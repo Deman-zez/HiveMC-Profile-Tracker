@@ -159,8 +159,11 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   transition:opacity .28s ease}
 .game .big,.game b{transition:color .2s ease}
 .game b{display:block;font-size:16px;font-weight:700;margin-bottom:10px}
-.game .big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.game .cap{color:var(--soft);font-size:13px;margin-top:3px}
+.game .gs{display:grid;gap:8px;margin-top:2px}
+.game .gs > div{background:none;padding:0;border-radius:12px}
+.game .gs span{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.game .gs small{display:block;color:var(--soft);font-size:13px;margin-top:2px}
 .badge{display:inline-block;background:var(--violet);color:#fff;font-size:11px;font-weight:800;
   padding:3px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
 
@@ -246,9 +249,9 @@ svg.line{width:100%;height:100%;display:block}
 
 @media (min-width:900px){
   body{padding-bottom:112px}
-  .wrap{max-width:1040px;padding:20px 24px 0}
+  .wrap{max-width:1180px;padding:20px 24px 0}
   .stick{padding:18px 24px;font-size:28px}
-  .stick .wrap{max-width:1040px}
+  .stick .wrap{max-width:1180px}
   .idline{font-size:28px}
   .hero{display:flex;align-items:center;justify-content:flex-start;gap:26px;text-align:left;
     padding:18px 0 6px}
@@ -256,7 +259,15 @@ svg.line{width:100%;height:100%;display:block}
   .title{margin:0;font-size:23px;text-align:left}
   .primary{max-width:340px;margin-left:0}
   .tiles{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .games{grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:24px;align-items:start}
+  .colMain,.colSide{min-width:0}
+  .colMain > h2:first-child,.colSide > h2:first-child{margin-top:20px}
+  .games{grid-template-columns:1fr;gap:14px}
+  .game{padding:18px 20px}
+  .game .gs{grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  .game .gs > div{background:var(--tile);padding:12px 14px}
+  .colSide .grid{grid-template-columns:repeat(auto-fill,minmax(74px,1fr))}
+  .colSide .tiles{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
   .grid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr))}
   .srow b{font-size:36px}
   .tabs{left:50%;right:auto;transform:translateX(-50%);max-width:580px;width:100%;
@@ -290,8 +301,8 @@ svg.line{width:100%;height:100%;display:block}
   .row2{gap:14px}
 }
 @media (min-width:1200px){
-  .wrap{max-width:1140px}
-  .stick .wrap{max-width:1140px}
+  .wrap{max-width:1280px}
+  .stick .wrap{max-width:1280px}
 }
 @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -458,7 +469,7 @@ const STR = {
     kd:"K/D", killsTotal:"Убийств всего", levelSum:"Сумма уровней", xpTotal:"Опыт всего",
     perGameK:"Убийств за игру", perGameD:"Смертей за игру", perGameX:"Опыта за игру",
     perGameF:"Финалок за игру", firstPlayed:"Первая игра",
-    playedLow:"сыграно", winrateLow:"процент побед", mostPlayed:"ЧАЩЕ ВСЕГО",
+    playedLow:"сыграно", winrateLow:"процент побед", winsLow:"побед", mostPlayed:"ЧАЩЕ ВСЕГО",
     level:"Уровень", prestige:"престиж",
     sinceHint:"Прошлый срез: %1 · рост смотрите во вкладке «Динамика»",
     close:"Закрыть", copy:"Скопировать", rawTitle:"Ответ API",
@@ -510,7 +521,7 @@ const STR = {
     kd:"K/D", killsTotal:"Kills total", levelSum:"Levels total", xpTotal:"XP total",
     perGameK:"Kills per game", perGameD:"Deaths per game", perGameX:"XP per game",
     perGameF:"Finals per game", firstPlayed:"First played",
-    playedLow:"played", winrateLow:"win rate", mostPlayed:"MOST PLAYED",
+    playedLow:"played", winrateLow:"win rate", winsLow:"wins", mostPlayed:"MOST PLAYED",
     level:"Level", prestige:"prestige",
     sinceHint:"Previous snapshot: %1 · see growth on the Trend tab",
     close:"Close", copy:"Copy", rawTitle:"API response",
@@ -1159,6 +1170,19 @@ function renderSnap(){
   body.innerHTML = "";
   if(!last) return;
 
+  if(main) renderStreak(main, body);
+
+  let cols = null;                       // левая колонка — игры, правая — косметика
+  const col = which => {
+    if(!cols){
+      cols = document.createElement("div");
+      cols.className = "cols";
+      cols.innerHTML = '<div class="colMain"></div><div class="colSide"></div>';
+      body.append(cols);
+    }
+    return cols.querySelector(which === "side" ? ".colSide" : ".colMain");
+  };
+
   const playedOf = c => num(c,"played") || num(c,"games_played");
   const codes = state.games.filter(g => g !== "main" && last.g[g])
     .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
@@ -1189,11 +1213,15 @@ function renderSnap(){
       const c = last.g[g], played = playedOf(c), wins = num(c,"victories");
       return '<button class="game" data-g="' + g + '"><b>' + esc(NAME(g)) +
         (g === most ? '<span class="badge">' + esc(T("mostPlayed")) + "</span>" : "") + "</b>" +
-        '<div class="big">' + nf(played) + '</div><div class="cap">' + esc(T("playedLow")) + "</div>" +
-        '<div class="big" style="margin-top:10px">' + (played ? pct(wins, played) : "—") +
-        '</div><div class="cap">' + esc(T("winrateLow")) + "</div></button>";
+        '<div class="gs">' +
+          "<div><span>" + nf(wins) + "</span><small>" + esc(T("winsLow")) + "</small></div>" +
+          "<div><span>" + nf(played) + "</span><small>" + esc(T("playedLow")) + "</small></div>" +
+          "<div><span>" + (played ? pct(wins, played) : "—") + "</span><small>" +
+            esc(T("winrateLow")) + "</small></div>" +
+        "</div></button>";
     }).join("");
-    body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("games")) + '</h2><div class="games">' + cards + "</div>");
+    col("main").insertAdjacentHTML("beforeend",
+      "<h2>" + esc(T("games")) + '</h2><div class="games">' + cards + "</div>");
     body.querySelectorAll(".game").forEach((b, i) => {
       b.style.setProperty("--i", i);
       b.onclick = () => openGame(b.dataset.g);
@@ -1203,8 +1231,8 @@ function renderSnap(){
 
   if(main){
     const html = cosmeticsHTML(main);
-    if(html) body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("appearance")) + "</h2>" + html);
-    body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("profileAll")) +
+    if(html) col("side").insertAdjacentHTML("beforeend", "<h2>" + esc(T("appearance")) + "</h2>" + html);
+    col("side").insertAdjacentHTML("beforeend", "<h2>" + esc(T("profileAll")) +
       '</h2><div class="card" style="text-align:center">' +
       '<button class="mini" id="openMain">' + esc(T("showAll")) + "</button></div>");
     const b = body.querySelector("#openMain");
