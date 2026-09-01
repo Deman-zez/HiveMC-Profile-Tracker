@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140a20">
+<title>Hive</title>
+<style>
+:root{
+  --bg-a:#2a1442; --bg-b:#140a20;
+  --gold:#ffc02e; --violet:#a05fd6; --pink:#ff7ab8; --green:#4fd48a;
+  --text:#f4eefb; --soft:#a493be;
+  --panel:rgba(24,13,38,.72); --tile:rgba(255,255,255,.075); --edge:rgba(255,255,255,.13);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;padding:0 0 92px;min-height:100vh;color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(139,68,199,.35) 0%, transparent 60%),
+    linear-gradient(170deg, var(--bg-a) 0%, var(--bg-b) 65%) fixed;
+}
+#aura{position:fixed;inset:-25%;z-index:-2;pointer-events:none;opacity:.9;
+  will-change:transform;contain:strict;
+  background:
+    radial-gradient(38% 32% at 22% 18%, rgba(168,92,224,.50), transparent 70%),
+    radial-gradient(30% 26% at 82% 26%, rgba(255,192,46,.14), transparent 70%),
+    radial-gradient(42% 38% at 62% 78%, rgba(108,52,178,.42), transparent 72%),
+    radial-gradient(34% 30% at 12% 84%, rgba(255,122,184,.12), transparent 72%)}
+@media (prefers-reduced-motion: no-preference){
+  #aura{animation:drift 30s ease-in-out infinite alternate}
+}
+@keyframes drift{
+  0%{transform:translate3d(-3%,-2%,0) scale(1)}
+  50%{transform:translate3d(3%,2%,0) scale(1.1)}
+  100%{transform:translate3d(-1%,3%,0) scale(1.04)}
+}
+#comb{position:fixed;top:-84px;left:-72px;width:calc(100% + 144px);
+  height:calc(100% + 168px);z-index:-1;pointer-events:none;will-change:transform;contain:strict}
+#spot{position:fixed;top:-40vh;left:-40vw;width:80vw;height:80vw;z-index:-1;pointer-events:none;
+  border-radius:50%;will-change:transform;contain:strict;
+  background:radial-gradient(circle, rgba(255,192,46,.16) 0%, rgba(255,192,46,.07) 38%, transparent 68%)}
+@media (prefers-reduced-motion: no-preference){
+  #comb{animation:combDrift 48s linear infinite}
+  #spot{animation:spotMove 26s ease-in-out infinite alternate}
+}
+@keyframes combDrift{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(72px,83.14px,0)}
+}
+@keyframes spotMove{
+  0%{transform:translate3d(20vw,25vh,0)}
+  50%{transform:translate3d(90vw,70vh,0)}
+  100%{transform:translate3d(45vw,120vh,0)}
+}
+.wrap{max-width:640px;margin:0 auto;padding:14px 16px 0}
+h2{font-size:15px;margin:26px 0 0;font-weight:700;color:var(--gold)}
+h3{font-size:16px;margin:0 0 12px;font-weight:700;color:var(--gold)}
+.sub{color:var(--soft);font-size:14px;margin:6px 0 0;line-height:1.55}
+button,input,select{font-family:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
+
+.idline{display:flex;align-items:center;gap:9px;padding:0;margin:0;font-size:24px;font-weight:800;
+  line-height:1.2}
+.idline .lvl{color:var(--gold);font-size:16px;font-weight:800}
+.idline .tag,.stick .tag{font-size:inherit;font-weight:800;line-height:1;white-space:nowrap}
+.rl{background:linear-gradient(100deg,var(--rankc1,var(--rankc)) 0 26%,var(--rankc2) 50%,
+  var(--rankc1,var(--rankc)) 74% 100%);
+  background-size:230% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  padding:0 1px}
+@media (prefers-reduced-motion: no-preference){
+  .rl{animation:shine2 2.6s ease-in-out infinite alternate}
+}
+@keyframes shine2{from{background-position:0% 0}to{background-position:100% 0}}
+.nk{background:linear-gradient(100deg,var(--text) 0 38%,var(--rankc,var(--gold)) 50%,var(--text) 62% 100%);
+  background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (prefers-reduced-motion: no-preference){
+  .nk{animation:shine 5s linear infinite}
+}
+@keyframes shine{from{background-position:130% 0}to{background-position:-50% 0}}
+.stick{position:fixed;top:0;left:0;right:0;z-index:8;display:block;
+  padding:14px 16px;font-size:24px;font-weight:800;line-height:1.2;
+  background:rgba(19,10,30,.97);
+  border-bottom:1px solid var(--edge);
+  transform:translateY(-102%);opacity:0;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.stick.on{transform:none;opacity:1}
+
+.srow{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.srow > div{text-align:center;flex:1}
+.srow .sep{flex:0 0 1px;align-self:stretch;background:var(--edge);max-width:1px}
+.sfoot{display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:16px;
+  padding-top:14px;border-top:1px solid rgba(255,255,255,.07)}
+.sfoot .pill{margin-top:0}
+.sfoot .reset{color:var(--soft);font-size:12px}
+.srow b{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.srow small{display:block;color:var(--soft);font-size:13px;margin-top:4px}
+.pill{display:inline-block;margin-top:14px;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700}
+.pill.ok{background:rgba(79,212,138,.16);color:var(--green)}
+.pill.no{background:rgba(255,192,46,.16);color:var(--gold)}
+.pill.unk{background:var(--tile);color:var(--soft)}
+.ciw{width:34px;height:34px;border-radius:9px;flex:none;padding:3px;
+  background:linear-gradient(160deg,#ffd970,#d99a15);box-shadow:0 3px 9px rgba(0,0,0,.3)}
+.ciw span{display:block;width:100%;height:100%;border-radius:6px;overflow:hidden;background:#170e22}
+.ciw img{width:156%;height:156%;margin:-28%;object-fit:contain;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:10px;margin-top:12px}
+.it{background:linear-gradient(160deg,#ffd970,#d99a15);border-radius:13px;padding:5px;
+  aspect-ratio:1;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+.it .box{width:100%;height:100%;border-radius:8px;overflow:hidden;background:#170e22;
+  display:grid;place-items:center}
+.it .box img{width:154%;height:154%;margin:-27%;object-fit:contain;display:block}
+.it .box em{font-style:normal;color:var(--soft);font-size:20px;font-weight:800}
+.tlist div{padding:10px 0;font-size:16px;border-top:1px solid rgba(255,255,255,.07);font-size:15px}
+.tlist div:first-child{border-top:none}
+.more{margin-top:12px}
+.hero{text-align:center;padding:10px 0 4px}
+.ava{width:104px;height:104px;margin:0 auto;border-radius:14px;
+  background:linear-gradient(160deg,#ffd970,#d99a15);padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.ava span{display:grid;place-items:center;overflow:hidden;width:100%;height:100%;border-radius:7px;
+  background:linear-gradient(160deg,#fff,#f3dff0);color:#2a1442;font-size:38px;font-weight:800}
+.ava img{width:152%;height:152%;margin:-26%;border-radius:0;display:block;object-fit:contain;background:transparent}
+.title{color:var(--pink);font-size:19px;margin:12px 0 0;font-weight:600;text-align:center;
+  line-height:1.25}
+
+
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:18px;padding:16px;
+  margin-top:14px;contain:content}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+.tile{background:var(--tile);border-radius:14px;padding:14px;min-width:0;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;text-align:center}
+.tile b{display:block;max-width:100%;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap;
+  font-size:clamp(20px,6.4vw,26px)}
+.tile b.sm{font-size:clamp(17px,5.2vw,22px)}
+.tile b.xs{font-size:clamp(14px,4.3vw,18px)}
+.tile b.xxs{font-size:clamp(11px,3.4vw,15px)}
+.tile small{display:block;color:var(--soft);font-size:13px;margin-top:5px;line-height:1.3}
+.tile .d{color:var(--gold);font-size:13px;font-weight:700;margin-left:7px}
+.tile.w2{grid-column:span 2}
+.tile.wide{grid-column:1/-1}
+.tile.w2,.tile.wide{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;text-align:left}
+.tile.w2 small,.tile.wide small{margin-top:0;text-align:right;min-width:0;
+  max-width:46%;white-space:normal;overflow-wrap:break-word;word-break:normal}
+.tile.w2 b,.tile.wide b{flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:break-word;
+  word-break:normal;hyphens:none;text-align:left}
+.tile.w2 small,.tile.wide small{flex:0 1 auto}
+
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.game{text-align:left;background:var(--panel);border:1px solid var(--edge);border-radius:18px;
+  padding:16px;color:var(--text);cursor:pointer}
+.game b{display:block;font-size:16px;font-weight:700;margin-bottom:10px}
+.game .big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.game .cap{color:var(--soft);font-size:13px;margin-top:3px}
+.badge{display:inline-block;background:var(--violet);color:#fff;font-size:11px;font-weight:800;
+  padding:3px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
+
+.bar{height:9px;border-radius:5px;background:rgba(0,0,0,.35);overflow:hidden;margin:9px 0 6px;width:100%}
+.bar i{display:block;height:100%;background:var(--violet);border-radius:5px}
+
+.cos{display:flex;justify-content:space-between;gap:12px;padding:11px 0;
+  border-top:1px solid rgba(255,255,255,.07);font-size:15px}
+.cos span{color:var(--soft);min-width:0;flex:1}
+.cos i{display:block;font-style:normal;color:var(--soft);opacity:.75;font-size:12px;
+  margin-top:4px;line-height:1.45;overflow-wrap:anywhere}
+.cos.sum{border-top:1px solid var(--edge)}
+.cos.sum span{color:var(--text);font-weight:600}
+.cos.sum b{font-size:18px}
+.cos.sum.gold b{color:var(--gold)}
+.cos b{font-weight:600;display:flex;align-items:center;gap:8px;justify-content:flex-end;text-align:right}
+
+
+.primary{width:100%;padding:16px;border:none;border-radius:13px;margin-top:18px;cursor:pointer;
+  background:var(--gold);color:#2a1442;font-size:16px;font-weight:700;box-shadow:0 6px 18px rgba(255,192,46,.22)}
+.primary:disabled{background:var(--panel);color:var(--soft);box-shadow:none;cursor:default}
+.mini{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px 14px;
+  font-size:14px;color:var(--text);cursor:pointer}
+input,select{width:100%;padding:13px;font-size:16px;color:var(--text);border-radius:11px;
+  background:rgba(0,0,0,.25);border:1px solid var(--edge)}
+label{display:block;font-size:13px;color:var(--soft);margin:20px 0 7px}
+
+#vSet .card.set{padding:16px 16px 18px}
+#vSet label{display:block;font-size:12px;font-weight:700;letter-spacing:.03em;
+  color:var(--soft);margin:0 0 7px;text-transform:none}
+#vSet .row2{margin-top:14px;gap:12px;align-items:stretch}
+#vSet .row2 > div{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+#vSet .row2 label{margin-top:0}
+#vSet input[type=text],#vSet select{font-size:15px;font-weight:500;padding:12px 13px;
+  border-radius:12px;background:rgba(0,0,0,.32)}
+#vSet input[type=text]::placeholder{color:var(--soft);opacity:.55;font-weight:400}
+#vSet .hint{margin:10px 0 0;font-size:12.5px;line-height:1.55;color:var(--soft);opacity:.85}
+#vSet .check{display:flex;align-items:center;gap:12px;margin:0;padding:11px 0;
+  font-size:14.5px;font-weight:500;color:var(--text);letter-spacing:0;cursor:pointer}
+#vSet .check + .check{border-top:1px solid rgba(255,255,255,.07)}
+#vSet .check input{width:20px;height:20px;flex:none;accent-color:var(--gold);margin:0;cursor:pointer}
+#vSet .chips{margin-top:0}
+#vSet .chips.btns{gap:9px}
+#vSet .chip{font-size:13.5px;font-weight:600;padding:8px 14px}
+#vSet .mini{font-size:13.5px;padding:10px 14px;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1px solid var(--edge);background:var(--panel);border-radius:22px;padding:9px 15px;
+  font-size:14px;color:var(--soft);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#2a1442;font-weight:700}
+.chip.dead{opacity:.45;text-decoration:line-through}
+
+.note{border:1px solid var(--edge);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;
+  padding:14px 16px;margin:20px 0;font-size:13px;line-height:1.6;color:var(--soft);background:rgba(0,0,0,.2)}
+svg.line{width:100%;height:140px;display:block;overflow:visible}
+.line path{fill:none;stroke:var(--gold);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.line circle{fill:var(--gold);stroke:var(--bg-b);stroke-width:2}
+.line text{font-size:11px;fill:var(--soft)}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;z-index:5;
+  background:rgba(19,10,30,.97);border-top:1px solid var(--edge);
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;background:none;border:none;font-size:14px;padding:11px;color:var(--soft);
+  cursor:pointer;border-radius:10px}
+.tabs button[aria-current="page"]{color:var(--gold);font-weight:700;background:rgba(255,192,46,.12)}
+
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,5,16,.75);overflow:auto}
+.modal .inner{min-height:100%;background:var(--bg-b);max-width:640px;margin:0 auto;
+  padding:22px 16px calc(30px + env(safe-area-inset-bottom))}
+.mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.mhead h3{font-size:26px;color:var(--text);margin:0}
+.close{background:var(--violet);border:none;color:#fff;border-radius:10px;padding:11px 18px;
+  font-size:15px;font-weight:600;cursor:pointer;flex:none}
+.raw{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.5;
+  background:rgba(0,0,0,.35);border:1px solid var(--edge);border-radius:12px;padding:14px;margin:0 0 14px}
+.hidden{display:none}
+.toast{position:fixed;left:12px;right:12px;bottom:100px;max-width:420px;margin:0 auto;z-index:30;
+  background:#2a1442;border:1px solid var(--edge);color:var(--text);padding:14px 16px;
+  border-radius:12px;font-size:15px;line-height:1.4}
+.row2{display:flex;gap:10px}.row2>*{flex:1}
+
+@media (min-width:900px){
+  body{padding-bottom:112px}
+  .wrap{max-width:1040px;padding:20px 24px 0}
+  .stick{padding:18px 24px;font-size:28px}
+  .stick .wrap{max-width:1040px}
+  .idline{font-size:28px}
+  .hero{display:flex;align-items:center;justify-content:flex-start;gap:26px;text-align:left;
+    padding:18px 0 6px}
+  .ava{width:126px;height:126px;margin:0;flex:none}
+  .title{margin:0;font-size:23px;text-align:left}
+  .primary{max-width:340px;margin-left:0}
+  .tiles{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .games{grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr))}
+  .srow b{font-size:36px}
+  .tabs{left:50%;right:auto;transform:translateX(-50%);max-width:580px;width:100%;
+    border:1px solid var(--edge);border-bottom:none;border-radius:16px 16px 0 0}
+  .tabs button{font-size:15px}
+  .modal{display:grid;place-items:center;padding:28px}
+  .modal .inner{min-height:0;max-height:86vh;overflow:auto;border-radius:20px;
+    border:1px solid var(--edge);padding:26px 26px 30px;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+  .toast{bottom:120px}
+  .game:hover{border-color:rgba(255,192,46,.45);background:rgba(255,255,255,.06)}
+  .chip:hover,.mini:hover{border-color:rgba(255,192,46,.45)}
+  .tile.tap:hover{background:rgba(255,255,255,.1)}
+  .row2{gap:14px}
+}
+@media (min-width:1200px){
+  .wrap{max-width:1140px}
+  .stick .wrap{max-width:1140px}
+}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(22px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes slideDown{to{transform:translateY(26px);opacity:0}}
+.modal.out{animation:fadeOut .2s ease forwards}
+.modal.out .inner{animation:slideDown .22s cubic-bezier(.4,0,1,1) forwards}
+@keyframes toastIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion: no-preference){
+  .tile,.game,.cos{animation:rise .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*22ms)}
+  .modal{animation:fadeIn .16s ease-out}
+  .modal .inner{animation:slideUp .28s cubic-bezier(.2,.8,.2,1)}
+  .toast{animation:toastIn .22s cubic-bezier(.2,.8,.2,1)}
+  .primary.busy{animation:pulse 1.1s ease-in-out infinite}
+  .bar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
+}
+.primary,.mini,.chip,.game,.close,.tabs button{transition:transform .12s ease,background .2s ease,
+  color .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease}
+.primary:active:not(:disabled),.mini:active,.close:active{transform:scale(.97)}
+.chip:active{transform:scale(.95)}
+.game:active{transform:scale(.985)}
+.lite #spot,.lite #aura,.lite #comb{animation:none !important}
+.lite .nk,.lite .rl{animation:none !important;background:none;color:var(--text);
+  -webkit-text-fill-color:currentColor}
+.lite .rl{color:var(--rankc)}
+.lite .rv{transition:none !important;opacity:1 !important;transform:none !important}
+.lite .tile,.lite .game,.lite .cos{animation:none !important}
+.rv{opacity:0;transform:translate3d(0,16px,0)}
+@media (prefers-reduced-motion: no-preference){
+  .rv{transition:opacity .5s ease,transform .5s cubic-bezier(.2,.8,.2,1)}
+}
+.rv.in{opacity:1;transform:translate3d(0,0,0)}
+.tile.tap{cursor:pointer}
+.tile.tap:active{transform:scale(.97)}
+.tile.tap b::after{content:"›";color:var(--soft);font-size:.7em;margin-left:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="aura" aria-hidden="true"></div>
+<svg id="comb" aria-hidden="true"><defs>
+<pattern id="hex" width="72" height="41.57" patternUnits="userSpaceOnUse">
+<g fill="none" stroke="#ffffff" stroke-opacity="0.055" stroke-width="1.4">
+<path d="M24 0 L12 20.785 L-12 20.785 L-24 0 L-12 -20.785 L12 -20.785 Z"/>
+<path d="M24 41.57 L12 62.355 L-12 62.355 L-24 41.57 L-12 20.785 L12 20.785 Z"/>
+<path d="M96 0 L84 20.785 L60 20.785 L48 0 L60 -20.785 L84 -20.785 Z"/>
+<path d="M96 41.57 L84 62.355 L60 62.355 L48 41.57 L60 20.785 L84 20.785 Z"/>
+<path d="M60 20.785 L48 41.57 L24 41.57 L12 20.785 L24 0 L48 0 Z"/>
+<path d="M60 -20.785 L48 0 L24 0 L12 -20.785 L24 -41.57 L48 -41.57 Z"/>
+<path d="M60 62.355 L48 83.14 L24 83.14 L12 62.355 L24 41.57 L48 41.57 Z"/>
+</g></pattern>
+</defs>
+<rect width="100%" height="100%" fill="url(#hex)"/>
+</svg>
+<div id="spot" aria-hidden="true"></div>
+
+<div id="stick" class="stick"><div class="wrap" style="padding:0;display:flex;align-items:center;gap:9px">
+<span class="nk" id="stickNick"></span><span class="tag" id="stickTag"></span></div></div>
+<div class="wrap">
+  <section id="vSnap">
+    <div id="hero"></div>
+    <button class="primary" id="fetchBtn"></button>
+    <p class="sub" id="subtitle"></p>
+    <div id="snapBody"></div>
+  </section>
+
+  <section id="vTrend" class="hidden">
+    <h2 id="trendHead" style="margin-top:10px"></h2>
+    <div class="row2" style="margin-top:12px">
+      <select id="trendGame"></select>
+      <select id="trendMetric"></select>
+    </div>
+    <div id="trendBody"></div>
+  </section>
+
+  <section id="vSet" class="hidden">
+    <h2 id="setHead" style="margin-top:10px"></h2>
+
+    <div class="card set">
+      <label for="nick" id="lNick"></label>
+      <input id="nick" type="text" autocapitalize="none" autocomplete="off">
+      <div class="row2">
+        <div>
+          <label for="lang" id="lLang"></label>
+          <select id="lang">
+            <option value="auto"></option>
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <label for="cd" id="lCd"></label>
+          <select id="cd"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card set">
+      <label id="lGames"></label>
+      <div class="chips" id="gameChips"></div>
+    </div>
+
+    <div class="card set">
+      <label for="proxy" id="lProxy"></label>
+      <input id="proxy" type="text" autocapitalize="none">
+      <p class="hint" id="proxyHint"></p>
+    </div>
+
+    <div class="card set">
+      <label class="check"><input type="checkbox" id="finals"><span id="lFinals"></span></label>
+      <label class="check"><input type="checkbox" id="lite"><span id="lLite"></span></label>
+    </div>
+
+    <div class="card set">
+      <div class="chips btns">
+        <button class="mini" id="exportBtn"></button>
+        <button class="mini" id="importBtn"></button>
+        <button class="mini" id="wipeBtn"></button>
+        <button class="mini" id="diagBtn"></button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+    </div>
+
+    <div class="note" id="limitNote" style="margin-bottom:24px"></div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button data-v="snap" aria-current="page" id="tab1"></button>
+  <button data-v="trend" id="tab2"></button>
+  <button data-v="set" id="tab3"></button>
+</nav>
+<script>
+"use strict";
+const API = "https://api.playhive.com/v0";
+const KEY = "hive.tracker.v1";
+const DIAG_CD = 3 * 60 * 1000;
+const REQ_LIMIT = 40;                    // запросов к API за час со всего приложения
+const REQ_WINDOW = 60 * 60 * 1000;
+const NICK_LIMIT = 4;                    // сколько разных ников можно опрашивать за час
+const SNAP_GAP = 60 * 1000;              // минимум между любыми двумя срезами
+const cdMs = () => (state.cd || 15) * 60 * 1000;
+
+const GAMES = [
+  ["main","Профиль","Profile"],["bed","BedWars","BedWars"],["sky","SkyWars","SkyWars"],
+  ["murder","Murder Mystery","Murder Mystery"],["hide","Hide and Seek","Hide and Seek"],
+  ["dr","DeathRun","DeathRun"],["sg","Survival Games","Survival Games"],
+  ["bridge","The Bridge","The Bridge"],["ctf","Capture the Flag","Capture the Flag"],
+  ["drop","Block Drop","Block Drop"],["party","Block Party","Block Party"],
+  ["ground","Ground Wars","Ground Wars"],["grav","Gravity","Gravity"],
+  ["build","Build Battle","Build Battle"],["wars","Treasure Wars","Treasure Wars"]
+];
+const MAX_LEVEL = 75;
+
+const STR = {
+  ru:{
+    tab1:"Профиль", tab2:"Динамика", tab3:"Настройки",
+    snap:"Снять срез", snapping:"Запрашиваю…",
+    noSnaps:"Срезов пока нет. Укажите ник в настройках и снимите первый.",
+    lastSnap:"Последний срез: %1 · всего: %2", nextIn:" · следующий через %1 мин",
+    noNick:"Ник не указан", games:"Игры", totalOver:"Всего по %1 играм",
+    played:"Сыграно", wins:"Побед", winrate:"Процент побед", losses:"Поражений",
+    kd:"K/D", killsTotal:"Убийств всего", levelSum:"Сумма уровней", xpTotal:"Опыт всего",
+    perGameK:"Убийств за игру", perGameD:"Смертей за игру", perGameX:"Опыта за игру",
+    perGameF:"Финалок за игру", firstPlayed:"Первая игра",
+    playedLow:"сыграно", winrateLow:"процент побед", mostPlayed:"ЧАЩЕ ВСЕГО",
+    level:"Уровень", prestige:"престиж",
+    sinceHint:"Прошлый срез: %1 · рост смотрите во вкладке «Динамика»",
+    close:"Закрыть", copy:"Скопировать", rawTitle:"Ответ API",
+    appearance:"Внешний вид", cosOpen:"Открыто", cosWorn:"Надето", notWorn:"не надето",
+    profileAll:"Профиль целиком", showAll:"Показать все поля профиля",
+    lNick:"Ник на Hive", nickPh:"точно как в игре", lLang:"Язык", auto:"Как в системе",
+    lGames:"Игры, за которыми следим", lProxy:"Прокси для запросов",
+    proxyPh:"пусто — напрямую; или https://…workers.dev/",
+    proxyHint:"Адрес приклеивается перед ссылкой на API. Если прокси ждёт её в параметре — впишите метку {url}.",
+    exportBtn:"Сохранить копию", importBtn:"Загрузить копию",
+    wipeBtn:"Стереть срезы", diagBtn:"Проверить профиль",
+    limitNote:"Лимит Hive: одна пара «игрок + игра» не чаще 3 раз в час. Приложение держит свои ограничения: пауза по каждой игре, минута между любыми срезами, не больше 40 запросов и 4 разных ников в час. Это защита от перебора чужих аккаунтов — не снимайте её, если публикуете страницу.",
+    noProfile:"Данные профиля не пришли — ранг, титул и косметика берутся именно оттуда. Откройте «Настройки → Проверить профиль», чтобы увидеть сырой ответ API.",
+    deadNote:"Нет данных по: %1. Либо вы в это не играли, либо у игры другой код в API.",
+    needNick:"Сначала укажите ник", cooldownAll:"Ещё рано — все игры на кулдауне",
+    skipped:"Пропущено (кулдаун): %1", imported:"Копия загружена", unreadable:"Не читается: %1",
+    copied:"Скопировано", clipFail:"Буфер недоступен — выделите текст вручную",
+    wipeAsk:"Удалить все сохранённые срезы?",
+    trendNeed:"Нужно минимум два среза — тогда появится график.",
+    trendFew:"По этой метрике мало точек.", trendGrowth:"%1: %2 → %3 · прирост %4",
+    streak:"Серия входов", bestStreak:"Лучшая серия", quests:"Квестов выполнено",
+    friends:"Друзья", playerNumber:"Номер игрока", firstJoin:"Первый вход",
+    limitErr:"лимит запросов", limitWait:", ждать %1 мин", netErr:"сеть или CORS: браузер не пустил запрос",
+    httpErr:"ответ %1", noReq:"запрос не ушёл (CORS или сеть)",
+    cdLabel:"Пауза между срезами", min:"%1 мин",
+    diagWait:"Проверить снова можно через %1 с",
+    killsTitle:"Из чего сложились убийства", counted:"учтено", skippedF:"не учтено",
+    finalsLabel:"Считать финальные убийства отдельно", noKillFields:"полей с убийствами нет",
+    streakNow:"Текущая серия", streakBest:"Лучшая серия", days:"дн.",
+    streakDone:"Серия обновлена сегодня", streakWait:"Сегодня серия ещё не обновлена",
+    streakUnknown:"Неизвестно — нужен срез за прошлый игровой день",
+    resetIn:"Новый игровой день через %1 · сброс в %2", hh:"ч", mm:"мин",
+    total:"Итого", wait:"ждать %1", showAllCos:"Показать все", misc:"Разное",
+    liteLabel:"Меньше анимаций (плавнее прокрутка)",
+    budget:"запас запросов %1 из %2",
+    budgetOut:"Час запросов исчерпан — подождите, лимит восстановится сам",
+    snapGap:"Слишком часто: следующий срез можно снять через %1 с",
+    nickLimit:"За час можно следить максимум за %1 никами — подождите или вернитесь к прежнему",
+    sumNoFinals:"Без финальных убийств", sumWithFinals:"С финальными убийствами",
+    killsHint:"Сверьте с титулом «Total Kills» в игре и включите или выключите финальные убийства в настройках — так сумма сойдётся точно."
+  },
+  en:{
+    tab1:"Profile", tab2:"Trend", tab3:"Settings",
+    snap:"Take snapshot", snapping:"Fetching…",
+    noSnaps:"No snapshots yet. Set your username in settings and take the first one.",
+    lastSnap:"Last snapshot: %1 · total: %2", nextIn:" · next in %1 min",
+    noNick:"No username set", games:"Games", totalOver:"Across %1 games",
+    played:"Played", wins:"Wins", winrate:"Win rate", losses:"Losses",
+    kd:"K/D", killsTotal:"Kills total", levelSum:"Levels total", xpTotal:"XP total",
+    perGameK:"Kills per game", perGameD:"Deaths per game", perGameX:"XP per game",
+    perGameF:"Finals per game", firstPlayed:"First played",
+    playedLow:"played", winrateLow:"win rate", mostPlayed:"MOST PLAYED",
+    level:"Level", prestige:"prestige",
+    sinceHint:"Previous snapshot: %1 · see growth on the Trend tab",
+    close:"Close", copy:"Copy", rawTitle:"API response",
+    appearance:"Appearance", cosOpen:"Unlocked", cosWorn:"Equipped", notWorn:"none equipped",
+    profileAll:"Full profile", showAll:"Show all profile fields",
+    lNick:"Hive username", nickPh:"exactly as in game", lLang:"Language", auto:"System default",
+    lGames:"Games to track", lProxy:"Request proxy",
+    proxyPh:"empty — direct; or https://…workers.dev/",
+    proxyHint:"The address is prepended to the API link. If your proxy expects it as a parameter, use the {url} placeholder.",
+    exportBtn:"Export backup", importBtn:"Import backup",
+    wipeBtn:"Clear snapshots", diagBtn:"Test profile call",
+    limitNote:"Hive rate limit: the same player and game pair may be requested 3 times per hour. The app adds its own guards: a per-game pause, a minute between any two snapshots, and caps of 40 requests and 4 different usernames per hour. This prevents mass scraping — keep it in place if you publish the page.",
+    noProfile:"Profile data did not arrive — rank, title and cosmetics come from there. Open Settings and use “Test profile call” to see the raw API response.",
+    deadNote:"No data for: %1. Either you have not played it, or the game uses a different API code.",
+    needNick:"Set your username first", cooldownAll:"Too soon — every game is on cooldown",
+    skipped:"Skipped (cooldown): %1", imported:"Backup loaded", unreadable:"Cannot read: %1",
+    copied:"Copied", clipFail:"Clipboard unavailable — select the text manually",
+    wipeAsk:"Delete all saved snapshots?",
+    trendNeed:"Two snapshots are needed before a chart appears.",
+    trendFew:"Not enough points for this metric.", trendGrowth:"%1: %2 → %3 · gain %4",
+    streak:"Login streak", bestStreak:"Longest streak", quests:"Quests completed",
+    friends:"Friends", playerNumber:"Player number", firstJoin:"First joined",
+    limitErr:"rate limited", limitWait:", wait %1 min", netErr:"network or CORS: the browser blocked it",
+    httpErr:"HTTP %1", noReq:"request did not go through (CORS or network)",
+    cdLabel:"Snapshot pause", min:"%1 min",
+    diagWait:"You can check again in %1 s",
+    killsTitle:"How the kill total adds up", counted:"counted", skippedF:"not counted",
+    finalsLabel:"Count final kills on top", noKillFields:"no kill fields",
+    streakNow:"Current streak", streakBest:"Longest streak", days:"d",
+    streakDone:"Streak updated today", streakWait:"Streak not updated today yet",
+    streakUnknown:"Unknown — needs a snapshot from the previous game day",
+    resetIn:"New game day in %1 · resets at %2", hh:"h", mm:"m",
+    total:"Total", wait:"wait %1", showAllCos:"Show all", misc:"Other",
+    liteLabel:"Fewer animations (smoother scrolling)",
+    budget:"request budget %1 of %2",
+    budgetOut:"Hourly request budget spent — it refills on its own",
+    snapGap:"Too soon: the next snapshot is available in %1 s",
+    nickLimit:"Up to %1 usernames per hour — wait or switch back to a previous one",
+    sumNoFinals:"Without final kills", sumWithFinals:"With final kills",
+    killsHint:"Compare with the in-game Total Kills title and toggle final kills in settings so the sum matches."
+  }
+};
+
+const LABELS_RU = {
+  played:"Сыграно", victories:"Побед", kills:"Убийств", deaths:"Смертей", xp:"Опыт",
+  level:"Уровень", prestige:"Престиж", final_kills:"Финальных убийств",
+  beds_destroyed:"Кроватей сломано", teams_eliminated:"Команд выбито",
+  murders:"Убийств маньяком", murderer_eliminations:"Маньяков убито", coins:"Монет",
+  hider_kills:"Убийств за прячущегося", seeker_kills:"Убийств за водящего",
+  deathrun_wins:"Побед за бегуна", killer_wins:"Побед за убийцу", checkpoints:"Чекпоинтов",
+  activated:"Ловушек активировано", traps_activated:"Ловушек активировано",
+  goals:"Голов", flags_captured:"Флагов захвачено", flags_returned:"Флагов возвращено",
+  blocks_destroyed:"Блоков сломано", blocks_placed:"Блоков поставлено",
+  powerups_collected:"Бонусов собрано", total_points:"Очков", games_played:"Сыграно",
+  eliminations:"Выбито игроков", survival_time:"Время выживания", longest_shot:"Дальний выстрел",
+  player_number:"Номер игрока", rank:"Ранг", daily_login_streak:"Серия входов",
+  longest_daily_login_streak:"Лучшая серия входов", quests:"Квестов выполнено",
+  friends:"Друзья", hub_title_count:"Титулов открыто", avatar_count:"Аватаров открыто",
+  costume_count:"Костюмов открыто", hat_count:"Шапок открыто",
+  backbling_count:"Украшений для спины", mount_count:"Транспорта открыто",
+  pet_count:"Питомцев открыто", friend_count:"Друзей", quest_count:"Квестов выполнено",
+  equipped_hub_title:"Титул надет", equipped_avatar:"Аватар надет",
+  equipped_hat:"Шапка надета", equipped_backbling:"Украшение для спины надето",
+  equipped_costume:"Костюм надет", equipped_mount:"Транспорт выбран", equipped_pet:"Питомец выбран",
+  paid_ranks:"Купленные ранги", pets:"Питомцы", mounts:"Транспорт", first_played:"Первая игра",
+  first_login:"Первый вход", last_login:"Последний вход", xuid:"XUID", mcid:"MCID"
+};
+const COS_RU = {
+  costume:"Костюм", hat:"Шапка", mount:"Транспорт", pet:"Питомец", avatar:"Аватар",
+  backbling:"Украшение для спины", back_bling:"Украшение для спины",
+  hub_title:"Титул", title:"Титул",
+  victory_dance:"Танец победы", win_celebration:"Празднование победы",
+  projectile_trail:"След снаряда", death_cry:"Крик смерти", emote:"Эмоция",
+  stat_track:"Стат-трек", pet_pin:"Значок питомца"
+};
+const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","index","human_index","player_number"]);
+const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
+const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
+
+let state = load() || { nick:"", games:["main","bed","sky","dr"], proxy:"", lang:"auto",
+  cd:5, finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
+state.last = state.last || {}; state.dead = state.dead || []; state.lang = state.lang || "auto";
+if(!state.cd) state.cd = 5;
+if(state.finals === undefined) state.finals = true;
+if(!state.tagged){                                   // разметка срезов, снятых до появления привязки
+  const n = (state.nick || "").trim().toLowerCase();
+  state.snaps.forEach(x => { if(!x.n) x.n = n; });
+  state.tagged = 1; save();
+} state.lastDiag = state.lastDiag || 0;
+
+function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+function langCode(){
+  if(state.lang === "ru" || state.lang === "en") return state.lang;
+  const l = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+  return /^ru|^be|^uk|^kk/i.test(l) ? "ru" : "en";
+}
+let L = langCode();
+const T = (k, ...a) => { let s = (STR[L] && STR[L][k]) || STR.en[k] || k;
+  a.forEach((v,i) => s = s.replace("%" + (i+1), v)); return s; };
+
+function pruneLogs(){
+  const t = Date.now() - REQ_WINDOW;
+  state.reqLog = (state.reqLog || []).filter(x => x > t);
+  state.nickLog = (state.nickLog || []).filter(x => x.t > t);
+}
+function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }
+function noteRequest(){ pruneLogs(); state.reqLog.push(Date.now()); save(); }
+function nickAllowed(n){
+  pruneLogs();
+  const seen = [...new Set(state.nickLog.map(x => x.n))];
+  return seen.includes(n) || seen.length < NICK_LIMIT;
+}
+function noteNick(n){
+  pruneLogs();
+  state.nickLog.push({ n, t: Date.now() });
+  save();
+}
+
+const nickKey = () => (state.nick || "").trim().toLowerCase();
+const lk = g => nickKey() + "|" + g;                 // кулдаун на пару «игрок + игра»
+const mySnaps = () => state.snaps.filter(x => (x.n || "") === nickKey());
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const nf = n => typeof n === "number" ? n.toLocaleString(L === "ru" ? "ru-RU" : "en-US") : String(n);
+const pct = (a,b) => b ? (a / b * 100).toFixed(2) + "%" : "—";
+const ratio = (a,b) => b ? (a / b).toFixed(2) : (a ? a.toFixed(2) : "0.00");
+const nice = v => { const t = String(v).trim();
+  return /[A-Z]|\s/.test(t) ? t : pretty(t); };
+const hasMC = v => typeof v === "string" && /[§&][0-9a-z]/i.test(v);
+const pretty = s => String(s).replace(/[_-]+/g," ").replace(/\b\w/g, c => c.toUpperCase()).trim();
+const NAME = c => { const g = GAMES.find(x => x[0] === c); return g ? (L === "ru" ? g[1] : g[2]) : c; };
+const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
+const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
+
+function closeModal(m){
+  if(m.dataset.closing) return;
+  m.dataset.closing = "1";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){ m.remove(); return; }
+  m.classList.add("out");
+  setTimeout(() => m.remove(), 230);
+}
+function toast(t){
+  const o = document.querySelector(".toast"); if(o) o.remove();
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = t; el.onclick = () => el.remove();
+  document.body.append(el);
+  setTimeout(() => el.remove(), 9000);
+}
+function when(ts){
+  const d = new Date(ts), now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const day = sameDay ? (L === "ru" ? "сегодня" : "today")
+    : d.getDate() + "." + String(d.getMonth()+1).padStart(2,"0");
+  return day + ", " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+}
+function pick(o, ...keys){ for(const k of keys) if(o && o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k]; }
+function num(o, k){ return o && typeof o[k] === "number" ? o[k] : 0; }
+function dateOf(v){
+  if(typeof v !== "number") return String(v);
+  const d = new Date(v > 1e12 ? v : v * 1000);
+  const p = n => String(n).padStart(2,"0");
+  return p(d.getDate()) + "." + p(d.getMonth()+1) + "." + d.getFullYear();
+}
+function scanStr(o, re){ if(!o) return;
+  for(const k of Object.keys(o)) if(re.test(k) && typeof o[k] === "string" && o[k]) return o[k]; }
+function rankTag(rank){
+  const r = String(rank || "").toUpperCase();
+  if(/ULTIMATE|ULTRA/.test(r)) return { t:"U", c:"var(--violet)", c1:"#6a25ad", c2:"#dcaaff" };
+  if(/PLUS|\+/.test(r)) return { t:"+", c:"var(--green)", c1:"#1c8a4d", c2:"#8bffbd" };
+  return null;
+}
+const MCCOL = {"0":"#000000","1":"#0000AA","2":"#00AA00","3":"#00AAAA","4":"#AA0000","5":"#AA00AA",
+  "6":"#FFAA00","7":"#AAAAAA","8":"#555555","9":"#5555FF",a:"#55FF55",b:"#55FFFF",c:"#FF5555",
+  d:"#FF55FF",e:"#FFFF55",f:"#FFFFFF",g:"#DDD605",
+  u:"#B14BFF",i:"#FFC02E",j:"#C77DFF",p:"#5BE8C4",m:"#9AA0B5",t:"#FF6B5A",h:"#FF7AB8",
+  n:"#C68A4E",q:"#5CE68A",r:"#FFFFFF",s:"#7FE8FF"};
+function mcText(str){
+  const t = String(str);
+  if(!/[§&][0-9a-z]/i.test(t)) return esc(pretty(t));
+  let out = "", cur = null, buf = "";
+  const flush = () => { if(!buf) return;
+    out += cur ? '<span style="color:' + cur + '">' + esc(buf) + "</span>" : esc(buf); buf = ""; };
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if((c === "§" || c === "&") && MCCOL[(t[i+1] || "").toLowerCase()]){
+      flush(); cur = MCCOL[t[++i].toLowerCase()];
+    } else if((c === "§" || c === "&") && /[k-or]/i.test(t[i+1] || "")){ flush(); i++; }
+    else buf += c;
+  }
+  flush();
+  return out;
+}
+const CDN_PREFIX = { avatar:"", hat:"hat-", costume:"costume-", backbling:"backbling-",
+  back_bling:"backbling-", mount:"mount-", pet:"pet-", hub_title:null, title:null };
+function iconUrl(base, id){
+  const pre = CDN_PREFIX[base];
+  if(pre === null || pre === undefined || typeof id !== "string" || !id) return null;
+  const slug = id.toLowerCase().replace(/[''"".!?()]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  if(!slug) return null;
+  return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
+}
+
+const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
+
+/* ---------- таблица уровней (hive-bedrock-data с CDN) ---------- */
+let HD = null, hdTried = false;
+async function loadHiveData(){
+  if(hdTried) return HD;
+  hdTried = true;
+  for(const u of ["https://cdn.jsdelivr.net/npm/hive-bedrock-data/+esm",
+                  "https://esm.sh/hive-bedrock-data"]){
+    try{ HD = await import(u); if(HD) break; }catch(e){ HD = null; }
+  }
+  return HD;
+}
+function maxLevelOf(code){
+  try{ const g = HD && HD.Games && HD.Games[code]; if(g && g.max_level) return g.max_level; }catch(e){}
+  return MAX_LEVEL;
+}
+function levelFromXP(xp, code){
+  if(!HD || !xp) return null;
+  try{
+    const f = HD.calculateLevelFromXP || (HD.default && HD.default.calculateLevelFromXP);
+    const v = f && f(xp, code);
+    return typeof v === "number" && isFinite(v) ? v : null;
+  }catch(e){ return null; }
+}
+function gameLevel(c, code){
+  if(!c) return 0;
+  if(typeof c.level === "number" && c.level) return c.level;
+  return levelFromXP(num(c,"xp"), code) || 0;
+}
+
+/* ---------- запрос ---------- */
+function urlFor(game){
+  const path = game === "main" ? "/game/all/main/" + encodeURIComponent(state.nick)
+                               : "/game/all/" + game + "/" + encodeURIComponent(state.nick);
+  const full = API + path, p = state.proxy || "";
+  return p.includes("{url}") ? p.replace("{url}", encodeURIComponent(full)) : p + full;
+}
+async function pull(game){
+  if(budgetLeft() <= 0) throw new Error(T("budgetOut"));
+  noteRequest();
+  let res;
+  try{ res = await fetch(urlFor(game), { cache:"no-store" }); }
+  catch(e){ throw new Error(T("netErr")); }
+  if(res.status === 404) return { missing:true };
+  if(res.status === 429){
+    const ra = res.headers.get("Retry-After");
+    throw new Error(T("limitErr") + (ra ? T("limitWait", Math.ceil(ra/60)) : ""));
+  }
+  if(!res.ok) throw new Error(T("httpErr", res.status));
+  let data = await res.json();
+  if(data && typeof data === "object" && !Array.isArray(data)){
+    const ks = Object.keys(data);
+    if(ks.length === 1 && data[ks[0]] && typeof data[ks[0]] === "object" && !Array.isArray(data[ks[0]]))
+      data = data[ks[0]];                       // ответ обёрнут: {"main": {…}}
+  }
+  return { data };
+}
+async function snapshot(){
+  if(!state.nick){ toast(T("needNick")); return; }
+  const n = nickKey();
+  const gap = SNAP_GAP - (Date.now() - state.lastSnapAt);
+  if(gap > 0){ toast(T("snapGap", Math.ceil(gap / 1000))); return; }
+  if(!nickAllowed(n)){ toast(T("nickLimit", NICK_LIMIT)); return; }
+  if(budgetLeft() <= 0){ toast(T("budgetOut")); return; }
+  noteNick(n);
+  state.lastSnapAt = Date.now(); save();
+  const btn = $("#fetchBtn");
+  btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
+  const now = Date.now(), snap = { t: now, n: nickKey(), g: {} }, skipped = [], failed = [];
+  for(const g of state.games){
+    if(now - (state.last[lk(g)] || 0) < cdMs()){ skipped.push(NAME(g)); continue; }
+    try{
+      const r = await pull(g);
+      state.last[lk(g)] = Date.now();
+      if(r.missing){ if(!state.dead.includes(g)) state.dead.push(g); }
+      else { snap.g[g] = r.data; state.dead = state.dead.filter(x => x !== g); }
+    }catch(e){ failed.push(NAME(g) + " — " + e.message); }
+    await new Promise(r => setTimeout(r, 700));
+  }
+  if(Object.keys(snap.g).length){
+    const mine = mySnaps(), prev = mine[mine.length-1];
+    if(prev) for(const g in prev.g) if(!(g in snap.g)) snap.g[g] = prev.g[g];
+    state.snaps.push(snap);
+    if(state.snaps.length > 300) state.snaps.shift();
+    save();
+  }
+  btn.disabled = false; btn.classList.remove("busy"); btn.textContent = T("snap");
+  renderSnap(); renderTrend();
+  if(failed.length) toast(failed.join("; "));
+  else if(!Object.keys(snap.g).length && skipped.length) toast(T("cooldownAll"));
+  else if(skipped.length) toast(T("skipped", skipped.join(", ")));
+}
+
+/* ---------- диагностика ---------- */
+function showRaw(text){
+  const m = document.createElement("div");
+  m.className = "modal";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("rawTitle")) +
+    '</h3><button class="close">' + esc(T("close")) + '</button></div><pre class="raw"></pre>' +
+    '<button class="mini" id="copyRaw">' + esc(T("copy")) + "</button></div>";
+  m.querySelector(".raw").textContent = text;
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  m.querySelector("#copyRaw").onclick = async () => {
+    try{ await navigator.clipboard.writeText(text); toast(T("copied")); }
+    catch(e){ toast(T("clipFail")); }
+  };
+  document.body.append(m);
+}
+async function diag(){
+  if(!state.nick){ toast(T("needNick")); return; }
+  const wait = DIAG_CD - (Date.now() - state.lastDiag);
+  if(wait > 0){ toast(T("diagWait", Math.ceil(wait / 1000))); return; }
+  if(!nickAllowed(nickKey())){ toast(T("nickLimit", NICK_LIMIT)); return; }
+  if(budgetLeft() <= 0){ toast(T("budgetOut")); return; }
+  noteNick(nickKey()); noteRequest();
+  state.lastDiag = Date.now(); save(); tickDiag();
+  const url = urlFor("main");
+  let st, txt;
+  try{
+    const r = await fetch(url, { cache:"no-store" });
+    st = "HTTP " + r.status + " " + (r.statusText || "");
+    txt = await r.text();
+  }catch(e){ st = T("noReq"); txt = String(e && e.message || e); }
+  showRaw(url + "\n\n" + st + "\n\n" + String(txt).slice(0, 4000));
+}
+
+/* ---------- плитки ---------- */
+function sizeClass(v){
+  const n = String(v).length;
+  return n <= 6 ? "" : n <= 9 ? "sm" : n <= 12 ? "xs" : "xxs";
+}
+function tilesHTML(list, extra){
+  return '<div class="tiles">' + (extra || "") + list.map((m, i) => {
+    const long = String(m.v).length >= 10;
+    const cls = (m.wide ? " wide" : (m.w2 || long ? " w2" : "")) + (m.act ? " tap" : "");
+    return '<div class="tile' + cls + '"' + (m.act ? ' data-act="' + m.act + '"' : "") +
+      ' style="--i:' + i + '"><b class="' + sizeClass(m.v) + '">' + (m.vhtml || esc(m.v)) + "</b>" +
+      "<small>" + esc(m.k) + "</small></div>";
+  }).join("") + "</div>";
+}
+
+const revealIO = ("IntersectionObserver" in window) ? new IntersectionObserver(es => {
+  es.forEach(e => { if(e.isIntersecting){ e.target.classList.add("in"); revealIO.unobserve(e.target); } });
+}, { rootMargin:"0px 0px -30px 0px", threshold:.02 }) : null;
+function reveal(root){
+  if(!revealIO){ return; }
+  (root || document).querySelectorAll(".card,.games,h2").forEach((el, i) => {
+    if(el.classList.contains("rv")) return;
+    el.classList.add("rv");
+    el.style.transitionDelay = Math.min(i, 6) * 25 + "ms";
+    revealIO.observe(el);
+  });
+}
+
+function fitText(root){
+  const all = (root || document).querySelectorAll(".tile b");
+  const jobs = [];
+  all.forEach(el => {                                  // сначала только чтение
+    if(el.closest(".tile.wide, .tile.w2")) return;
+    if(el.scrollWidth > el.clientWidth + 1)
+      jobs.push({ el, size: parseFloat(getComputedStyle(el).fontSize) || 24 });
+  });
+  jobs.forEach(j => {                                  // затем правки только там, где надо
+    let size = j.size, guard = 0;
+    while(j.el.scrollWidth > j.el.clientWidth + 1 && size > 10 && guard++ < 30){
+      size -= 1; j.el.style.fontSize = size + "px";
+    }
+  });
+}
+addEventListener("resize", () => fitText());
+
+/* ---------- метрики игры ---------- */
+const KILL_KEY = /(^|_)kills$/;
+const KILL_EXTRA = /^(murders|murderer_eliminations|eliminations)$/;
+function killsParts(c){
+  let base = 0, fin = 0;
+  if(!c) return { base, fin };
+  for(const key of Object.keys(c)){
+    const v = c[key];
+    if(typeof v !== "number") continue;
+    if(key === "final_kills") fin += v;
+    else if(KILL_KEY.test(key) || KILL_EXTRA.test(key)) base += v;
+  }
+  return { base, fin };
+}
+function killsOf(c){
+  const p = killsParts(c);
+  return p.base + (state.finals ? p.fin : 0);
+}
+
+function metrics(cur, old){
+  const out = [];
+  const delta = k => {
+    if(!old || typeof cur[k] !== "number" || typeof old[k] !== "number") return "";
+    const d = cur[k] - old[k];
+    return d === 0 ? "" : (d > 0 ? "+" : "−") + nf(Math.abs(d));
+  };
+  const played = num(cur,"played") || num(cur,"games_played");
+  const wins = num(cur,"victories"), kills = num(cur,"kills"), deaths = num(cur,"deaths");
+  let firstTile = null;
+
+  for(const k of Object.keys(cur)){
+    if(SKIP.has(k)) continue;
+    const v = cur[k];
+    if(v === null || typeof v === "object") continue;
+    if(typeof v === "boolean"){ out.push({ k:label(k), v: v ? "✓" : "—", d:"" }); continue; }
+    if(hasMC(v)){ out.push({ k:label(k), v:String(v).replace(/[§&][0-9a-z]/gi,""),
+      vhtml:mcText(v), d:"" }); continue; }
+    if(isDateKey(k) && typeof v === "number" && v > 1e8){
+      firstTile = { k:T("firstPlayed"), v:dateOf(v), d:"", wide:true }; continue;
+    }
+    out.push({ k:label(k), v:nf(v), d:delta(k) });
+  }
+  if(played && wins) out.push({ k:T("winrate"), v:pct(wins, played), d:"", wide:true });
+  if(firstTile) out.push(firstTile);
+  if(played && wins) out.push({ k:T("losses"), v:nf(played - wins), d:"" });
+  if(kills || deaths) out.push({ k:T("kd"), v:ratio(kills, deaths), d:"" });
+  if(played && kills) out.push({ k:T("perGameK"), v:ratio(kills, played), d:"" });
+  if(played && deaths) out.push({ k:T("perGameD"), v:ratio(deaths, played), d:"" });
+  if(played && num(cur,"xp")) out.push({ k:T("perGameX"), v:ratio(num(cur,"xp"), played), d:"" });
+  if(played && num(cur,"final_kills")) out.push({ k:T("perGameF"), v:ratio(num(cur,"final_kills"), played), d:"" });
+  return out;
+}
+
+function openGame(code){
+  const mine = mySnaps();
+  const last = mine[mine.length-1], prev = mine[mine.length-2];
+  const cur = last && last.g[code]; if(!cur) return;
+  const old = prev && prev.g[code];
+  let bar = "";
+  const lvRaw = gameLevel(cur, code);
+  if(lvRaw){
+    const cap = maxLevelOf(code), lv = Math.min(Math.floor(lvRaw), cap);
+    bar = '<div class="tile wide" style="display:block"><b class="">' + lv + " / " + cap + "</b>" +
+      '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div><small>' +
+      T("level") + (num(cur,"prestige") ? " · " + T("prestige") + " " + cur.prestige : "") + "</small></div>";
+  }
+  const m = document.createElement("div");
+  m.className = "modal";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
+    (old ? '<p class="sub" style="margin:0 0 14px">' + esc(T("sinceHint", when(prev.t))) + "</p>" : "") +
+    tilesHTML(metrics(cur, old), bar) + "</div>";
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  document.body.append(m);
+  fitText(m);
+}
+
+function openKills(){
+  const mine = mySnaps();
+  const last = mine[mine.length-1]; if(!last) return;
+  const playedOf = c => num(c,"played") || num(c,"games_played");
+  const codes = state.games.filter(g => g !== "main" && last.g[g])
+    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
+  let base = 0, fin = 0;
+  const rows = codes.map(g => {
+    const c = last.g[g], used = [], other = [];
+    for(const k of Object.keys(c)){
+      if(typeof c[k] !== "number") continue;
+      if(k === "final_kills" || KILL_KEY.test(k) || KILL_EXTRA.test(k)) used.push(k + " " + nf(c[k]));
+      else if(/kill|murder|elimin/i.test(k)) other.push(k + " " + nf(c[k]));
+    }
+    const p = killsParts(c);
+    base += p.base; fin += p.fin;
+    if(!p.base && !p.fin) return "";
+    return '<div class="cos"><span>' + esc(NAME(g)) +
+      (used.length ? "<i>" + esc(used.join(" · ")) + "</i>" : "") +
+      (other.length ? '<i style="color:var(--gold)">' + esc(T("skippedF")) + ": " +
+        esc(other.join(", ")) + "</i>" : "") +
+      "</span><b>" + nf(p.base + p.fin) + "</b></div>";
+  }).join("");
+
+  const m = document.createElement("div");
+  m.className = "modal";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("killsTitle")) +
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
+    '<div class="card">' + rows +
+    '<div class="cos sum" style="margin-top:8px"><span>' +
+    esc(T("sumNoFinals")) + "</span><b>" + nf(base) + "</b></div>" +
+    '<div class="cos sum gold"><span>' + esc(T("sumWithFinals")) + "</span><b>" + nf(base + fin) + "</b></div>" +
+    '</div><p class="sub">' + esc(T("killsHint")) + "</p></div>";
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  document.body.append(m);
+}
+
+/* ---------- косметика ---------- */
+function cosGroups(src){
+  const g = {}, set = (b, kind, v) => { (g[b] = g[b] || {})[kind] = v; };
+  const main = Object.assign({}, src);
+  for(const box of ["cosmetics","appearance","equipped","unlocked","collection"]){
+    if(src[box] && typeof src[box] === "object" && !Array.isArray(src[box]))
+      for(const k of Object.keys(src[box])){
+        const key = /^(equipped|unlocked)$/.test(box) ? k + "_" + box : k;
+        if(!(key in main)) main[key] = src[box][k];
+      }
+  }
+  for(const k of Object.keys(main)){
+    let m;
+    if((m = k.match(/^cosmetics\.(.+)$/))) set(m[1], "un", main[k]);
+    else if((m = k.match(/^(.+)_equipped$/))) set(m[1], "eq", main[k]);
+    else if((m = k.match(/^equipped_(.+)$/))) set(m[1], "eq", main[k]);
+    else if((m = k.match(/^(.+)_unlocked$/))) set(m[1], "un", main[k]);
+    else if((m = k.match(/^unlocked_(.+)$/))) set(m[1], "un", main[k]);
+    else if((m = k.match(/^(.+?)_(?:count|owned|total)$/)) && COS_WORDS.test(m[1]))
+      set(m[1].replace(/s$/,""), "un", main[k]);
+    else if(COS_WORDS.test(k)){
+      const base = k.replace(/s$/,"");
+      const v = main[k];
+      if(Array.isArray(v) || typeof v === "number") set(base, "un", v);
+      else if(typeof v === "string" || (v && typeof v === "object")) set(base, "eq", v);
+    }
+  }
+  return g;
+}
+const cosName = v => v === null || v === undefined || v === "" ? null
+  : (typeof v === "object" ? (pick(v, "name", "human_name", "title", "id", "index") ?? null) : v);
+const cosIcon = v => { if(v && typeof v === "object"){
+  const u = pick(v, "url", "icon", "image"); if(typeof u === "string" && /^https?:/.test(u)) return u; } return null; };
+const cosCount = v => typeof v === "number" ? v : Array.isArray(v) ? v.length
+  : (v && typeof v === "object" ? Object.keys(v).length : null);
+
+function itemsOf(v){
+  if(Array.isArray(v)) return v;
+  if(v && typeof v === "object" && !("name" in v)) return Object.values(v);
+  return null;
+}
+const LIST_KIND = b => /title|costume/.test(b);
+const LIMIT = b => LIST_KIND(b) ? 5 : 12;
+function itemHTML(base, it){
+  const name = typeof it === "string" ? it : (pick(it, "name", "human_name", "id") || "");
+  const id = typeof it === "string" ? it : (pick(it, "id", "index", "name") || "");
+  const url = cosIcon(it) || iconUrl(base, String(id));
+  const first = String(name).replace(/[§&][0-9a-z]/gi,"").trim().charAt(0).toUpperCase() || "?";
+  if(/^\[?placeholder\]?$/i.test(String(name).trim())) return "";
+  return '<div class="it" title="' + esc(String(name).replace(/[§&][0-9a-z]/gi,"")) + '"><div class="box">' +
+    (url ? '<img alt="" loading="lazy" decoding="async" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
+      'document.createElement(\'em\'),{textContent:' + JSON.stringify(first) + '}))">'
+         : "<em>" + esc(first) + "</em>") +
+    "</div></div>";
+}
+function rowsHTML(base, arr){
+  return '<div class="tlist">' + arr.map(it => {
+    const n = typeof it === "string" ? it : (pick(it, "name", "id") || "");
+    return "<div>" + (hasMC(n) ? mcText(n) : esc(nice(n))) + "</div>";
+  }).join("") + "</div>";
+}
+function listHTML(base, arr){
+  const part = arr.slice(0, LIMIT(base));
+  return LIST_KIND(base) ? rowsHTML(base, part)
+    : '<div class="grid">' + part.map(it => itemHTML(base, it)).join("") + "</div>";
+}
+function openCos(base, arr){
+  const m = document.createElement("div");
+  m.className = "modal";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(cosLabel(base)) + " · " + arr.length +
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
+    '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
+      : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div></div>";
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  document.body.append(m);
+}
+
+function cosmeticsHTML(main){
+  const g = cosGroups(main), keys = Object.keys(g);
+  if(!keys.length) return "";
+  const ordered = keys.slice().sort((x,y) => {
+    const ix = COS_ORDER.indexOf(x), iy = COS_ORDER.indexOf(y);
+    return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy);
+  });
+  const counts = ordered.map(k => ({ k:cosLabel(k), v:cosCount(g[k].un) }))
+    .filter(t => t.v !== null).map(t => ({ k:t.k, v:nf(t.v), d:"" }));
+  const worn = ordered.filter(k => "eq" in g[k]).map(k => {
+    const n = cosName(g[k].eq), icon = cosIcon(g[k].eq);
+    return '<div class="cos"><span>' + esc(cosLabel(k)) + "</span><b>" +
+      (icon ? '<span class="ciw"><span><img alt="" loading="lazy" decoding="async" src="' + esc(icon) +
+        '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "") +
+      (n === null ? esc(T("notWorn")) : hasMC(n) ? mcText(n) : esc(nice(n))) + "</b></div>";
+  }).join("");
+  let out = '<div class="card">';
+  if(counts.length) out += "<h3>" + esc(T("cosOpen")) + "</h3>" + tilesHTML(counts);
+  if(worn) out += '<h3 style="margin-top:18px">' + esc(T("cosWorn")) + "</h3>" + worn;
+  out += "</div>";
+
+  ordered.forEach(k => {
+    const arr = itemsOf(g[k].un);
+    if(!arr || !arr.length) return;
+    out += '<div class="card"><h3>' + esc(cosLabel(k)) + " · " + arr.length + "</h3>" +
+      listHTML(k, arr) +
+      (arr.length > LIMIT(k)
+        ? '<button class="mini more" data-cos="' + esc(k) + '">' + esc(T("showAllCos")) + "</button>" : "") +
+      "</div>";
+  });
+  window.__cos = g;
+  return out;
+}
+
+/* ---------- главный экран ---------- */
+function renderSnap(){
+  const mine = mySnaps();
+  const last = mine[mine.length-1], prev = mine[mine.length-2];
+  const main = last && last.g.main;
+  const hero = $("#hero"), body = $("#snapBody");
+
+  const letter = (state.nick || "?").trim().charAt(0).toUpperCase() || "?";
+  const rank = main && (pick(main, "rank", "player_rank") || scanStr(main, /rank/i));
+  const title = main && (pick(main, "hub_title_equipped", "equipped_hub_title", "hub_title", "title")
+    || scanStr(main, /title/i));
+  const avaId = main && (pick(main, "avatar_equipped", "equipped_avatar") || scanStr(main, /avatar/i));
+  const tag = rankTag(rank);
+  const lvlKey = main && Object.keys(main).find(k => /level/i.test(k) && typeof main[k] === "number");
+  const hubLevel = lvlKey ? main[lvlKey] : undefined;
+  const avaName = cosName(avaId), avaUrl = cosIcon(avaId);
+
+  const rc = tag ? tag.c : "var(--gold)";
+  document.documentElement.style.setProperty("--rankc", rc);
+  document.documentElement.style.setProperty("--rankc1", tag ? tag.c1 : "#8a6a10");
+  document.documentElement.style.setProperty("--rankc2", tag ? tag.c2 : "#ffe6a6");
+  const tagHTML = tag ? ' <span class="tag">[<span class="rl">' + tag.t + "</span>]</span>" : "";
+  const idHTML = '<span class="nk">' + esc(state.nick || T("noNick")) + tagHTML + "</span>";
+  $("#stickNick").innerHTML = idHTML;
+  $("#stickTag").innerHTML = "";
+
+  hero.innerHTML = '<h1 class="idline">' +
+      (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
+      idHTML + "</h1>" +
+    '<div class="hero"><div class="ava"><span>' +
+      (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
+          JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
+       : typeof avaName === "string"
+        ? '<img alt="" src="https://cdn.playhive.com/avatars/' + encodeURIComponent(avaName) +
+          '.png" onerror="this.replaceWith(document.createTextNode(' +
+          JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
+        : esc(letter)) +
+    "</span></div>" +
+    (title ? '<p class="title">' + mcText(cosName(title) || title) + "</p>" : "") + "</div>";
+
+  tickStatus();
+
+  body.innerHTML = "";
+  if(!last) return;
+
+  if(false){
+    const om = prev && prev.g.main;
+    const dd = k => om && typeof main[k] === "number" && typeof om[k] === "number" && main[k] !== om[k]
+      ? (main[k] > om[k] ? "+" : "−") + nf(Math.abs(main[k] - om[k])) : "";
+    const top = [];
+    const push = (k, v, dk) => { if(v === undefined || v === null || v === "") return;
+      top.push({ k, v: typeof v === "number" ? nf(v) : String(v), d: dk ? dd(dk) : "" }); };
+    const fk = Object.keys(main).find(k => isDateKey(k));
+    if(fk) push(T("firstJoin"), dateOf(main[fk]));
+    push(T("friends"), pick(main, "friends", "friend_count", "friends_count"), "friend_count");
+    push(T("quests"), pick(main, "quests", "quest_count", "quests_completed",
+      "total_quests_completed", "quest_completions"), "quest_count");
+    if(top.length) miscCard = "<h2>" + esc(T("misc")) + '</h2><div class="card">' +
+      top.map(t => '<div class="cos"><span>' + esc(t.k) + "</span><b>" + esc(t.v) +
+        (t.d ? '<span class="d">' + esc(t.d) + "</span>" : "") + "</b></div>").join("") + "</div>";
+  }
+
+  if(main) renderStreak(main, body);
+
+  const playedOf = c => num(c,"played") || num(c,"games_played");
+  const codes = state.games.filter(g => g !== "main" && last.g[g])
+    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
+
+  if(codes.length){
+    let P=0, W=0, K=0, D=0, LV=0, PR=0, XP=0, pP=0, pW=0, pK=0;
+    codes.forEach(g => {
+      const c = last.g[g], o = prev && prev.g[g];
+      P += playedOf(c); W += num(c,"victories"); K += killsOf(c); D += num(c,"deaths");
+      LV += Math.floor(gameLevel(c, g)); PR += num(c,"prestige"); XP += num(c,"xp");
+      if(o){ pP += playedOf(o); pW += num(o,"victories"); pK += killsOf(o); }
+    });
+    const dl = (now, was) => prev && was && now > was ? "+" + nf(now - was) : "";
+    const tiles = [
+      { k:T("played"), v:nf(P), d:dl(P,pP) },
+      { k:T("wins"), v:nf(W), d:dl(W,pW) },
+      { k:T("winrate"), v:pct(W,P), d:"" },
+      { k:T("killsTotal"), v:nf(K), d:dl(K,pK), act:"kills" },
+      { k:T("kd"), v:ratio(K,D), d:"" }
+    ];
+    tiles.push(LV ? { k:T("levelSum"), v:nf(LV) + (PR ? " (+" + PR + ")" : ""), d:"" }
+                  : { k:T("xpTotal"), v:nf(XP), d:"" });
+    body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("totalOver", codes.length)) + "</h2>" +
+      '<div class="card">' + tilesHTML(tiles) + "</div>");
+
+    const most = codes[0];
+    const cards = codes.map(g => {
+      const c = last.g[g], played = playedOf(c), wins = num(c,"victories");
+      return '<button class="game" data-g="' + g + '"><b>' + esc(NAME(g)) +
+        (g === most ? '<span class="badge">' + esc(T("mostPlayed")) + "</span>" : "") + "</b>" +
+        '<div class="big">' + nf(played) + '</div><div class="cap">' + esc(T("playedLow")) + "</div>" +
+        '<div class="big" style="margin-top:10px">' + (played ? pct(wins, played) : "—") +
+        '</div><div class="cap">' + esc(T("winrateLow")) + "</div></button>";
+    }).join("");
+    body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("games")) + '</h2><div class="games">' + cards + "</div>");
+    body.querySelectorAll(".game").forEach((b, i) => {
+      b.style.setProperty("--i", i);
+      b.onclick = () => openGame(b.dataset.g);
+    });
+    body.querySelectorAll('[data-act="kills"]').forEach(el => el.onclick = openKills);
+  }
+
+  if(main){
+    const html = cosmeticsHTML(main);
+    if(html) body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("appearance")) + "</h2>" + html);
+    body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("profileAll")) +
+      '</h2><div class="card" style="text-align:center">' +
+      '<button class="mini" id="openMain">' + esc(T("showAll")) + "</button></div>");
+    const b = body.querySelector("#openMain");
+    if(b) b.onclick = () => openGame("main");
+  }else{
+    body.insertAdjacentHTML("beforeend", '<div class="note">' + esc(T("noProfile")) + "</div>");
+  }
+  body.querySelectorAll("[data-cos]").forEach(b => b.onclick = () => {
+    const g = window.__cos || {}, k = b.dataset.cos;
+    const arr = itemsOf(g[k] && g[k].un) || [];
+    if(arr.length) openCos(k, arr);
+  });
+  if(state.dead.length)
+    body.insertAdjacentHTML("beforeend", '<div class="note">' +
+      esc(T("deadNote", state.dead.map(NAME).join(", "))) + "</div>");
+  fitText(body);
+  reveal(body);
+}
+
+function renderStreak(main, body){
+  const cur = pick(main, "daily_login_streak", "login_streak");
+  const best = pick(main, "longest_daily_login_streak", "longest_login_streak");
+  const gday = ts => Math.floor(ts / 86400000);          // игровые сутки: 00:00 UTC
+  const today = gday(Date.now());
+
+  let updated = null;
+  if(typeof cur === "number"){
+    const mine = mySnaps();
+    for(let i = mine.length - 1; i >= 0; i--){
+      const sn = mine[i];
+      if(!sn.g.main || gday(sn.t) >= today) continue;
+      const was = pick(sn.g.main, "daily_login_streak", "login_streak");
+      if(typeof was === "number"){ updated = cur > was; break; }
+    }
+  }
+  const cls = updated === true ? "ok" : updated === false ? "no" : "unk";
+  const txt = updated === true ? T("streakDone") : updated === false ? T("streakWait") : T("streakUnknown");
+
+  const nextTs = (today + 1) * 86400000;
+  const left = nextTs - Date.now();
+  const h = Math.floor(left / 3600000), mn = Math.floor(left % 3600000 / 60000);
+  const at = new Date(nextTs).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US",
+    { hour:"2-digit", minute:"2-digit" });
+
+  body.insertAdjacentHTML("beforeend", '<div class="card streak">' +
+    '<div class="srow">' +
+      "<div><b>" + esc(cur === undefined ? "—" : nf(cur)) + "</b><small>" + esc(T("streakNow")) + "</small></div>" +
+      '<div class="sep"></div>' +
+      "<div><b>" + esc(best === undefined ? "—" : nf(best)) + "</b><small>" + esc(T("streakBest")) + "</small></div>" +
+    "</div>" +
+    '<div class="sfoot"><span class="pill ' + cls + '">' + esc(txt) + "</span>" +
+    '<span class="reset">' + esc(T("resetIn", h + " " + T("hh") + " " + mn + " " + T("mm"), at)) +
+    "</span></div></div>");
+}
+
+function tickStatus(){
+  const mine = mySnaps();
+  const last = mine[mine.length-1];
+  const cool = state.games.map(g => cdMs() - (Date.now() - (state.last[lk(g)] || 0))).filter(ms => ms > 0);
+  const readyIn = cool.length === state.games.length ? Math.ceil(Math.min(...cool) / 60000) : 0;
+  const btn = $("#fetchBtn");
+  if(!btn.classList.contains("busy")){
+    btn.disabled = !!readyIn;
+    btn.textContent = readyIn ? T("snap") + " · " + T("min", readyIn) : T("snap");
+  }
+  $("#subtitle").textContent = !last ? T("noSnaps")
+    : T("lastSnap", when(last.t), mine.length) + (readyIn ? T("nextIn", readyIn) : "") +
+      " · " + T("budget", budgetLeft(), REQ_LIMIT);
+}
+
+/* ---------- динамика ---------- */
+const DERIVED = {
+  __winrate: c => { const p = num(c,"played") || num(c,"games_played");
+    return p ? +(num(c,"victories") / p * 100).toFixed(2) : null; },
+  __kd: c => { const d = num(c,"deaths"); return d ? +(num(c,"kills") / d).toFixed(2) : null; }
+};
+const derivedLabel = k => k === "__winrate" ? T("winrate") : k === "__kd" ? T("kd") : label(k);
+function metricVal(c, k){
+  if(!c) return null;
+  if(DERIVED[k]) return DERIVED[k](c);
+  return typeof c[k] === "number" ? c[k] : null;
+}
+
+function renderTrend(){
+  const gSel = $("#trendGame"), mSel = $("#trendMetric"), body = $("#trendBody");
+  const mine = mySnaps();
+  const withData = state.games.filter(g => mine.some(s => s.g[g]));
+  if(mine.length < 2){
+    body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendNeed")) + "</p>";
+    gSel.innerHTML = mSel.innerHTML = ""; return;
+  }
+  const keepG = gSel.value;
+  gSel.innerHTML = withData.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
+  if(withData.includes(keepG)) gSel.value = keepG;
+  const game = gSel.value;
+
+  const numeric = new Set();
+  mine.forEach(s => { const d = s.g[game]; if(d) Object.keys(d).forEach(k => {
+    if(!SKIP.has(k) && typeof d[k] === "number" && !isDateKey(k)) numeric.add(k); }); });
+  const opts = [];
+  const sample = (mine.map(x => x.g[game]).filter(Boolean).pop()) || {};
+  if(metricVal(sample, "__winrate") !== null) opts.push("__winrate");
+  if(metricVal(sample, "__kd") !== null) opts.push("__kd");
+  opts.push(...numeric);
+  const keepM = mSel.value;
+  mSel.innerHTML = opts.map(k => '<option value="' + k + '">' + esc(derivedLabel(k)) + "</option>").join("");
+  if(opts.includes(keepM)) mSel.value = keepM;
+  const metric = mSel.value;
+
+  const pts = mine.filter(s => s.g[game] && metricVal(s.g[game], metric) !== null)
+    .map(s => ({ t:s.t, v:metricVal(s.g[game], metric) }));
+  if(pts.length < 2){ body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendFew")) + "</p>"; return; }
+
+  const unit = metric === "__winrate" ? "%" : "";
+  const fmtM = n => (metric === "__kd" || metric === "__winrate" ? n.toFixed(2) : nf(n)) + unit;
+  const W = 300, H = 110;
+  const vs = pts.map(p => p.v), min = Math.min(...vs), max = Math.max(...vs), span = (max - min) || 1;
+  const x = i => i / (pts.length - 1) * W, y = v => H - (v - min) / span * (H - 10) - 5;
+  const path = pts.map((p,i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+  const grew = vs[vs.length-1] - vs[0];
+
+  body.innerHTML = '<div class="card"><svg class="line" viewBox="0 0 ' + W + " " + (H + 18) +
+    '" preserveAspectRatio="none" role="img"><path d="' + path + '"/><circle cx="' +
+    x(pts.length-1).toFixed(1) + '" cy="' + y(vs[vs.length-1]).toFixed(1) + '" r="3.5"/>' +
+    '<text x="0" y="' + (H + 14) + '">' + esc(when(pts[0].t)) + "</text>" +
+    '<text x="' + W + '" y="' + (H + 14) + '" text-anchor="end">' + esc(when(pts[pts.length-1].t)) + "</text></svg>" +
+    '<p class="sub">' + esc(T("trendGrowth", derivedLabel(metric), fmtM(min), fmtM(max),
+      (grew >= 0 ? "+" : "−") + fmtM(Math.abs(grew)))) + "</p></div>";
+}
+$("#trendGame").onchange = renderTrend;
+$("#trendMetric").onchange = renderTrend;
+
+/* ---------- настройки и язык ---------- */
+function renderChips(){
+  const box = $("#gameChips"); box.innerHTML = "";
+  GAMES.forEach(([code]) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (state.dead.includes(code) ? " dead" : "");
+    b.textContent = NAME(code);
+    b.setAttribute("aria-pressed", state.games.includes(code));
+    b.onclick = () => {
+      state.games = state.games.includes(code) ? state.games.filter(g => g !== code) : state.games.concat(code);
+      save(); renderChips(); renderSnap(); renderTrend();
+    };
+    box.append(b);
+  });
+}
+function applyLang(){
+  L = langCode();
+  document.documentElement.lang = L;
+  $("#tab1").textContent = T("tab1"); $("#tab2").textContent = T("tab2"); $("#tab3").textContent = T("tab3");
+  $("#fetchBtn").textContent = T("snap");
+  $("#trendHead").textContent = T("tab2"); $("#setHead").textContent = T("tab3");
+  $("#lNick").textContent = T("lNick"); $("#nick").placeholder = T("nickPh");
+  $("#lLang").textContent = T("lLang"); $("#lang").options[0].textContent = T("auto");
+  $("#lGames").textContent = T("lGames");
+  $("#lCd").textContent = T("cdLabel");
+  const cdSel = $("#cd");
+  cdSel.innerHTML = [5,10,15,30,60].map(v =>
+    '<option value="' + v + '">' + T("min", v) + "</option>").join("");
+  cdSel.value = String(state.cd);
+  $("#lFinals").textContent = T("finalsLabel");
+  $("#finals").checked = !!state.finals;
+  $("#lLite").textContent = T("liteLabel");
+  $("#lite").checked = !!state.lite;
+  tickDiag();
+  $("#lProxy").textContent = T("lProxy"); $("#proxy").placeholder = T("proxyPh");
+  $("#proxyHint").textContent = T("proxyHint");
+  $("#exportBtn").textContent = T("exportBtn"); $("#importBtn").textContent = T("importBtn");
+  $("#wipeBtn").textContent = T("wipeBtn"); $("#diagBtn").textContent = T("diagBtn");
+  $("#limitNote").textContent = T("limitNote");
+  renderChips(); renderSnap(); renderTrend();
+}
+$("#cd").onchange = e => { state.cd = parseInt(e.target.value,10) || 5; save(); renderSnap(); };
+$("#finals").onchange = e => { state.finals = e.target.checked; save(); renderSnap(); };
+$("#lite").onchange = e => {
+  state.lite = e.target.checked; save();
+  document.documentElement.classList.toggle("lite", state.lite);
+};
+$("#lang").value = state.lang;
+$("#lang").onchange = e => { state.lang = e.target.value; save(); let stickOn = false, stickTick = false;
+addEventListener("scroll", () => {
+  if(stickTick) return;
+  stickTick = true;
+  requestAnimationFrame(() => {
+    stickTick = false;
+    const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
+    if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
+  });
+}, { passive:true });
+
+document.documentElement.classList.toggle("lite", !!state.lite);
+applyLang(); };
+$("#nick").value = state.nick;
+let nickTimer = null;
+$("#nick").oninput = e => {
+  const was = nickKey();
+  state.nick = e.target.value.trim();
+  if(nickKey() !== was){
+    state.dead = [];                       // «нет данных» относилось к прошлому нику
+    state.lastDiag = 0;                    // проверку профиля можно делать сразу
+    tickDiag();
+  }
+  save();
+  clearTimeout(nickTimer);
+  nickTimer = setTimeout(() => { renderSnap(); renderTrend(); }, 250);
+};
+$("#proxy").value = state.proxy;
+$("#proxy").oninput = e => { state.proxy = e.target.value.trim(); save(); };
+$("#exportBtn").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type:"application/json" }));
+  a.download = "hive-" + (state.nick || "stats") + ".json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const p = JSON.parse(r.result);
+      if(!Array.isArray(p.snaps)) throw new Error("no snapshots");
+      state = Object.assign(state, p); save();
+      $("#nick").value = state.nick; $("#lang").value = state.lang || "auto";
+      let stickOn = false, stickTick = false;
+addEventListener("scroll", () => {
+  if(stickTick) return;
+  stickTick = true;
+  requestAnimationFrame(() => {
+    stickTick = false;
+    const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
+    if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
+  });
+}, { passive:true });
+
+applyLang(); toast(T("imported"));
+    }catch(err){ toast(T("unreadable", err.message)); }
+  };
+  r.readAsText(f); e.target.value = "";
+};
+$("#wipeBtn").onclick = () => {
+  if(!confirm(T("wipeAsk"))) return;
+  const n = nickKey();
+  state.snaps = state.snaps.filter(x => (x.n || "") !== n);
+  Object.keys(state.last).forEach(k => { if(k.startsWith(n + "|")) delete state.last[k]; });
+  save(); renderSnap(); renderTrend();
+};
+$("#fetchBtn").onclick = snapshot;
+$("#diagBtn").onclick = diag;
+function tickDiag(){
+  const b = $("#diagBtn"); if(!b) return;
+  const left = Math.ceil((DIAG_CD - (Date.now() - state.lastDiag)) / 1000);
+  if(left > 0){ b.disabled = true; b.textContent = T("diagBtn") + " · " + left; setTimeout(tickDiag, 1000); }
+  else { b.disabled = false; b.textContent = T("diagBtn"); }
+}
+
+document.querySelectorAll(".tabs button").forEach(b => {
+  b.onclick = () => {
+    const v = b.dataset.v;
+    $("#vSnap").classList.toggle("hidden", v !== "snap");
+    $("#vTrend").classList.toggle("hidden", v !== "trend");
+    $("#vSet").classList.toggle("hidden", v !== "set");
+    document.querySelectorAll(".tabs button").forEach(x => x.removeAttribute("aria-current"));
+    b.setAttribute("aria-current","page");
+    if(v === "trend") renderTrend();
+    if(v === "snap") renderSnap();
+  };
+});
+
+let stickOn = false, stickTick = false;
+addEventListener("scroll", () => {
+  if(stickTick) return;
+  stickTick = true;
+  requestAnimationFrame(() => {
+    stickTick = false;
+    const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
+    if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
+  });
+}, { passive:true });
+
+applyLang();
+loadHiveData().then(() => { if(HD){ renderSnap(); } });
+setInterval(tickStatus, 30000);
+</script>
+</body>
+</html>
