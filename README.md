@@ -10,11 +10,11 @@ Your Hive profile already shows where you stand today. This shows where you are 
 
 | Profile | Game breakdown | Cosmetics |
 |---|---|---|
-| ![Profile](docs/profile.jpg) | ![Game](docs/game.jpg) | ![Cosmetics](docs/cosmetics.jpg) |
+| ![Profile](profile.jpg) | ![Game](game.jpg) | ![Cosmetics](cosmetics.jpg) |
 
 | Appearance | Trend | Settings |
 |---|---|---|
-| ![Appearance](docs/appearance.jpg) | ![Trend](docs/trend.jpg) | ![Settings](docs/settings.jpg) |
+| ![Appearance](appearance.jpg) | ![Trend](trend.jpg) | ![Settings](settings.jpg) |
 
 ## Features
 
@@ -36,7 +36,7 @@ Your Hive profile already shows where you stand today. This shows where you are 
 
 The layout is not just a stretched phone screen. On screens 900px and wider it switches to a dedicated desktop mode:
 
-![Desktop](docs/desktop.jpg)
+![Desktop](desktop.jpg)
 
 - The header becomes horizontal — avatar beside the name and title instead of stacked.
 - Game cards flow into three or four columns; stat tiles and cosmetic icons pack tighter.
