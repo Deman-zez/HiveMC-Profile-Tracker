@@ -139,6 +139,9 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .tile.w2{grid-column:span 2}
 .tile.wide{grid-column:1/-1}
 .tile.w2,.tile.wide{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;text-align:left}
+.tile.wide.lvl{flex-direction:column;align-items:stretch;text-align:center;gap:0}
+.tile.wide.lvl b{text-align:center;flex:none}
+.tile.wide.lvl small{max-width:none;text-align:center;margin-top:2px}
 .tile.w2 small,.tile.wide small{margin-top:0;text-align:right;min-width:0;
   max-width:46%;white-space:normal;overflow-wrap:break-word;word-break:normal}
 .tile.w2 b,.tile.wide b{flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:break-word;
@@ -146,8 +149,15 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .tile.w2 small,.tile.wide small{flex:0 1 auto}
 
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
-.game{text-align:left;background:var(--panel);border:1px solid var(--edge);border-radius:18px;
-  padding:16px;color:var(--text);cursor:pointer}
+.game{position:relative;overflow:hidden;text-align:left;background:var(--panel);
+  border:1px solid var(--edge);border-radius:18px;padding:16px;color:var(--text);cursor:pointer}
+.game::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  transform:scaleX(0);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.game::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(120% 80% at 50% 0%, rgba(255,192,46,.14), transparent 62%);
+  transition:opacity .28s ease}
+.game .big,.game b{transition:color .2s ease}
 .game b{display:block;font-size:16px;font-weight:700;margin-bottom:10px}
 .game .big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
 .game .cap{color:var(--soft);font-size:13px;margin-top:3px}
@@ -204,10 +214,13 @@ label{display:block;font-size:13px;color:var(--soft);margin:20px 0 7px}
 
 .note{border:1px solid var(--edge);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;
   padding:14px 16px;margin:20px 0;font-size:13px;line-height:1.6;color:var(--soft);background:rgba(0,0,0,.2)}
-svg.line{width:100%;height:140px;display:block;overflow:visible}
+.chart{position:relative;height:150px;margin-top:4px}
+svg.line{width:100%;height:100%;display:block}
 .line path{fill:none;stroke:var(--gold);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
-.line circle{fill:var(--gold);stroke:var(--bg-b);stroke-width:2}
-.line text{font-size:11px;fill:var(--soft)}
+.chart .dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--gold);
+  border:2px solid var(--bg-b);transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(255,192,46,.5)}
+.tmeta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;
+  font-size:12px;color:var(--soft)}
 
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;z-index:5;
   background:rgba(19,10,30,.97);border-top:1px solid var(--edge);
@@ -249,13 +262,31 @@ svg.line{width:100%;height:140px;display:block;overflow:visible}
   .tabs{left:50%;right:auto;transform:translateX(-50%);max-width:580px;width:100%;
     border:1px solid var(--edge);border-bottom:none;border-radius:16px 16px 0 0}
   .tabs button{font-size:15px}
-  .modal{display:grid;place-items:center;padding:28px}
-  .modal .inner{min-height:0;max-height:86vh;overflow:auto;border-radius:20px;
-    border:1px solid var(--edge);padding:26px 26px 30px;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+  .modal{display:grid;place-items:center;padding:32px}
+  .modal .inner{min-height:0;width:100%;max-width:920px;max-height:86vh;overflow:auto;
+    border-radius:20px;border:1px solid var(--edge);padding:24px 26px 30px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);scrollbar-width:thin}
+  .modal .mhead{position:sticky;top:-24px;z-index:2;margin:-24px -26px 14px;
+    padding:22px 26px 14px;background:var(--bg-b);
+    border-bottom:1px solid var(--edge);border-radius:20px 20px 0 0}
+  .modal .tiles{grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+  .modal .grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+  .modal .card{margin-top:0}
   .toast{bottom:120px}
-  .game:hover{border-color:rgba(255,192,46,.45);background:rgba(255,255,255,.06)}
-  .chip:hover,.mini:hover{border-color:rgba(255,192,46,.45)}
-  .tile.tap:hover{background:rgba(255,255,255,.1)}
+  .game:hover{border-color:rgba(255,192,46,.4);transform:translateY(-3px);
+    box-shadow:0 14px 30px rgba(0,0,0,.4)}
+  .game:hover::before{transform:scaleX(1)}
+  .game:hover::after{opacity:1}
+  .game:hover b{color:var(--gold)}
+  .chip:hover,.mini:hover{border-color:rgba(255,192,46,.4);
+    background:color-mix(in srgb, var(--gold) 9%, var(--panel))}
+  .chip[aria-pressed="true"]:hover{background:var(--gold);border-color:var(--gold)}
+  .tile.tap:hover{background:color-mix(in srgb, var(--gold) 11%, var(--tile));
+    box-shadow:inset 0 0 0 1px rgba(255,192,46,.25)}
+  .close:hover{filter:brightness(1.12)}
+  .it{transition:transform .18s ease,box-shadow .18s ease}
+  .it:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 10px 20px rgba(0,0,0,.4)}
+  .cos:hover .ciw{transform:scale(1.06);transition:transform .18s ease}
   .row2{gap:14px}
 }
 @media (min-width:1200px){
@@ -920,7 +951,7 @@ function openGame(code){
   const lvRaw = gameLevel(cur, code);
   if(lvRaw){
     const cap = maxLevelOf(code), lv = Math.min(Math.floor(lvRaw), cap);
-    bar = '<div class="tile wide" style="display:block"><b class="">' + lv + " / " + cap + "</b>" +
+    bar = '<div class="tile wide lvl"><b>' + lv + " / " + cap + "</b>" +
       '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div><small>' +
       T("level") + (num(cur,"prestige") ? " · " + T("prestige") + " " + cur.prestige : "") + "</small></div>";
   }
@@ -1128,25 +1159,6 @@ function renderSnap(){
   body.innerHTML = "";
   if(!last) return;
 
-  if(false){
-    const om = prev && prev.g.main;
-    const dd = k => om && typeof main[k] === "number" && typeof om[k] === "number" && main[k] !== om[k]
-      ? (main[k] > om[k] ? "+" : "−") + nf(Math.abs(main[k] - om[k])) : "";
-    const top = [];
-    const push = (k, v, dk) => { if(v === undefined || v === null || v === "") return;
-      top.push({ k, v: typeof v === "number" ? nf(v) : String(v), d: dk ? dd(dk) : "" }); };
-    const fk = Object.keys(main).find(k => isDateKey(k));
-    if(fk) push(T("firstJoin"), dateOf(main[fk]));
-    push(T("friends"), pick(main, "friends", "friend_count", "friends_count"), "friend_count");
-    push(T("quests"), pick(main, "quests", "quest_count", "quests_completed",
-      "total_quests_completed", "quest_completions"), "quest_count");
-    if(top.length) miscCard = "<h2>" + esc(T("misc")) + '</h2><div class="card">' +
-      top.map(t => '<div class="cos"><span>' + esc(t.k) + "</span><b>" + esc(t.v) +
-        (t.d ? '<span class="d">' + esc(t.d) + "</span>" : "") + "</b></div>").join("") + "</div>";
-  }
-
-  if(main) renderStreak(main, body);
-
   const playedOf = c => num(c,"played") || num(c,"games_played");
   const codes = state.games.filter(g => g !== "main" && last.g[g])
     .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
@@ -1237,7 +1249,7 @@ function renderStreak(main, body){
   const at = new Date(nextTs).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US",
     { hour:"2-digit", minute:"2-digit" });
 
-  body.insertAdjacentHTML("beforeend", '<div class="card streak">' +
+  body.insertAdjacentHTML("beforeend", '<div class="card">' +
     '<div class="srow">' +
       "<div><b>" + esc(cur === undefined ? "—" : nf(cur)) + "</b><small>" + esc(T("streakNow")) + "</small></div>" +
       '<div class="sep"></div>' +
@@ -1314,11 +1326,15 @@ function renderTrend(){
   const path = pts.map((p,i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
   const grew = vs[vs.length-1] - vs[0];
 
-  body.innerHTML = '<div class="card"><svg class="line" viewBox="0 0 ' + W + " " + (H + 18) +
-    '" preserveAspectRatio="none" role="img"><path d="' + path + '"/><circle cx="' +
-    x(pts.length-1).toFixed(1) + '" cy="' + y(vs[vs.length-1]).toFixed(1) + '" r="3.5"/>' +
-    '<text x="0" y="' + (H + 14) + '">' + esc(when(pts[0].t)) + "</text>" +
-    '<text x="' + W + '" y="' + (H + 14) + '" text-anchor="end">' + esc(when(pts[pts.length-1].t)) + "</text></svg>" +
+  const lastX = (x(pts.length-1) / W * 100).toFixed(2);
+  const lastY = (y(vs[vs.length-1]) / H * 100).toFixed(2);
+
+  body.innerHTML = '<div class="card"><div class="chart">' +
+    '<svg class="line" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img">' +
+    '<path vector-effect="non-scaling-stroke" d="' + path + '"/></svg>' +
+    '<i class="dot" style="left:' + lastX + '%;top:' + lastY + '%"></i></div>' +
+    '<div class="tmeta"><span>' + esc(when(pts[0].t)) + "</span><span>" +
+    esc(when(pts[pts.length-1].t)) + "</span></div>" +
     '<p class="sub">' + esc(T("trendGrowth", derivedLabel(metric), fmtM(min), fmtM(max),
       (grew >= 0 ? "+" : "−") + fmtM(Math.abs(grew)))) + "</p></div>";
 }
