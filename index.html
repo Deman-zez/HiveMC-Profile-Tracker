@@ -14,16 +14,13 @@
   --text:#f4eefb; --soft:#a493be;
   --panel:rgba(24,13,38,.72); --tile:rgba(255,255,255,.075); --edge:rgba(255,255,255,.13);
 }
-html{background:#140a20;color-scheme:dark}
+html{background:#140a20;color-scheme:dark;scrollbar-gutter:stable}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none}
 *::-webkit-scrollbar{width:0;height:0;display:none}
 body{
   margin:0;padding:0 0 92px;min-height:100vh;color:var(--text);
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
-  background:
-    radial-gradient(120% 70% at 50% 0%, rgba(139,68,199,.35) 0%, transparent 60%),
-    linear-gradient(170deg, var(--bg-a) 0%, var(--bg-b) 65%) fixed;
-  background-color:var(--bg-b);
+  background:none;                       /* фон рисует body::before — фиксированным слоем */
 }
 #aura{position:fixed;inset:-20%;z-index:-3;pointer-events:none;contain:strict;
   background:
@@ -33,6 +30,10 @@ body{
     radial-gradient(46% 40% at 50% 52%, rgba(96,44,160,.42), transparent 74%),
     radial-gradient(34% 30% at 12% 78%, rgba(255,122,184,.12), transparent 74%),
     radial-gradient(40% 34% at 88% 86%, rgba(70,30,120,.5), transparent 74%)}
+body::before{content:"";position:fixed;inset:0;z-index:-4;pointer-events:none;contain:strict;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(139,68,199,.35) 0%, transparent 60%),
+    linear-gradient(170deg, var(--bg-a) 0%, var(--bg-b) 65%)}
 #spot{position:fixed;top:-30vh;left:-30vw;width:70vw;height:70vw;z-index:-2;pointer-events:none;
   border-radius:50%;will-change:transform;contain:strict;
   background:radial-gradient(circle, rgba(255,192,46,.12) 0%, rgba(255,192,46,.05) 40%, transparent 68%)}
@@ -51,6 +52,7 @@ h2{font-size:15px;margin:26px 0 0;font-weight:700;color:var(--gold)}
 h3{font-size:16px;margin:0 0 12px;font-weight:700;color:var(--gold)}
 .sub{color:var(--soft);font-size:14px;margin:6px 0 0;line-height:1.55}
 button,input,select{font-family:inherit}
+button,.game,.tile.tap,.cos,.it,a{touch-action:manipulation}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 
@@ -289,9 +291,11 @@ svg.line{width:100%;height:100%;display:block}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;z-index:5;
   background:rgba(19,10,30,.97);border-top:1px solid var(--edge);
   padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
-.tabs button{flex:1;background:none;border:none;font-size:14px;padding:11px;color:var(--soft);
-  cursor:pointer;border-radius:10px}
-.tabs button[aria-current="page"]{color:var(--gold);font-weight:700;background:rgba(255,192,46,.12)}
+.tabs button{flex:1;background:none;border:none;font-size:14px;padding:0;color:var(--soft);
+  cursor:pointer}
+.tabs button[aria-current="page"]{color:var(--gold);font-weight:700}
+.tabs button > span{display:block;padding:11px;border-radius:10px;pointer-events:none}
+.tabs button[aria-current="page"] > span{background:rgba(255,192,46,.12)}
 
 .modal{position:fixed;inset:0;z-index:20;background:rgba(10,5,16,.75);overflow:auto;
   overscroll-behavior:contain}
@@ -380,7 +384,7 @@ html.locked, html.locked body{overflow:hidden}
   .modal.fromEl .inner{animation:growFrom .3s cubic-bezier(.2,.85,.25,1)}
   .modal.fromEl.out .inner{animation:backTo .26s cubic-bezier(.4,0,.7,1) forwards;filter:none}
 }
-.modal.out{animation:fadeOut .16s ease forwards}
+.modal.out{animation:fadeOut .16s ease forwards;pointer-events:none}
 .modal.out .inner{animation:shrinkOut .18s cubic-bezier(.4,0,1,1) forwards}
 
 @keyframes toastIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
@@ -401,14 +405,14 @@ html.locked, html.locked body{overflow:hidden}
   .primary.busy{animation:pulse 1.1s ease-in-out infinite}
   .bar i{transition:width .7s cubic-bezier(.2,.8,.2,1)}
 }
-.primary,.mini,.chip,.game,.close,.tabs button{transition:transform .12s ease,background .2s ease,
+.primary,.mini,.chip,.game,.close,.tabs button>span{transition:transform .12s ease,background .2s ease,
   color .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease}
 .primary:active:not(:disabled){transform:scale(.985);filter:brightness(.97);
   box-shadow:0 3px 12px rgba(255,192,46,.28)}
 .mini:active,.close:active{transform:scale(.975);filter:brightness(1.08)}
 .chip:active{transform:scale(.97)}
 .game:active{transform:scale(.99)}
-.tabs button:active{transform:scale(.96)}
+.tabs button:active > span{transform:scale(.96)}
 .lite #spot,.lite #aura{animation:none !important}
 .lite .nk,.lite .rl{animation:none !important;background:none;color:var(--text);
   -webkit-text-fill-color:currentColor}
@@ -524,9 +528,9 @@ html.locked, html.locked body{overflow:hidden}
 </div>
 
 <nav class="tabs">
-  <button data-v="snap" aria-current="page" id="tab1"></button>
-  <button data-v="trend" id="tab2"></button>
-  <button data-v="set" id="tab3"></button>
+  <button data-v="snap" aria-current="page"><span id="tab1"></span></button>
+  <button data-v="trend"><span id="tab2"></span></button>
+  <button data-v="set"><span id="tab3"></span></button>
 </nav>
 <script>
 "use strict";
@@ -537,6 +541,8 @@ const REQ_LIMIT = 80;                    // запросов к API за час 
 const REQ_WINDOW = 60 * 60 * 1000;
 const NICK_LIMIT = 8;                    // сколько разных ников можно опрашивать за час
 const SNAP_GAP = 60 * 1000;              // минимум между любыми двумя срезами
+const SNAP_BATCH = 3;                    // сколько игр запрашиваем одновременно
+const SNAP_GAP_MS = 400;                 // пауза между пачками
 const cdMs = () => (state.cd || 15) * 60 * 1000;
 
 const GAMES = [
@@ -698,7 +704,23 @@ const LABELS_RU = {
   equipped_hat:"Шапка надета", equipped_backbling:"Украшение для спины надето",
   equipped_costume:"Костюм надет", equipped_mount:"Транспорт выбран", equipped_pet:"Питомец выбран",
   paid_ranks:"Купленные ранги", pets:"Питомцы", mounts:"Транспорт", first_played:"Первая игра",
-  first_login:"Первый вход", last_login:"Последний вход", xuid:"XUID", mcid:"MCID"
+  first_login:"Первый вход", last_login:"Последний вход", xuid:"XUID", mcid:"MCID",
+  wins:"Побед", losses:"Поражений", final_deaths:"Финальных смертей",
+  beds_lost:"Кроватей потеряно", melee_kills:"Убийств в ближнем бою",
+  void_kills:"Убийств в пустоту", bow_kills:"Убийств из лука",
+  explosive_kills:"Убийств взрывом", fall_kills:"Убийств падением",
+  arrows_fired:"Стрел выпущено", arrows_hit:"Попаданий стрелой",
+  chests_opened:"Сундуков открыто", chests_destroyed:"Сундуков разбито",
+  blocks_broken:"Блоков сломано", blocks_mined:"Блоков добыто",
+  emeralds_collected:"Изумрудов собрано", diamonds_collected:"Алмазов собрано",
+  gold_collected:"Золота собрано", iron_collected:"Железа собрано",
+  time_played:"Время в игре", playtime:"Время в игре",
+  highest_win_streak:"Лучшая серия побед", current_win_streak:"Текущая серия побед",
+  win_streak:"Серия побед", best_win_streak:"Лучшая серия побед",
+  most_kills:"Больше всего убийств за игру", tokens:"Жетонов",
+  items_collected:"Предметов собрано", items_used:"Предметов использовано",
+  doors_opened:"Дверей открыто", trees_grown:"Деревьев выращено",
+  points:"Очков", score:"Очки", placement:"Место", rounds_played:"Раундов сыграно"
 };
 const COS_RU = {
   costume:"Костюм", hat:"Шапка", mount:"Транспорт", pet:"Питомец", avatar:"Аватар",
@@ -708,6 +730,53 @@ const COS_RU = {
   projectile_trail:"След снаряда", death_cry:"Крик смерти", emote:"Эмоция",
   stat_track:"Стат-трек", pet_pin:"Значок питомца"
 };
+const COS_PLURAL = {                                   // 1 шапка / 2 шапки / 5 шапок
+  hub_title:["Титул","Титула","Титулов","Hub Title","Hub Titles"],
+  title:["Титул","Титула","Титулов","Title","Titles"],
+  costume:["Костюм","Костюма","Костюмов","Costume","Costumes"],
+  avatar:["Аватар","Аватара","Аватаров","Avatar","Avatars"],
+  hat:["Шапка","Шапки","Шапок","Hat","Hats"],
+  pet:["Питомец","Питомца","Питомцев","Pet","Pets"],
+  mount:["Транспорт","Транспорта","Транспорта","Mount","Mounts"],
+  backbling:["Украшение для спины","Украшения для спины","Украшений для спины",
+    "Backbling","Backblings"],
+  back_bling:["Украшение для спины","Украшения для спины","Украшений для спины",
+    "Backbling","Backblings"]
+};
+function pluralRU(n, f){                               // 1 победа / 2 победы / 5 побед
+  const a = Math.abs(n) % 100, b = a % 10;
+  if(a > 10 && a < 20) return f[2];
+  return b === 1 ? f[0] : (b >= 2 && b <= 4 ? f[1] : f[2]);
+}
+function cosLabelN(k, n){
+  const f = COS_PLURAL[k];
+  if(!f || typeof n !== "number") return cosLabel(k);
+  return L === "ru" ? pluralRU(n, f) : (n === 1 ? f[3] : f[4]);
+}
+
+const PLURAL_RU = {                                    // подписи, стоящие рядом с числом
+  victories:["Победа","Победы","Побед"], wins:["Победа","Победы","Побед"],
+  deaths:["Смерть","Смерти","Смертей"],
+  kills:["Убийство","Убийства","Убийств"],
+  final_kills:["Финальное убийство","Финальных убийства","Финальных убийств"],
+  murders:["Убийство маньяком","Убийства маньяком","Убийств маньяком"],
+  coins:["Монета","Монеты","Монет"], tokens:["Жетон","Жетона","Жетонов"],
+  checkpoints:["Чекпоинт","Чекпоинта","Чекпоинтов"],
+  friends:["Друг","Друга","Друзей"], friend_count:["Друг","Друга","Друзей"],
+  goals:["Гол","Гола","Голов"],
+  assists:["Помощь в убийстве","Помощи в убийствах","Помощей в убийствах"],
+  points:["Очко","Очка","Очков"], total_points:["Очко","Очка","Очков"],
+  rounds_played:["Раунд сыгран","Раунда сыграно","Раундов сыграно"],
+  deathmatches:["Смертельный матч","Смертельных матча","Смертельных матчей"]
+};
+function labelN(k, n){
+  const f = L === "ru" && PLURAL_RU[k];
+  if(!f || typeof n !== "number") return label(k);
+  return pluralRU(n, f);
+}
+const LOSSES_RU = ["Поражение","Поражения","Поражений"];
+const WINS_LOW_RU = ["победа","победы","побед"];
+
 const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","index","human_index","player_number"]);
 const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
 const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
@@ -798,7 +867,7 @@ function mountModal(m, from){        // окно растёт из элемен�
       m.classList.add("fromEl");
     }
   }
-  requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add("in")));
+  requestAnimationFrame(() => m.classList.add("in"));
 }
 
 function closeModal(m){
@@ -1003,8 +1072,11 @@ async function snapshot(){
   const btn = $("#fetchBtn");
   btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
   const now = Date.now(), snap = { t: now, n: nickKey(), g: {} }, skipped = [], failed = [];
-  for(const g of state.games){
-    if(now - (state.last[lk(g)] || 0) < cdMs()){ skipped.push(NAME(g)); continue; }
+  const queue = state.games.filter(g => {
+    if(now - (state.last[lk(g)] || 0) < cdMs()){ skipped.push(NAME(g)); return false; }
+    return true;
+  });
+  const one = async g => {
     try{
       const r = await pull(g);
       state.last[lk(g)] = Date.now();
@@ -1028,7 +1100,13 @@ async function snapshot(){
         }
       }
     }catch(e){ failed.push(NAME(g) + " — " + e.message); }
-    await new Promise(r => setTimeout(r, 700));
+  };
+  for(let i = 0; i < queue.length; i += SNAP_BATCH){          // пачками, а не по одному
+    await Promise.all(queue.slice(i, i + SNAP_BATCH).map(one));
+    if(i + SNAP_BATCH < queue.length)
+      await new Promise(r => setTimeout(r, SNAP_GAP_MS));     // паузы после последней пачки нет
+    const done = Math.min(i + SNAP_BATCH, queue.length);
+    btn.textContent = T("snapping") + " " + done + "/" + queue.length;
   }
   if(Object.keys(snap.g).length){
     const mine = mySnaps(), prev = mine[mine.length-1];
@@ -1178,21 +1256,29 @@ function showRaw(text){
   };
   document.body.append(m);
 }
+let diagBusy = false;
 async function diag(){
+  if(diagBusy) return;                                 // запрос уже в пути
   if(!state.nick){ toast(T("needNick")); return; }
   const wait = DIAG_CD - (Date.now() - state.lastDiag);
   if(wait > 0){ toast(T("diagWait", Math.ceil(wait / 1000))); return; }
   if(!nickAllowed(nickKey())){ toast(T("nickLimit", NICK_LIMIT)); return; }
   if(budgetLeft() <= 0){ toast(T("budgetOut")); return; }
   noteNick(nickKey()); noteRequest();
-  state.lastDiag = Date.now(); save(); tickDiag();
   const url = urlFor("main");
+  const btn = $("#diagBtn");
+  diagBusy = true;
+  if(btn){ btn.disabled = true; btn.textContent = T("snapping"); }
   let st, txt;
   try{
     const r = await fetch(url, { cache:"no-store" });
     st = "HTTP " + r.status + " " + (r.statusText || "");
     txt = await r.text();
   }catch(e){ st = T("noReq"); txt = String(e && e.message || e); }
+  finally{
+    diagBusy = false;
+    state.lastDiag = Date.now(); save(); tickDiag();   // отсчёт с момента ответа, а не нажатия
+  }
   showRaw(url + "\n\n" + st + "\n\n" + String(txt).slice(0, 4000));
 }
 
@@ -1249,10 +1335,11 @@ function fitText(root){
       jobs.push({ el, size: parseFloat(getComputedStyle(el).fontSize) || 24 });
   });
   jobs.forEach(j => {                                  // затем правки только там, где надо
-    let size = j.size, guard = 0;
-    while(j.el.scrollWidth > j.el.clientWidth + 1 && size > 10 && guard++ < 30){
-      size -= 1; j.el.style.fontSize = size + "px";
-    }
+    const ratio = j.el.clientWidth / j.el.scrollWidth; // сразу нужный масштаб, без перебора
+    let size = Math.max(10, Math.floor(j.size * ratio));
+    j.el.style.fontSize = size + "px";
+    if(size > 10 && j.el.scrollWidth > j.el.clientWidth + 1)
+      j.el.style.fontSize = (size - 1) + "px";         // одна страховочная проверка
   });
 }
 addEventListener("resize", () => fitText());
@@ -1298,11 +1385,12 @@ function metrics(cur, old){
     if(isDateKey(k) && typeof v === "number" && v > 1e8){
       firstTile = { k:T("firstPlayed"), v:dateOf(v), d:"", wide:true }; continue;
     }
-    out.push({ k:label(k), v:nf(v), d:delta(k) });
+    out.push({ k:labelN(k, v), v:nf(v), d:delta(k) });
   }
   if(played && wins) out.push({ k:T("winrate"), v:pct(wins, played), d:"", wide:true });
   if(firstTile) out.push(firstTile);
-  if(played && wins) out.push({ k:T("losses"), v:nf(played - wins), d:"" });
+  if(played && wins) out.push({ k: L === "ru" ? pluralRU(played - wins, LOSSES_RU) : T("losses"),
+    v:nf(played - wins), d:"" });
   if(kills || deaths) out.push({ k:T("kd"), v:ratio(kills, deaths), d:"" });
   if(played && kills) out.push({ k:T("perGameK"), v:ratio(kills, played), d:"" });
   if(played && deaths) out.push({ k:T("perGameD"), v:ratio(deaths, played), d:"" });
@@ -1329,12 +1417,17 @@ function openGame(code, from){
   const m = document.createElement("div");
   m.className = "modal";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
-    (old ? '<p class="sub" style="margin:0 0 14px">' + esc(T("sinceHint", when(prev.t))) + "</p>" : "") +
-    tilesHTML(metrics(cur, old), bar) + "</div>";
+    '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  fitText(m);
+  requestAnimationFrame(() => {                        // окно уже на экране, содержимое следом
+    const box = m.querySelector(".mbody");
+    if(!box) return;
+    box.innerHTML =
+      (old ? '<p class="sub" style="margin:0 0 14px">' + esc(T("sinceHint", when(prev.t))) + "</p>" : "") +
+      tilesHTML(metrics(cur, old), bar);
+    fitText(m);
+  });
 }
 
 function openKills(from){
@@ -1444,12 +1537,17 @@ function listHTML(base, arr){
 function openCos(base, arr, from){
   const m = document.createElement("div");
   m.className = "modal";
-  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(cosLabel(base)) + " · " + arr.length +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
-    '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
-      : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div></div>";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(cosLabelN(base, arr.length)) +
+    " · " + arr.length +
+    '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
+  requestAnimationFrame(() => {
+    const box = m.querySelector(".mbody");
+    if(!box) return;
+    box.innerHTML = '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
+      : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div>";
+  });
 }
 
 function cosmeticsHTML(main){
@@ -1459,8 +1557,8 @@ function cosmeticsHTML(main){
     const ix = COS_ORDER.indexOf(x), iy = COS_ORDER.indexOf(y);
     return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy);
   });
-  const counts = ordered.map(k => ({ k:cosLabel(k), v:cosCount(g[k].un) }))
-    .filter(t => t.v !== null).map(t => ({ k:t.k, v:nf(t.v), d:"" }));
+  const counts = ordered.map(k => ({ k, v:cosCount(g[k].un) }))
+    .filter(t => t.v !== null).map(t => ({ k:cosLabelN(t.k, t.v), v:nf(t.v), d:"" }));
   const worn = ordered.filter(k => "eq" in g[k]).map(k => {
     const n = cosName(g[k].eq), icon = cosIcon(g[k].eq);
     return '<div class="cos"><span>' + esc(cosLabel(k)) + "</span><b>" +
@@ -1478,7 +1576,7 @@ function cosmeticsHTML(main){
   ordered.forEach(k => {
     const arr = itemsNewFirst(g[k].un);
     if(!arr || !arr.length) return;
-    out += '<div class="card"><h3>' + esc(cosLabel(k)) + " · " + arr.length + "</h3>" +
+    out += '<div class="card"><h3>' + esc(cosLabelN(k, arr.length)) + " · " + arr.length + "</h3>" +
       listHTML(k, arr) +
       (arr.length > LIMIT(k)
         ? '<button class="mini more" data-cos="' + esc(k) + '">' + esc(T("showAllCos")) + "</button>" : "") +
@@ -1549,8 +1647,8 @@ function renderSnap(){
   };
 
   const playedOf = c => num(c,"played") || num(c,"games_played");
-  const codes = state.games.filter(g => g !== "main" && last.g[g])
-    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
+  const codes = state.games.filter(g => g !== "main" && last.g[g] && playedOf(last.g[g]))
+    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));   // ноль игр — карточки нет
 
   if(codes.length){
     let P=0, W=0, K=0, D=0, LV=0, PR=0, XP=0, pP=0, pW=0, pK=0;
@@ -1579,7 +1677,9 @@ function renderSnap(){
       return '<button class="game" data-g="' + g + '"><b>' + esc(NAME(g)) +
         (g === most ? '<span class="badge">' + esc(T("mostPlayed")) + "</span>" : "") + "</b>" +
         '<div class="gs">' +
-          "<div><span>" + nf(wins) + "</span><small>" + esc(T("winsLow")) + "</small></div>" +
+          "<div><span>" + nf(wins) + "</span><small>" +
+            esc(L === "ru" ? pluralRU(wins, WINS_LOW_RU) : (wins === 1 ? "win" : T("winsLow"))) +
+          "</small></div>" +
           "<div><span>" + nf(played) + "</span><small>" + esc(T("playedLow")) + "</small></div>" +
           "<div><span>" + (played ? pct(wins, played) : "—") + "</span><small>" +
             esc(T("winrateLow")) + "</small></div>" +
@@ -1857,15 +1957,17 @@ $("#wipeBtn").onclick = () => {
 $("#fetchBtn").onclick = snapshot;
 $("#diagBtn").onclick = diag;
 function tickDiag(){
-  const b = $("#diagBtn"); if(!b) return;
+  const b = $("#diagBtn"); if(!b || diagBusy) return;
   const left = Math.ceil((DIAG_CD - (Date.now() - state.lastDiag)) / 1000);
   if(left > 0){ b.disabled = true; b.textContent = T("diagBtn") + " · " + left; setTimeout(tickDiag, 1000); }
   else { b.disabled = false; b.textContent = T("diagBtn"); }
 }
 
+let snapScroll = 0;                         // где стоял профиль, когда с него ушли
 document.querySelectorAll(".tabs button").forEach(b => {
   b.onclick = () => {
     const v = b.dataset.v;
+    if(!$("#vSnap").classList.contains("hidden")) snapScroll = scrollY;   // уходим с профиля
     $("#vSnap").classList.toggle("hidden", v !== "snap");
     $("#vTrend").classList.toggle("hidden", v !== "trend");
     $("#vSet").classList.toggle("hidden", v !== "set");
@@ -1873,6 +1975,11 @@ document.querySelectorAll(".tabs button").forEach(b => {
     b.setAttribute("aria-current","page");
     if(v === "trend") renderTrend();
     if(v === "snap") renderSnap();
+    wheelTo = null;                           // инерция не должна тянуть новую вкладку
+    if(v === "snap"){
+      scrollTo(0, snapScroll);                // профиль возвращается на прежнее место
+      requestAnimationFrame(() => scrollTo(0, snapScroll));   // после перерисовки высота уже своя
+    } else scrollTo(0, 0);                    // остальные вкладки открываются сверху
     const sec = v === "snap" ? $("#vSnap") : v === "trend" ? $("#vTrend") : $("#vSet");
     reveal(sec);
     sec.classList.remove("swap");
@@ -1882,6 +1989,7 @@ document.querySelectorAll(".tabs button").forEach(b => {
 });
 
 let stickOn = false, stickTick = false, lastShade = -1;
+const shadeEl = $("#shade");
 function onScroll(){
   if(stickTick) return;
   stickTick = true;
@@ -1895,7 +2003,7 @@ function onScroll(){
     const v = Math.round(p * 20) / 20;              // шаг 5%, чтобы не дёргать стиль зря
     if(v !== lastShade){
       lastShade = v;
-      document.documentElement.style.setProperty("--sd", v);
+      shadeEl.style.setProperty("--sd", v);
     }
   });
 }
@@ -1904,14 +2012,43 @@ addEventListener("pointerdown", e => {
   const b = e.target.closest &&
     e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button");
   if(!b || b.disabled) return;
-  b.classList.remove("press");
-  void b.offsetWidth;                       // перезапуск, если жмут подряд
-  b.classList.add("press");
-  setTimeout(() => b.classList.remove("press"), 440);
+  const t = b.matches(".tabs button") ? b.firstElementChild : b;   // у вкладок анимируем подпись
+  if(!t) return;
+  t.classList.remove("press");
+  void t.offsetWidth;                       // перезапуск, если жмут подряд
+  t.classList.add("press");
+  setTimeout(() => t.classList.remove("press"), 440);
 }, { passive:true });
 
 addEventListener("scroll", onScroll, { passive:true });
 addEventListener("resize", onScroll, { passive:true });
+
+/* ---------- инерция колеса мыши ---------- */
+let wheelTo = null, wheelRAF = 0;
+const dropWheel = () => { wheelTo = null; };
+function wheelStep(){
+  const cur = scrollY, d = wheelTo - cur;
+  if(Math.abs(d) < .6){ scrollTo(0, wheelTo); wheelTo = null; wheelRAF = 0; return; }
+  scrollTo(0, cur + d * .16);
+  wheelRAF = requestAnimationFrame(wheelStep);
+}
+addEventListener("wheel", e => {
+  if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(e.ctrlKey || e.shiftKey || e.defaultPrevented) return;
+  if(document.documentElement.classList.contains("locked")) return;   // открыто окно
+  if(e.target.closest && e.target.closest(".modal,.sugg")) return;     // свой скролл внутри
+  if(e.deltaMode === 0 && Math.abs(e.deltaY) < 15) return;             // тачпад: он уже плавный
+  const max = document.documentElement.scrollHeight - innerHeight;
+  if(max <= 0) return;
+  e.preventDefault();
+  const from = wheelTo === null ? scrollY : wheelTo;
+  const step = e.deltaY * (e.deltaMode === 1 ? 18 : 1);
+  wheelTo = Math.max(0, Math.min(max, from + step));
+  if(!wheelRAF) wheelRAF = requestAnimationFrame(wheelStep);
+}, { passive:false });
+addEventListener("touchstart", dropWheel, { passive:true });          // другой способ прокрутки
+addEventListener("keydown", dropWheel);                               // перебивает инерцию
+addEventListener("pointerdown", dropWheel, { passive:true });
 
 applyLang();
 loadHiveData().then(() => { if(HD){ renderSnap(); } });
