@@ -2039,8 +2039,12 @@ addEventListener("resize", onScroll, { passive:true });
 
 /* ---------- инерция колеса мыши ---------- */
 let wheelTo = null, wheelRAF = 0;
-const dropWheel = () => { wheelTo = null; };
+const dropWheel = () => {
+  wheelTo = null;
+  if(wheelRAF){ cancelAnimationFrame(wheelRAF); wheelRAF = 0; }   // иначе кадр доедет до нуля
+};
 function wheelStep(){
+  if(wheelTo === null){ wheelRAF = 0; return; }
   const cur = scrollY, d = wheelTo - cur;
   if(Math.abs(d) < .6){ scrollTo(0, wheelTo); wheelTo = null; wheelRAF = 0; return; }
   scrollTo(0, cur + d * .16);
