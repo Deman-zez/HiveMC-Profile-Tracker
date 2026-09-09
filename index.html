@@ -388,6 +388,8 @@ html.locked, html.locked body{overflow:hidden}
 .modal.out .inner{animation:shrinkOut .18s cubic-bezier(.4,0,1,1) forwards}
 
 @keyframes toastIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes toastOut{to{transform:translateY(10px) scale(.97);opacity:0}}
+.toast.out{animation:toastOut .26s cubic-bezier(.4,0,1,1) forwards;pointer-events:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 @media (prefers-reduced-motion: no-preference){
   .swap{animation:swapIn .32s cubic-bezier(.2,.8,.2,1)}
@@ -901,12 +903,21 @@ function closeModal(m){
       document.documentElement.classList.remove("locked");
   }, 200);
 }
+const TOAST_MS = 4000;
 function toast(t){
   const o = document.querySelector(".toast"); if(o) o.remove();
   const el = document.createElement("div");
-  el.className = "toast"; el.textContent = t; el.onclick = () => el.remove();
+  el.className = "toast"; el.textContent = t;
+  const hide = () => {
+    if(el.dataset.out) return;                         // не запускаем уход дважды
+    el.dataset.out = "1";
+    if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches){ el.remove(); return; }
+    el.classList.add("out");
+    setTimeout(() => el.remove(), 260);
+  };
+  el.onclick = hide;
   document.body.append(el);
-  setTimeout(() => el.remove(), 9000);
+  setTimeout(hide, TOAST_MS);
 }
 function when(ts){
   const d = new Date(ts), now = new Date();
