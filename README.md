@@ -107,3 +107,6 @@ This project is unofficial and not affiliated with or endorsed by The Hive. All 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+
+## now I have stopped actively developing the project, as soon as I have the strength and time, I will definitely continue.
