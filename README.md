@@ -109,4 +109,6 @@ This project is unofficial and not affiliated with or endorsed by The Hive. All 
 MIT — see [LICENSE](LICENSE).
 
 
-## now I have stopped actively developing the project, as soon as I have the strength and time, I will definitely continue.
+## The project is currently in the open beta stage, it requires the addition of many features and constant refinement
+
+**I strongly ask you to report any errors or shortcomings on the site so that I can fix it as quickly as possible**
