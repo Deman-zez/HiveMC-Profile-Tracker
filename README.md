@@ -4,6 +4,9 @@ A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock serv
 
 **Live:** https://deman-zez.github.io/HiveMC-Profile-Tracker/
 
+> [!NOTE]
+> **Open Beta:** The project is currently in open beta and under active development. If you encounter any bugs or have suggestions, please [open an issue](https://github.com/deman-zez/HiveMC-Profile-Tracker/issues)!
+
 Your Hive profile already shows where you stand today. This shows where you are *going*: it saves snapshots of your stats over time and turns them into progress you can actually see.
 
 ## Screenshots
@@ -80,35 +83,21 @@ Opening the file directly from disk usually works, but browsers often block stor
 
 ```bash
 python3 -m http.server 8080
-```
 
-Then open `http://localhost:8080`.
-
-If your browser blocks the API requests with a CORS error, Settings has a proxy field. The address is prepended to the API URL, or you can use the `{url}` placeholder if your proxy expects the target as a parameter. A minimal Cloudflare Worker is enough.
-
-## How it is built
-
-Plain HTML, CSS and JavaScript in a single ~91 KB file. No frameworks, no bundler, no build.
-
-- Stats come from the public API at `api.playhive.com/v0`, including `/player/search` for the username suggestions.
-- Levels are derived from XP using the tables in [hive-bedrock-data](https://github.com/CubeEdge-Studios/hive-bedrock-data), loaded from a CDN at runtime.
-- Cosmetic icons come from `cdn.playhive.com`. Players without a known avatar get a coloured tile derived from their UUID, so the same person always looks the same.
-- The gradient background, the drifting light, the scroll-linked dimming and every transition run on compositor-only properties so they never interfere with scrolling. A **Fewer animations** switch in settings turns them off entirely, and the system "reduce motion" preference is respected automatically.
-- Charts are hand-drawn SVG — no charting library.
-- Visitor counts use [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/), which sets no cookies and tracks nobody across sites.
-
-## Credits
-
-- [The Hive](https://playhive.com) for the server and the public API.
-- [hive-bedrock-data](https://github.com/CubeEdge-Studios/hive-bedrock-data) by CubeEdge Studios for the level curves and game metadata.
-
+Then open http://localhost:8080.
+If your browser blocks the API requests with a CORS error, Settings has a proxy field. The address is prepended to the API URL, or you can use the {url} placeholder if your proxy expects the target as a parameter. A minimal Cloudflare Worker is enough.
+How it is built
+Plain HTML, CSS and Vanilla JS in a single ~91 KB file. No frameworks, no bundler, no build step.
+ * Stats come from the public API at api.playhive.com/v0, including /player/search for the username suggestions.
+ * Levels are derived from XP using the tables in hive-bedrock-data, loaded from a CDN at runtime.
+ * Cosmetic icons come from cdn.playhive.com. Players without a known avatar get a coloured tile derived from their UUID, so the same person always looks the same.
+ * The gradient background, the drifting light, the scroll-linked dimming and every transition run on compositor-only properties so they never interfere with scrolling. A Fewer animations switch in settings turns them off entirely, and the system "reduce motion" preference is respected automatically.
+ * Charts are hand-drawn SVG — no charting library.
+ * Visitor counts use Cloudflare Web Analytics, which sets no cookies and tracks nobody across sites.
+Credits
+ * The Hive for the server and the public API.
+ * hive-bedrock-data by CubeEdge Studios for the level curves and game metadata.
 This project is unofficial and not affiliated with or endorsed by The Hive. All game names, cosmetic names and images belong to their respective owners.
+License
+MIT — see LICENSE.
 
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-
-## The project is currently in the open beta stage, it requires the addition of many features and constant refinement
-
-**I strongly ask you to report any errors or shortcomings on the site so that I can fix it as quickly as possible**
