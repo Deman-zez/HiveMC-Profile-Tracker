@@ -130,7 +130,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
     var(--c1) 50%, var(--c2) 62.5%, var(--c3) 75%, var(--c2) 87.5%, var(--c1) 100%);
   background-size:calc(var(--w, 100%) * 2) 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent}
-.tic{height:1.1em;width:auto;margin-left:.4em;vertical-align:-.14em;display:inline-block;
+.tic{height:1.1em;width:auto;margin-left:.4em;vertical-align:-.22em;display:inline-block;
   image-rendering:pixelated}
 .tlist .tic{margin:0 .45em 0 0}
 .tic.gl{margin:0 .08em}
@@ -217,6 +217,7 @@ label{display:block;font-size:13px;color:var(--soft);margin:20px 0 7px}
 .sugg{z-index:40}
 #vSet label{display:block;font-size:12px;font-weight:700;letter-spacing:.03em;
   color:var(--soft);margin:0 0 7px;text-transform:none}
+#lLang{margin-top:14px}
 .nickbox{position:relative}
 .sugg{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:9;overflow:hidden;
   background:var(--bg-b);border:1px solid var(--edge);border-radius:12px;
@@ -483,31 +484,17 @@ html.locked, html.locked body{overflow:hidden}
         <input id="nick" type="text" autocapitalize="none" autocomplete="off" spellcheck="false">
         <div class="sugg hidden" id="sugg"></div>
       </div>
-      <div class="row2">
-        <div>
-          <label for="lang" id="lLang"></label>
-          <select id="lang">
-            <option value="auto"></option>
-            <option value="ru">Русский</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div>
-          <label for="cd" id="lCd"></label>
-          <select id="cd"></select>
-        </div>
-      </div>
+      <label for="lang" id="lLang"></label>
+      <select id="lang">
+        <option value="auto"></option>
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
     </div>
 
     <div class="card set">
       <label id="lGames"></label>
       <div class="chips" id="gameChips"></div>
-    </div>
-
-    <div class="card set">
-      <label for="proxy" id="lProxy"></label>
-      <input id="proxy" type="text" autocapitalize="none">
-      <p class="hint" id="proxyHint"></p>
     </div>
 
     <div class="card set">
@@ -537,15 +524,18 @@ html.locked, html.locked body{overflow:hidden}
 <script>
 "use strict";
 const API = "https://api.playhive.com/v0";
+const HIVE_HEADERS = {                              // просим сервер уже подставить числа в динамические титулы
+  "X-Hive-Resolve-Stat-Track": "true",
+  "X-Hive-API-Version": "2024-03-29"
+};
 const KEY = "hive.tracker.v1";
 const DIAG_CD = 3 * 60 * 1000;
 const REQ_LIMIT = 80;                    // запросов к API за час со всего приложения
 const REQ_WINDOW = 60 * 60 * 1000;
-const NICK_LIMIT = 8;                    // сколько разных ников можно опрашивать за час
-const SNAP_GAP = 60 * 1000;              // минимум между любыми двумя срезами
-const SNAP_BATCH = 3;                    // сколько игр запрашиваем одновременно
-const SNAP_GAP_MS = 400;                 // пауза между пачками
-const cdMs = () => (state.cd || 15) * 60 * 1000;
+const SNAP_GAP = 5 * 1000;                // минимум между любыми двумя срезами
+                                          // раньше было 60с как защита от долбёжки в сам API Hive;
+                                          // теперь повторные заходы гасит кэш воркера, так что это
+                                          // только страховка от случайного двойного клика
 
 const GAMES = [
   ["main","Профиль","Profile"],["bed","BedWars","BedWars"],["sky","SkyWars","SkyWars"],
@@ -562,7 +552,7 @@ const STR = {
     tab1:"Профиль", tab2:"Динамика", tab3:"Настройки",
     snap:"Снять срез", snapping:"Запрашиваю…",
     noSnaps:"Срезов пока нет. Укажите ник в настройках и снимите первый.",
-    lastSnap:"Последний срез: %1 · всего: %2", nextIn:" · следующий через %1 мин",
+    lastSnap:"Последний срез: %1 · всего: %2",
     noNick:"Ник не указан", games:"Игры", totalOver:"Всего по %1 играм",
     played:"Сыграно", wins:"Побед", winrate:"Процент побед", losses:"Поражений",
     kd:"K/D", killsTotal:"Убийств всего", levelSum:"Сумма уровней", xpTotal:"Опыт всего",
@@ -575,12 +565,10 @@ const STR = {
     appearance:"Внешний вид", cosOpen:"Открыто", cosWorn:"Надето", notWorn:"не надето",
     profileAll:"Профиль целиком", showAll:"Показать все поля профиля",
     lNick:"Ник на Hive", nickPh:"точно как в игре", lLang:"Язык", auto:"Как в системе",
-    lGames:"Игры, за которыми следим", lProxy:"Прокси для запросов",
-    proxyPh:"пусто — напрямую; или https://…workers.dev/",
-    proxyHint:"Адрес приклеивается перед ссылкой на API. Если прокси ждёт её в параметре — впишите метку {url}.",
+    lGames:"Игры, за которыми следим",
     exportBtn:"Сохранить копию", importBtn:"Загрузить копию",
     wipeBtn:"Стереть срезы", diagBtn:"Проверить профиль",
-    limitNote:"Лимит Hive: одна пара «игрок + игра» не чаще 3 раз в час. Приложение держит свои ограничения: пауза по каждой игре, минута между любыми срезами, не больше 80 запросов и 8 разных ников в час. Это защита от перебора чужих аккаунтов — не снимайте её, если публикуете страницу.",
+    limitNote:"Лимит Hive: одна пара «игрок + игра» не чаще 3 раз в час.",
     noProfile:"Данные профиля не пришли — ранг, титул и косметика берутся именно оттуда. Откройте «Настройки → Проверить профиль», чтобы увидеть сырой ответ API.",
     deadNote:"Нет данных по: %1. Либо вы в это не играли, либо у игры другой код в API.",
     needNick:"Сначала укажите ник", cooldownAll:"Ещё рано — все игры на кулдауне",
@@ -593,8 +581,6 @@ const STR = {
     friends:"Друзья", playerNumber:"Номер игрока", firstJoin:"Первый вход",
     limitErr:"лимит запросов", limitWait:", ждать %1 мин", netErr:"сеть или CORS: браузер не пустил запрос",
     httpErr:"ответ %1", noReq:"запрос не ушёл (CORS или сеть)",
-    cdLabel:"Пауза между срезами", min:"%1 мин",
-    diagWait:"Проверить снова можно через %1 с",
     killsTitle:"Из чего сложились убийства", counted:"учтено", skippedF:"не учтено",
     finalsLabel:"Считать финальные убийства отдельно", noKillFields:"полей с убийствами нет",
     streakNow:"Текущая серия", streakBest:"Лучшая серия", days:"дн.",
@@ -603,12 +589,9 @@ const STR = {
     resetIn:"Новый игровой день через %1 · сброс в %2", hh:"ч", mm:"мин",
     total:"Итого", wait:"ждать %1", showAllCos:"Показать все", misc:"Разное",
     liteLabel:"Меньше анимаций (плавнее прокрутка)",
-    budget:"запас запросов %1 из %2", noPlayers:"Никого не нашлось",
+    noPlayers:"Никого не нашлось",
     trendSub:"Как менялись показатели от среза к срезу",
     setSub:"Ник, отслеживаемые игры и ограничения запросов",
-    budgetOut:"Час запросов исчерпан — подождите, лимит восстановится сам",
-    snapGap:"Слишком часто: следующий срез можно снять через %1 с",
-    nickLimit:"За час можно следить максимум за %1 никами — подождите или вернитесь к прежнему",
     sumNoFinals:"Без финальных убийств", sumWithFinals:"С финальными убийствами",
     killsHint:"Сверьте с титулом «Total Kills» в игре и включите или выключите финальные убийства в настройках — так сумма сойдётся точно."
   },
@@ -616,7 +599,7 @@ const STR = {
     tab1:"Profile", tab2:"Trend", tab3:"Settings",
     snap:"Take snapshot", snapping:"Fetching…",
     noSnaps:"No snapshots yet. Set your username in settings and take the first one.",
-    lastSnap:"Last snapshot: %1 · total: %2", nextIn:" · next in %1 min",
+    lastSnap:"Last snapshot: %1 · total: %2",
     noNick:"No username set", games:"Games", totalOver:"Across %1 games",
     played:"Played", wins:"Wins", winrate:"Win rate", losses:"Losses",
     kd:"K/D", killsTotal:"Kills total", levelSum:"Levels total", xpTotal:"XP total",
@@ -629,12 +612,10 @@ const STR = {
     appearance:"Appearance", cosOpen:"Unlocked", cosWorn:"Equipped", notWorn:"none equipped",
     profileAll:"Full profile", showAll:"Show all profile fields",
     lNick:"Hive username", nickPh:"exactly as in game", lLang:"Language", auto:"System default",
-    lGames:"Games to track", lProxy:"Request proxy",
-    proxyPh:"empty — direct; or https://…workers.dev/",
-    proxyHint:"The address is prepended to the API link. If your proxy expects it as a parameter, use the {url} placeholder.",
+    lGames:"Games to track",
     exportBtn:"Export backup", importBtn:"Import backup",
     wipeBtn:"Clear snapshots", diagBtn:"Test profile call",
-    limitNote:"Hive rate limit: the same player and game pair may be requested 3 times per hour. The app adds its own guards: a per-game pause, a minute between any two snapshots, and caps of 80 requests and 8 different usernames per hour. This prevents mass scraping — keep it in place if you publish the page.",
+    limitNote:"Hive rate limit: the same player and game pair may be requested 3 times per hour.",
     noProfile:"Profile data did not arrive — rank, title and cosmetics come from there. Open Settings and use “Test profile call” to see the raw API response.",
     deadNote:"No data for: %1. Either you have not played it, or the game uses a different API code.",
     needNick:"Set your username first", cooldownAll:"Too soon — every game is on cooldown",
@@ -647,8 +628,6 @@ const STR = {
     friends:"Friends", playerNumber:"Player number", firstJoin:"First joined",
     limitErr:"rate limited", limitWait:", wait %1 min", netErr:"network or CORS: the browser blocked it",
     httpErr:"HTTP %1", noReq:"request did not go through (CORS or network)",
-    cdLabel:"Snapshot pause", min:"%1 min",
-    diagWait:"You can check again in %1 s",
     killsTitle:"How the kill total adds up", counted:"counted", skippedF:"not counted",
     finalsLabel:"Count final kills on top", noKillFields:"no kill fields",
     streakNow:"Current streak", streakBest:"Longest streak", days:"d",
@@ -657,12 +636,9 @@ const STR = {
     resetIn:"New game day in %1 · resets at %2", hh:"h", mm:"m",
     total:"Total", wait:"wait %1", showAllCos:"Show all", misc:"Other",
     liteLabel:"Fewer animations (smoother scrolling)",
-    budget:"request budget %1 of %2", noPlayers:"No players found",
+    noPlayers:"No players found",
     trendSub:"How your stats moved from snapshot to snapshot",
     setSub:"Username, tracked games and request limits",
-    budgetOut:"Hourly request budget spent — it refills on its own",
-    snapGap:"Too soon: the next snapshot is available in %1 s",
-    nickLimit:"Up to %1 usernames per hour — wait or switch back to a previous one",
     sumNoFinals:"Without final kills", sumWithFinals:"With final kills",
     killsHint:"Compare with the in-game Total Kills title and toggle final kills in settings so the sum matches."
   }
@@ -797,10 +773,12 @@ const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","inde
 const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
 const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
 
-let state = load() || { nick:"", games:["main","bed","sky","dr"], proxy:"", lang:"auto",
-  cd:5, finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
+// один запрос /game/all/all/ забирает все игры сразу — прямой fetch к api.playhive.com
+// у нас всегда работал без CORS-ошибок, так что свой прокси/воркер тут не нужен
+const DEFAULT_GAMES = GAMES.map(g => g[0]).filter(g => g !== "wars");   // Treasure Wars — не следим по умолчанию
+let state = load() || { nick:"", games:DEFAULT_GAMES, lang:"auto",
+  finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
 state.last = state.last || {}; state.dead = state.dead || []; state.lang = state.lang || "auto";
-if(!state.cd) state.cd = 5;
 if(state.finals === undefined) state.finals = true;
 if(!state.tagged){                                   // разметка срезов, снятых до появления привязки
   const n = (state.nick || "").trim().toLowerCase();
@@ -809,7 +787,6 @@ if(!state.tagged){                                   // разметка сре�
 }
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];
-state.nickLog = state.nickLog || [];
 state.lastSnapAt = state.lastSnapAt || 0;
 state.avatars = state.avatars || {};      // ник → аватар из уже виденных профилей
 
@@ -834,20 +811,9 @@ const T = (k, ...a) => { let s = (STR[L] && STR[L][k]) || STR.en[k] || k;
 function pruneLogs(){
   const t = Date.now() - REQ_WINDOW;
   state.reqLog = (state.reqLog || []).filter(x => x > t);
-  state.nickLog = (state.nickLog || []).filter(x => x.t > t);
 }
-function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }
+function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }   // не отображается, только для внутренней логики повтора
 function noteRequest(){ pruneLogs(); state.reqLog.push(Date.now()); save(); }
-function nickAllowed(n){
-  pruneLogs();
-  const seen = [...new Set(state.nickLog.map(x => x.n))];
-  return seen.includes(n) || seen.length < NICK_LIMIT;
-}
-function noteNick(n){
-  pruneLogs();
-  state.nickLog.push({ n, t: Date.now() });
-  save();
-}
 
 const nickKey = () => (state.nick || "").trim().toLowerCase();
 const lk = g => nickKey() + "|" + g;                 // кулдаун на пару «игрок + игра»
@@ -1061,78 +1027,63 @@ function gameLevel(c, code){
 /* ---------- запрос ---------- */
 function urlFor(game){
   const path = game === "main" ? "/game/all/main/" + encodeURIComponent(state.nick)
+             : game === "all"  ? "/game/all/all/" + encodeURIComponent(state.nick)
                                : "/game/all/" + game + "/" + encodeURIComponent(state.nick);
-  const full = API + path, p = state.proxy || "";
-  return p.includes("{url}") ? p.replace("{url}", encodeURIComponent(full)) : p + full;
+  return API + path;
 }
-async function pull(game){
-  if(budgetLeft() <= 0) throw new Error(T("budgetOut"));
-  noteRequest();
+async function pullAll(){                         // /game/all/all/{ник} — все игры одним запросом
+  noteRequest();                                    // всё ещё считаем — цифра в подвале информативна,
+                                                     // но больше не блокирует снятие среза
   let res;
-  try{ res = await fetch(urlFor(game), { cache:"no-store" }); }
+  try{ res = await fetch(urlFor("all"), { cache:"no-store", headers: HIVE_HEADERS }); }
   catch(e){ throw new Error(T("netErr")); }
-  if(res.status === 404) return { missing:true };
   if(res.status === 429){
     const ra = res.headers.get("Retry-After");
     throw new Error(T("limitErr") + (ra ? T("limitWait", Math.ceil(ra/60)) : ""));
   }
   if(!res.ok) throw new Error(T("httpErr", res.status));
-  let data = await res.json();
-  if(data && typeof data === "object" && !Array.isArray(data)){
-    const ks = Object.keys(data);
-    if(ks.length === 1 && data[ks[0]] && typeof data[ks[0]] === "object" && !Array.isArray(data[ks[0]]))
-      data = data[ks[0]];                       // ответ обёрнут: {"main": {…}}
-  }
-  return { data };
+  const data = await res.json();                  // плоский объект: {main:{…}, bed:{…}, …} — без обёртки
+  return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
 }
 async function snapshot(){
   if(!state.nick){ toast(T("needNick")); return; }
   const n = nickKey();
-  const gap = SNAP_GAP - (Date.now() - state.lastSnapAt);
-  if(gap > 0){ toast(T("snapGap", Math.ceil(gap / 1000))); return; }
-  if(!nickAllowed(n)){ toast(T("nickLimit", NICK_LIMIT)); return; }
-  if(budgetLeft() <= 0){ toast(T("budgetOut")); return; }
-  noteNick(n);
-  state.lastSnapAt = Date.now(); save();
   const btn = $("#fetchBtn");
+  if(btn.disabled) return;                     // идёт запрос или ещё действует пауза — просто игнорируем клик
+  state.lastSnapAt = Date.now(); save();
   btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
-  const now = Date.now(), snap = { t: now, n: nickKey(), g: {} }, skipped = [], failed = [];
-  const queue = state.games.filter(g => {
-    if(now - (state.last[lk(g)] || 0) < cdMs()){ skipped.push(NAME(g)); return false; }
-    return true;
-  });
-  const one = async g => {
-    try{
-      const r = await pull(g);
-      state.last[lk(g)] = Date.now();
-      if(r.missing){ if(!state.dead.includes(g)) state.dead.push(g); }
-      else {
-        snap.g[g] = r.data;
+  const now = Date.now(), snap = { t: now, n, g: {} };
+  let failed = "";
+  try{
+    const r = await pullAll();
+    state.last[lk("_all")] = Date.now();
+    const data = r.data;
+    for(const [g] of GAMES){
+      const gd = data[g];
+      const hasData = gd && typeof gd === "object" && Object.keys(gd).length > 0;
+      if(hasData){
+        snap.g[g] = gd;
         state.dead = state.dead.filter(x => x !== g);
-        if(g === "main" && r.data){
-          const url = cosIcon(pick(r.data, "equipped_avatar", "avatar_equipped"));
-          const who = (pick(r.data, "username", "username_cc") || state.nick).toLowerCase();
-          if(url){
-            state.avatars[who] = url;
-            const keys = Object.keys(state.avatars);
-            if(keys.length > 60) delete state.avatars[keys[0]];   // не копим бесконечно
-          }
-        }
-        const cc = g === "main" && r.data && r.data.username_cc;
-        if(cc && cc.toLowerCase() === nickKey() && cc !== state.nick){
-          state.nick = cc;                       // правильный регистр из профиля
-          const inp = $("#nick"); if(inp) inp.value = cc;
-        }
+      } else if(g !== "main" && !state.dead.includes(g)){
+        state.dead.push(g);                      // игру в этот аккаунт не играли
       }
-    }catch(e){ failed.push(NAME(g) + " — " + e.message); }
-  };
-  for(let i = 0; i < queue.length; i += SNAP_BATCH){          // пачками, а не по одному
-    await Promise.all(queue.slice(i, i + SNAP_BATCH).map(one));
-    if(i + SNAP_BATCH < queue.length)
-      await new Promise(r => setTimeout(r, SNAP_GAP_MS));     // паузы после последней пачки нет
-    const done = Math.min(i + SNAP_BATCH, queue.length);
-    btn.textContent = T("snapping") + " " + done + "/" + queue.length;
-  }
+    }
+    const md = snap.g.main;
+    if(md){
+      const url = cosIcon(pick(md, "equipped_avatar", "avatar_equipped"));
+      const who = (pick(md, "username", "username_cc") || state.nick).toLowerCase();
+      if(url){
+        state.avatars[who] = url;
+        const keys = Object.keys(state.avatars);
+        if(keys.length > 60) delete state.avatars[keys[0]];   // не копим бесконечно
+      }
+      const cc = md.username_cc;
+      if(cc && cc.toLowerCase() === n && cc !== state.nick){
+        state.nick = cc;                          // правильный регистр из профиля
+        const inp = $("#nick"); if(inp) inp.value = cc;
+      }
+    }
+  }catch(e){ failed = e.message; }
   if(Object.keys(snap.g).length){
     const mine = mySnaps(), prev = mine[mine.length-1];
     if(prev){
@@ -1147,11 +1098,12 @@ async function snapshot(){
     if(state.snaps.length > 300) state.snaps.shift();
     save();
   }
-  btn.disabled = false; btn.classList.remove("busy"); btn.textContent = T("snap");
+  btn.classList.remove("busy"); btn.textContent = T("snap");
   renderSnap(); renderTrend();
-  if(failed.length) toast(failed.join("; "));
-  else if(!Object.keys(snap.g).length && skipped.length) toast(T("cooldownAll"));
-  else if(skipped.length) toast(T("skipped", skipped.join(", ")));
+  if(failed) toast(failed);
+  const wait = SNAP_GAP - (Date.now() - state.lastSnapAt);   // держим кнопку выключенной остаток паузы
+  if(wait > 0) setTimeout(() => { btn.disabled = false; }, wait);
+  else btn.disabled = false;
 }
 
 /* ---------- поиск игроков ---------- */
@@ -1160,10 +1112,7 @@ let searchTimer = null, searchSeq = 0;
 
 async function searchPlayers(q){
   if(searchCache.has(q)) return searchCache.get(q);
-  if(budgetLeft() <= 0) throw new Error(T("budgetOut"));
-  const full = API + "/player/search/" + encodeURIComponent(q);
-  const p = state.proxy || "";
-  const url = p.includes("{url}") ? p.replace("{url}", encodeURIComponent(full)) : p + full;
+  const url = API + "/player/search/" + encodeURIComponent(q);
   let res = null;
   for(let attempt = 0; attempt < 2; attempt++){
     noteRequest();                           // каждая попытка — реальный запрос
@@ -1285,18 +1234,15 @@ let diagBusy = false;
 async function diag(){
   if(diagBusy) return;                                 // запрос уже в пути
   if(!state.nick){ toast(T("needNick")); return; }
-  const wait = DIAG_CD - (Date.now() - state.lastDiag);
-  if(wait > 0){ toast(T("diagWait", Math.ceil(wait / 1000))); return; }
-  if(!nickAllowed(nickKey())){ toast(T("nickLimit", NICK_LIMIT)); return; }
-  if(budgetLeft() <= 0){ toast(T("budgetOut")); return; }
-  noteNick(nickKey()); noteRequest();
-  const url = urlFor("main");
   const btn = $("#diagBtn");
+  if(btn && btn.disabled) return;                       // ещё действует пауза — просто игнорируем клик
+  noteRequest();
+  const url = urlFor("main");
   diagBusy = true;
   if(btn){ btn.disabled = true; btn.textContent = T("snapping"); }
   let st, txt;
   try{
-    const r = await fetch(url, { cache:"no-store" });
+    const r = await fetch(url, { cache:"no-store", headers: HIVE_HEADERS });
     st = "HTTP " + r.status + " " + (r.statusText || "");
     txt = await r.text();
   }catch(e){ st = T("noReq"); txt = String(e && e.message || e); }
@@ -1304,7 +1250,7 @@ async function diag(){
     diagBusy = false;
     state.lastDiag = Date.now(); save(); tickDiag();   // отсчёт с момента ответа, а не нажатия
   }
-  showRaw(url + "\n\n" + st + "\n\n" + String(txt).slice(0, 4000));
+  showRaw(url + "\n\n" + st + "\n\n" + String(txt).slice(0, 40000));
 }
 
 /* ---------- плитки ---------- */
@@ -1388,6 +1334,35 @@ function killsOf(c){
   return p.base + (state.finals ? p.fin : 0);
 }
 
+const RATING_ORDER = [                                // Build Battle: от лучшей оценки к худшей
+  "rating_love_received", "love_ratings",
+  "rating_great_received", "great_ratings",
+  "rating_good_received", "good_ratings",
+  "rating_okay_received", "okay_ratings",
+  "rating_meh_received", "meh_ratings"
+];
+function orderedKeys(cur){                             // рейтинги идут единым блоком в фикс. порядке,
+  const keys = Object.keys(cur);                        // остальные поля остаются на своих местах
+  const ratingKeys = keys.filter(k => RATING_ORDER.includes(k))
+    .sort((a, b) => RATING_ORDER.indexOf(a) - RATING_ORDER.indexOf(b));
+  if(!ratingKeys.length) return keys;
+  let inserted = false;
+  const out = [];
+  keys.forEach(k => {
+    if(RATING_ORDER.includes(k)){
+      if(!inserted){ out.push(...ratingKeys); inserted = true; }
+    } else out.push(k);
+  });
+  return out;
+}
+function hasKillField(c){                               // отличает "0 убийств" от "тут убийств не бывает"
+  if(!c) return false;
+  for(const key of Object.keys(c)){
+    if(typeof c[key] !== "number") continue;
+    if(key === "final_kills" || KILL_KEY.test(key) || KILL_EXTRA.test(key)) return true;
+  }
+  return false;
+}
 function metrics(cur, old){
   const out = [];
   const delta = k => {
@@ -1400,7 +1375,7 @@ function metrics(cur, old){
   const kills = killsOf(cur);            // учитывает murders, hider_kills и прочие
   let firstTile = null;
 
-  for(const k of Object.keys(cur)){
+  for(const k of orderedKeys(cur)){
     if(SKIP.has(k)) continue;
     const v = cur[k];
     if(v === null || typeof v === "object") continue;
@@ -1416,7 +1391,7 @@ function metrics(cur, old){
   if(firstTile) out.push(firstTile);
   if(played && wins) out.push({ k: L === "ru" ? pluralRU(played - wins, LOSSES_RU) : T("losses"),
     v:nf(played - wins), d:"" });
-  if(kills || deaths) out.push({ k:T("kd"), v:ratio(kills, deaths), d:"" });
+  if(hasKillField(cur) && deaths) out.push({ k:T("kd"), v:ratio(kills, deaths), d:"" });
   if(played && kills) out.push({ k:T("perGameK"), v:ratio(kills, played), d:"" });
   if(played && deaths) out.push({ k:T("perGameD"), v:ratio(deaths, played), d:"" });
   if(played && num(cur,"xp")) out.push({ k:T("perGameX"), v:ratio(num(cur,"xp"), played), d:"" });
@@ -1522,7 +1497,7 @@ function cosGroups(src){
   return g;
 }
 const cosName = v => v === null || v === undefined || v === "" ? null
-  : (typeof v === "object" ? (pick(v, "name", "human_name", "title", "id", "index") ?? null) : v);
+  : (typeof v === "object" ? (pick(v, "display", "name", "human_name", "title", "id", "index") ?? null) : v);
 const cosIcon = v => { if(v && typeof v === "object"){
   const u = pick(v, "url", "icon", "image"); if(typeof u === "string" && /^https?:/.test(u)) return u; } return null; };
 const cosCount = v => typeof v === "number" ? v : Array.isArray(v) ? v.length
@@ -1550,7 +1525,7 @@ function itemHTML(base, it){
 }
 function rowsHTML(base, arr){
   return '<div class="tlist">' + arr.map(it => {
-    const n = typeof it === "string" ? it : (pick(it, "name", "id") || "");
+    const n = typeof it === "string" ? it : (pick(it, "display", "name", "id") || "");
     return "<div>" + titleIcon(it) + (hasMC(n) ? mcText(n) : esc(nice(n))) + "</div>";
   }).join("") + "</div>";
 }
@@ -1781,16 +1756,13 @@ function renderStreak(main, body){
 function tickStatus(){
   const mine = mySnaps();
   const last = mine[mine.length-1];
-  const cool = state.games.map(g => cdMs() - (Date.now() - (state.last[lk(g)] || 0))).filter(ms => ms > 0);
-  const readyIn = cool.length === state.games.length ? Math.ceil(Math.min(...cool) / 60000) : 0;
   const btn = $("#fetchBtn");
-  if(!btn.classList.contains("busy")){
-    btn.disabled = !!readyIn;
-    btn.textContent = readyIn ? T("snap") + " · " + T("min", readyIn) : T("snap");
+  const locked = Date.now() - state.lastSnapAt < SNAP_GAP;   // не мешаем собственной паузе кнопки
+  if(!btn.classList.contains("busy") && !locked){
+    btn.disabled = false;
+    btn.textContent = T("snap");
   }
-  $("#subtitle").textContent = !last ? T("noSnaps")
-    : T("lastSnap", when(last.t), mine.length) + (readyIn ? T("nextIn", readyIn) : "") +
-      " · " + T("budget", budgetLeft(), REQ_LIMIT);
+  $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t), mine.length);
 }
 
 /* ---------- динамика ---------- */
@@ -1886,24 +1858,16 @@ function applyLang(){
   $("#lNick").textContent = T("lNick"); $("#nick").placeholder = T("nickPh");
   $("#lLang").textContent = T("lLang"); $("#lang").options[0].textContent = T("auto");
   $("#lGames").textContent = T("lGames");
-  $("#lCd").textContent = T("cdLabel");
-  const cdSel = $("#cd");
-  cdSel.innerHTML = [5,10,15,30,60].map(v =>
-    '<option value="' + v + '">' + T("min", v) + "</option>").join("");
-  cdSel.value = String(state.cd);
   $("#lFinals").textContent = T("finalsLabel");
   $("#finals").checked = !!state.finals;
   $("#lLite").textContent = T("liteLabel");
   $("#lite").checked = !!state.lite;
   tickDiag();
-  $("#lProxy").textContent = T("lProxy"); $("#proxy").placeholder = T("proxyPh");
-  $("#proxyHint").textContent = T("proxyHint");
   $("#exportBtn").textContent = T("exportBtn"); $("#importBtn").textContent = T("importBtn");
   $("#wipeBtn").textContent = T("wipeBtn"); $("#diagBtn").textContent = T("diagBtn");
   $("#limitNote").textContent = T("limitNote");
   renderChips(); renderSnap(); renderTrend();
 }
-$("#cd").onchange = e => { state.cd = parseInt(e.target.value,10) || 5; save(); renderSnap(); };
 $("#finals").onchange = e => { state.finals = e.target.checked; save(); renderSnap(); };
 $("#lite").onchange = e => {
   state.lite = e.target.checked; save();
@@ -1928,8 +1892,6 @@ $("#nick").oninput = e => {
 };
 $("#nick").onblur = () => setTimeout(hideSugg, 180);
 $("#nick").onfocus = e => { if(e.target.value.trim().length >= 4) askSearch(e.target.value); };
-$("#proxy").value = state.proxy;
-$("#proxy").oninput = e => { state.proxy = e.target.value.trim(); save(); };
 $("#exportBtn").onclick = () => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type:"application/json" }));
@@ -1948,11 +1910,8 @@ $("#importFile").onchange = e => {
       const clean = {
         nick: typeof p.nick === "string" ? p.nick.trim().slice(0, 32) : state.nick,
         lang: ["auto","ru","en"].includes(p.lang) ? p.lang : state.lang,
-        cd: [5,10,15,30,60].includes(+p.cd) ? +p.cd : state.cd,
         finals: typeof p.finals === "boolean" ? p.finals : state.finals,
         lite: typeof p.lite === "boolean" ? p.lite : !!state.lite,
-        proxy: typeof p.proxy === "string" && /^(https:\/\/|$)/.test(p.proxy.trim())
-          ? p.proxy.trim().slice(0, 300) : "",
         games: Array.isArray(p.games) ? p.games.filter(g => codes.includes(g)) : state.games,
         snaps: p.snaps.filter(x => x && typeof x.t === "number" && x.g && typeof x.g === "object")
                       .slice(-300),
@@ -1964,7 +1923,7 @@ $("#importFile").onchange = e => {
       };
       if(!clean.games.length) clean.games = ["main","bed","sky","dr"];
       state = Object.assign(state, clean);
-      state.reqLog = []; state.nickLog = []; state.lastSnapAt = 0;   // лимиты не импортируем
+      state.reqLog = []; state.lastSnapAt = 0;   // счётчик запросов не импортируем
       save();
       $("#nick").value = state.nick; $("#lang").value = state.lang || "auto";
       applyLang(); toast(T("imported"));
@@ -1982,10 +1941,12 @@ $("#wipeBtn").onclick = () => {
 $("#fetchBtn").onclick = snapshot;
 $("#diagBtn").onclick = diag;
 function tickDiag(){
-  const b = $("#diagBtn"); if(!b || diagBusy) return;
-  const left = Math.ceil((DIAG_CD - (Date.now() - state.lastDiag)) / 1000);
-  if(left > 0){ b.disabled = true; b.textContent = T("diagBtn") + " · " + left; setTimeout(tickDiag, 1000); }
-  else { b.disabled = false; b.textContent = T("diagBtn"); }
+  const b = $("#diagBtn");
+  if(!b || diagBusy) return;
+  const left = DIAG_CD - (Date.now() - state.lastDiag);
+  b.textContent = T("diagBtn");                 // без цифр — просто подпись
+  if(left > 0){ b.disabled = true; setTimeout(tickDiag, Math.min(left, 5000)); }
+  else b.disabled = false;
 }
 
 let snapScroll = 0;                         // где стоял профиль, когда с него ушли
