@@ -169,7 +169,8 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
 .game{position:relative;overflow:hidden;text-align:left;background:var(--panel);
-  border:1px solid var(--edge);border-radius:18px;padding:16px;color:var(--text);cursor:pointer}
+  border:1px solid var(--edge);border-radius:18px;padding:16px;color:var(--text);cursor:pointer;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
 .game::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);
   transform:scaleX(0);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
@@ -472,6 +473,9 @@ html.locked, html.locked body{overflow:hidden}
       <select id="trendGame"></select>
       <select id="trendMetric"></select>
     </div>
+    <div class="row2" style="margin-top:10px">
+      <select id="trendRange"></select>
+    </div>
     <div id="trendBody"></div>
   </section>
 
@@ -552,7 +556,7 @@ const STR = {
     tab1:"Профиль", tab2:"Динамика", tab3:"Настройки",
     snap:"Снять срез", snapping:"Запрашиваю…",
     noSnaps:"Срезов пока нет. Укажите ник в настройках и снимите первый.",
-    lastSnap:"Последний срез: %1 · всего: %2",
+    lastSnap:"Последний срез: %1",
     noNick:"Ник не указан", games:"Игры", totalOver:"Всего по %1 играм",
     played:"Сыграно", wins:"Побед", winrate:"Процент побед", losses:"Поражений",
     kd:"K/D", killsTotal:"Убийств всего", levelSum:"Сумма уровней", xpTotal:"Опыт всего",
@@ -591,6 +595,7 @@ const STR = {
     liteLabel:"Меньше анимаций (плавнее прокрутка)",
     noPlayers:"Никого не нашлось",
     trendSub:"Как менялись показатели от среза к срезу",
+    rangeAll:"Всё время", range24h:"24 часа", range7d:"7 дней", range30d:"30 дней",
     setSub:"Ник, отслеживаемые игры и ограничения запросов",
     sumNoFinals:"Без финальных убийств", sumWithFinals:"С финальными убийствами",
     killsHint:"Сверьте с титулом «Total Kills» в игре и включите или выключите финальные убийства в настройках — так сумма сойдётся точно."
@@ -599,7 +604,7 @@ const STR = {
     tab1:"Profile", tab2:"Trend", tab3:"Settings",
     snap:"Take snapshot", snapping:"Fetching…",
     noSnaps:"No snapshots yet. Set your username in settings and take the first one.",
-    lastSnap:"Last snapshot: %1 · total: %2",
+    lastSnap:"Last snapshot: %1",
     noNick:"No username set", games:"Games", totalOver:"Across %1 games",
     played:"Played", wins:"Wins", winrate:"Win rate", losses:"Losses",
     kd:"K/D", killsTotal:"Kills total", levelSum:"Levels total", xpTotal:"XP total",
@@ -638,6 +643,7 @@ const STR = {
     liteLabel:"Fewer animations (smoother scrolling)",
     noPlayers:"No players found",
     trendSub:"How your stats moved from snapshot to snapshot",
+    rangeAll:"All time", range24h:"24 hours", range7d:"7 days", range30d:"30 days",
     setSub:"Username, tracked games and request limits",
     sumNoFinals:"Without final kills", sumWithFinals:"With final kills",
     killsHint:"Compare with the in-game Total Kills title and toggle final kills in settings so the sum matches."
@@ -1762,7 +1768,7 @@ function tickStatus(){
     btn.disabled = false;
     btn.textContent = T("snap");
   }
-  $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t), mine.length);
+  $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t));
 }
 
 /* ---------- динамика ---------- */
@@ -1778,8 +1784,11 @@ function metricVal(c, k){
   return typeof c[k] === "number" ? c[k] : null;
 }
 
+const TREND_RANGES = [                                 // мс; null = без ограничения
+  ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
+];
 function renderTrend(){
-  const gSel = $("#trendGame"), mSel = $("#trendMetric"), body = $("#trendBody");
+  const gSel = $("#trendGame"), mSel = $("#trendMetric"), rSel = $("#trendRange"), body = $("#trendBody");
   const mine = mySnaps();
   const withData = state.games.filter(g => mine.some(s => s.g[g]));
   if(mine.length < 2){
@@ -1804,8 +1813,16 @@ function renderTrend(){
   if(opts.includes(keepM)) mSel.value = keepM;
   const metric = mSel.value;
 
+  if(!rSel.options.length){                             // список промежутков строится один раз
+    rSel.innerHTML = TREND_RANGES.map(([v]) =>
+      '<option value="' + v + '">' + esc(T("range" + (v === "all" ? "All" : v))) + "</option>").join("");
+  }
+  const range = TREND_RANGES.find(x => x[0] === rSel.value) || TREND_RANGES[0];
+  const cutoff = range[1] === null ? -Infinity : Date.now() - range[1];
+
   const pts = mine
-    .filter(s => s.g[game] && !(s.old || []).includes(game) && metricVal(s.g[game], metric) !== null)
+    .filter(s => s.g[game] && !(s.old || []).includes(game) && metricVal(s.g[game], metric) !== null
+      && s.t >= cutoff)
     .map(s => ({ t:s.t, v:metricVal(s.g[game], metric) }));
   if(pts.length < 2){ body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendFew")) + "</p>"; return; }
 
@@ -1813,7 +1830,10 @@ function renderTrend(){
   const fmtM = n => (metric === "__kd" || metric === "__winrate" ? n.toFixed(2) : nf(n)) + unit;
   const W = 300, H = 110;
   const vs = pts.map(p => p.v), min = Math.min(...vs), max = Math.max(...vs), span = (max - min) || 1;
-  const x = i => i / (pts.length - 1) * W, y = v => H - (v - min) / span * (H - 10) - 5;
+  const t0 = pts[0].t, t1 = pts[pts.length-1].t, tspan = (t1 - t0) || 1;
+  const x = i => (pts[i].t - t0) / tspan * W;            // по времени, а не по номеру среза —
+                                                          // иначе частые срезы сжимают график в точку
+  const y = v => H - (v - min) / span * (H - 10) - 5;
   const path = pts.map((p,i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
   const grew = vs[vs.length-1] - vs[0];
 
