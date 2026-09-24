@@ -9,6 +9,19 @@ A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock serv
 
 Your Hive profile already shows where you stand today. This shows where you are *going*: it saves snapshots of your stats over time and turns them into progress you can actually see.
 
+## What's new
+
+- **One request per snapshot.** The whole profile — main stats and every game — now comes from a single call to `/game/all/all/{player}` instead of one call per game. Snapshots are several times faster.
+- **No limits.** The app no longer caps requests or usernames per hour, and there is no pause between snapshots. The buttons only ignore repeated taps within five seconds, so a double tap doesn't fire twice.
+- **Live counters in titles.** Titles like `Total Kills` or `Winrate` now show the real number (`11.5K Total Kills`) instead of an empty placeholder.
+- **Title icons.** Prestige badges, beds, swords and other icons inside titles are shown as the same artwork the game uses.
+- **Trend by time, with a range picker.** The chart is spaced by real time, so frequent snapshots no longer flatten it into a straight line, and you can zoom to 24 hours, 7 days, 30 days or all time.
+- **All games tracked by default**, except the discontinued Treasure Wars. Games you have never played are hidden from the profile.
+- **Proper Russian grammar** in counts — 1 победа, 2 победы, 5 побед.
+- **Cleaner game details.** Build Battle ratings are listed from best to worst, and K/D only appears in games that actually have kills.
+- **Smoother desktop.** Mouse-wheel scrolling glides instead of jumping, and the Profile tab remembers where you scrolled.
+- **Proxy removed.** Direct requests to the Hive API work without CORS problems, so the proxy field is gone.
+
 ## Screenshots
 
 | Profile | Game breakdown | Cosmetics |
@@ -21,7 +34,7 @@ Your Hive profile already shows where you stand today. This shows where you are 
 
 ## Features
 
-**Profile at a glance.** Rank tag next to your name, equipped avatar, and the hub title rendered with its real in-game colours — including a shimmer that plays through darker and lighter shades of each coloured segment, so multi-coloured titles keep every colour. A login streak card tells you whether today's login has already counted, with a countdown to the next game day in your own timezone.
+**Profile at a glance.** Rank tag next to your name, equipped avatar, and the hub title rendered with its real in-game colours, icons and live counters. The shimmer plays through darker and lighter shades of each coloured segment and runs across the whole title as one wave, so even a title where every letter has its own colour, like `SkyWars`, keeps every colour. A login streak card tells you whether today's login has already counted, with a countdown to the next game day in your own timezone.
 
 **Player search.** Start typing a username and matching players appear below the field, with the part you typed highlighted. Pick one and the whole profile switches to them — handy for scouting an opponent.
 
@@ -29,7 +42,7 @@ Your Hive profile already shows where you stand today. This shows where you are 
 
 **Cosmetics.** Hub titles, avatars, costumes, hats, backblings, mounts and pets — what you own and what you have equipped, newest first, with icons pulled straight from Hive's CDN.
 
-**Snapshots and trends.** Every refresh stores a snapshot locally. Once you have two, the Trend tab plots any metric over time — including computed ones like win rate and K/D, which the API does not return.
+**Snapshots and trends.** Every refresh stores a snapshot locally. Once you have two, the Trend tab plots any metric over a time range you choose — including computed ones like win rate and K/D, which the API does not return.
 
 **Kill breakdown.** Total kills are assembled from different fields across games (`kills`, `hider_kills`, `murders` and so on). Tap the tile to see exactly which fields were counted per game, with totals both with and without final kills, so you can match the number to your in-game Total Kills title.
 
@@ -55,27 +68,20 @@ Everything stays in the same single file — there is no separate desktop build.
 
 1. Open the page and go to **Settings**.
 2. Enter your Hive username, or start typing and pick it from the suggestions.
-3. Choose the games you want to follow.
+3. Untick any games you don't care about — everything except Treasure Wars is on by default.
 4. Go back and press **Take snapshot**.
 
 The first snapshot gives you your current stats. The second one and everything after builds history, and the Trend tab comes alive.
 
 All data lives in your browser's `localStorage`. Nothing is uploaded anywhere, and there is no account to create. Settings include backup export and import if you want to move between devices.
 
-## Rate limits and fair use
+## Fair use
 
-Hive's public API allows the same player-and-game pair to be requested three times per hour for anonymous clients. The page keeps its own guards well inside that:
+The app has no request limits of its own. A snapshot costs a single request no matter how many games you track, and buttons simply ignore repeat taps within five seconds.
 
-- a configurable pause per game, five minutes by default;
-- at least a minute between any two snapshots;
-- a rolling cap of 80 requests and 8 distinct usernames per hour;
-- a three-minute cooldown on the diagnostic profile request.
+Hive's public API still has its own rate limit. If you hit it, the app shows the error and you just try again a bit later.
 
-The remaining request budget is shown under the snapshot button.
-
-**Scouting tip:** every tracked game costs one request per snapshot, so looking someone up with all thirteen games enabled burns thirteen requests at once. When you only want to check an opponent, leave a single mode ticked in Settings — one player then costs one or two requests instead, and the hourly budget lasts far longer. Player search also spends one request per query, though repeated prefixes are served from memory.
-
-These guards are client-side. Anyone can edit the file and remove them — they exist to keep normal use polite, not to make abuse impossible. **Please do not use this to bulk-query other people's accounts.** The public API is a courtesy from Hive, and it stays available only while people treat it well.
+**Please do not use this to bulk-query other people's accounts.** The public API is a courtesy from Hive, and it stays available only while people treat it well.
 
 ## Running locally
 
@@ -83,21 +89,30 @@ Opening the file directly from disk usually works, but browsers often block stor
 
 ```bash
 python3 -m http.server 8080
+```
 
-Then open http://localhost:8080.
-If your browser blocks the API requests with a CORS error, Settings has a proxy field. The address is prepended to the API URL, or you can use the {url} placeholder if your proxy expects the target as a parameter. A minimal Cloudflare Worker is enough.
-How it is built
-Plain HTML, CSS and Vanilla JS in a single ~91 KB file. No frameworks, no bundler, no build step.
- * Stats come from the public API at api.playhive.com/v0, including /player/search for the username suggestions.
- * Levels are derived from XP using the tables in hive-bedrock-data, loaded from a CDN at runtime.
- * Cosmetic icons come from cdn.playhive.com. Players without a known avatar get a coloured tile derived from their UUID, so the same person always looks the same.
- * The gradient background, the drifting light, the scroll-linked dimming and every transition run on compositor-only properties so they never interfere with scrolling. A Fewer animations switch in settings turns them off entirely, and the system "reduce motion" preference is respected automatically.
- * Charts are hand-drawn SVG — no charting library.
- * Visitor counts use Cloudflare Web Analytics, which sets no cookies and tracks nobody across sites.
-Credits
- * The Hive for the server and the public API.
- * hive-bedrock-data by CubeEdge Studios for the level curves and game metadata.
+Then open `http://localhost:8080`.
+
+## How it is built
+
+Plain HTML, CSS and vanilla JS in a single ~113 KB file. No frameworks, no bundler, no build step.
+
+- Stats come from the public API at `api.playhive.com/v0`: one request to `/game/all/all/{player}` per snapshot, plus `/player/search` for the username suggestions.
+- Requests send `X-Hive-Resolve-Stat-Track: true`, so Hive fills in the numbers in dynamic titles before returning them.
+- Title icons are glyphs from Hive's own image set; the file number is the character's code point minus `0xE100`.
+- Levels are derived from XP using [hive-bedrock-data](https://github.com/CubeEdge-Studios/hive-bedrock), loaded from a CDN at runtime, with a built-in table as a fallback.
+- Cosmetic icons come from `cdn.playhive.com`. Players without a known avatar get a coloured tile derived from their UUID, so the same person always looks the same.
+- The gradient background, the drifting light, the scroll-linked dimming and every transition run on compositor-only properties so they never interfere with scrolling. A **Fewer animations** switch in settings turns them off entirely, and the system "reduce motion" preference is respected automatically.
+- Charts are hand-drawn SVG — no charting library.
+- Visitor counts use [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/), which sets no cookies and tracks nobody across sites.
+
+## Credits
+
+- [The Hive](https://playhive.com) for the server and the public API.
+- [hive-bedrock-data](https://github.com/CubeEdge-Studios/hive-bedrock) by CubeEdge Studios for the level curves and game metadata.
+
 This project is unofficial and not affiliated with or endorsed by The Hive. All game names, cosmetic names and images belong to their respective owners.
-License
-MIT — see LICENSE.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
