@@ -20,7 +20,7 @@ html{background:#140a20;color-scheme:dark;scrollbar-gutter:stable}
 body{
   margin:0;padding:0 0 92px;min-height:100vh;color:var(--text);
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
-  background:none;                       /* фон рисует body::before — фиксированным слоем */
+  background:none;
 }
 #aura{position:fixed;inset:-20%;z-index:-3;pointer-events:none;contain:strict;
   background:
@@ -529,18 +529,15 @@ html.locked, html.locked body{overflow:hidden}
 <script>
 "use strict";
 const API = "https://api.playhive.com/v0";
-const HIVE_HEADERS = {                              // просим сервер уже подставить числа в динамические титулы
+const HIVE_HEADERS = {
   "X-Hive-Resolve-Stat-Track": "true",
   "X-Hive-API-Version": "2024-03-29"
 };
 const KEY = "hive.tracker.v1";
-const DIAG_CD = 5 * 1000;                  // как у кнопки среза — только защита от двойного нажатия
-const REQ_LIMIT = 80;                    // запросов к API за час со всего приложения
+const DIAG_CD = 5 * 1000;
+const REQ_LIMIT = 80;
 const REQ_WINDOW = 60 * 60 * 1000;
-const SNAP_GAP = 5 * 1000;                // минимум между любыми двумя срезами
-                                          // раньше было 60с как защита от долбёжки в сам API Hive;
-                                          // теперь повторные заходы гасит кэш воркера, так что это
-                                          // только страховка от случайного двойного клика
+const SNAP_GAP = 5 * 1000;
 
 const GAMES = [
   ["main","Профиль","Profile"],["bed","BedWars","BedWars"],["sky","SkyWars","SkyWars"],
@@ -719,7 +716,7 @@ const COS_RU = {
   projectile_trail:"След снаряда", death_cry:"Крик смерти", emote:"Эмоция",
   stat_track:"Стат-трек", pet_pin:"Значок питомца"
 };
-const COS_PLURAL = {                                   // 1 шапка / 2 шапки / 5 шапок
+const COS_PLURAL = {
   hub_title:["Титул","Титула","Титулов","Hub Title","Hub Titles"],
   title:["Титул","Титула","Титулов","Title","Titles"],
   costume:["Костюм","Костюма","Костюмов","Costume","Costumes"],
@@ -732,7 +729,7 @@ const COS_PLURAL = {                                   // 1 шапка / 2 ша�
   back_bling:["Украшение для спины","Украшения для спины","Украшений для спины",
     "Backbling","Backblings"]
 };
-function pluralRU(n, f){                               // 1 победа / 2 победы / 5 побед
+function pluralRU(n, f){
   const a = Math.abs(n) % 100, b = a % 10;
   if(a > 10 && a < 20) return f[2];
   return b === 1 ? f[0] : (b >= 2 && b <= 4 ? f[1] : f[2]);
@@ -743,7 +740,7 @@ function cosLabelN(k, n){
   return L === "ru" ? pluralRU(n, f) : (n === 1 ? f[3] : f[4]);
 }
 
-const PLURAL_RU = {                                    // подписи, стоящие рядом с числом
+const PLURAL_RU = {
   victories:["Победа","Победы","Побед"], wins:["Победа","Победы","Побед"],
   deaths:["Смерть","Смерти","Смертей"],
   kills:["Убийство","Убийства","Убийств"],
@@ -780,14 +777,12 @@ const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","inde
 const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
 const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
 
-// один запрос /game/all/all/ забирает все игры сразу — прямой fetch к api.playhive.com
-// у нас всегда работал без CORS-ошибок, так что свой прокси/воркер тут не нужен
-const DEFAULT_GAMES = GAMES.map(g => g[0]).filter(g => g !== "wars");   // Treasure Wars — не следим по умолчанию
+const DEFAULT_GAMES = GAMES.map(g => g[0]).filter(g => g !== "wars");
 let state = load() || { nick:"", games:DEFAULT_GAMES, lang:"auto",
   finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
 state.last = state.last || {}; state.dead = state.dead || []; state.lang = state.lang || "auto";
 if(state.finals === undefined) state.finals = true;
-if(!state.tagged){                                   // разметка срезов, снятых до появления привязки
+if(!state.tagged){
   const n = (state.nick || "").trim().toLowerCase();
   state.snaps.forEach(x => { if(!x.n) x.n = n; });
   state.tagged = 1; save();
@@ -795,7 +790,7 @@ if(!state.tagged){                                   // разметка сре�
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];
 state.lastSnapAt = state.lastSnapAt || 0;
-state.avatars = state.avatars || {};      // ник → аватар из уже виденных профилей
+state.avatars = state.avatars || {};
 
 function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
 let saveWarned = false;
@@ -819,11 +814,11 @@ function pruneLogs(){
   const t = Date.now() - REQ_WINDOW;
   state.reqLog = (state.reqLog || []).filter(x => x > t);
 }
-function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }   // не отображается, только для внутренней логики повтора
+function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }
 function noteRequest(){ pruneLogs(); state.reqLog.push(Date.now()); save(); }
 
 const nickKey = () => (state.nick || "").trim().toLowerCase();
-const lk = g => nickKey() + "|" + g;                 // кулдаун на пару «игрок + игра»
+const lk = g => nickKey() + "|" + g;
 const mySnaps = () => state.snaps.filter(x => (x.n || "") === nickKey());
 
 const $ = s => document.querySelector(s);
@@ -840,7 +835,7 @@ const NAME = c => { const g = GAMES.find(x => x[0] === c); return g ? (L === "ru
 const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
 const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
 
-function mountModal(m, from){        // окно растёт из элемента и туда же возвращается
+function mountModal(m, from){
   document.body.append(m);
   document.documentElement.classList.add("locked");
   const ok = from && from.getBoundingClientRect &&
@@ -850,7 +845,7 @@ function mountModal(m, from){        // окно растёт из элемен�
     const x = r.left + r.width / 2, y = r.top + r.height / 2;
     const inner = m.querySelector(".inner");
     if(inner){
-      const ir = inner.getBoundingClientRect();          // точка в системе координат окна
+      const ir = inner.getBoundingClientRect();
       m.style.setProperty("--ox", Math.round(x - ir.left) + "px");
       m.style.setProperty("--oy", Math.round(y - ir.top) + "px");
       m.classList.add("fromEl");
@@ -882,7 +877,7 @@ function toast(t){
   const el = document.createElement("div");
   el.className = "toast"; el.textContent = t;
   const hide = () => {
-    if(el.dataset.out) return;                         // не запускаем уход дважды
+    if(el.dataset.out) return;
     el.dataset.out = "1";
     if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches){ el.remove(); return; }
     el.classList.add("out");
@@ -920,14 +915,13 @@ const MCCOL = {"0":"#000000","1":"#0000AA","2":"#00AA00","3":"#00AAAA","4":"#AA0
   d:"#FF55FF",e:"#FFFF55",f:"#FFFFFF",g:"#DDD605",
   u:"#B14BFF",i:"#FFC02E",j:"#C77DFF",p:"#5BE8C4",m:"#9AA0B5",t:"#FF6B5A",h:"#FF7AB8",
   n:"#C68A4E",q:"#5CE68A",r:"#FFFFFF",s:"#7FE8FF"};
-// приватная зона: основная (U+E000–U+F8FF) и две дополнительные плоскости (U+F0000+)
 const PUA = /[\uE000-\uF8FF]|[\uDB80-\uDBBF][\uDC00-\uDFFF]/;
 const isGlyph = cp => (cp >= 0xE000 && cp <= 0xF8FF) || (cp >= 0xF0000 && cp <= 0x10FFFD);
 const GLYPHS = "https://playhive.com/_nextassets/glyphs/";
 const GLYPH_BASE = 0xE100;                             // U+E1DC → 220.png, U+E122 → 34.png
 function glyphImg(cp){
   const id = cp - GLYPH_BASE;
-  if(id < 0) return "";                                // символ не из таблицы иконок
+  if(id < 0) return "";
   return '<img class="tic gl" alt="" decoding="async" src="' + GLYPHS + id +
     '.png" onerror="this.remove()">';
 }
@@ -940,8 +934,8 @@ function mcSegments(str){
   for(let i = 0; i < t.length; i++){
     const ch = t[i], nx = (t[i+1] || "").toLowerCase();
     if((ch === "§" || ch === "&") && MCCOL[nx]){ push(); cur = MCCOL[nx]; i++; continue; }
-    if((ch === "§" || ch === "&") && /[0-9a-z]/.test(nx)){ push(); i++; continue; }  // код неизвестен — прячем
-    const cp = t.codePointAt(i);                       // символ может быть суррогатной парой
+    if((ch === "§" || ch === "&") && /[0-9a-z]/.test(nx)){ push(); i++; continue; }
+    const cp = t.codePointAt(i);
     if(isGlyph(cp)){ push(); out.push({ g: cp, c: cur }); if(cp > 0xFFFF) i++; continue; }
     buf += ch;
   }
@@ -949,13 +943,13 @@ function mcSegments(str){
   return out;
 }
 
-function tones(hex){                                   // притемнённый, родной, осветлённый
+function tones(hex){
   const n = parseInt(String(hex).slice(1), 16);
   if(!isFinite(n)) return [hex, hex, hex];
   const r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
   const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   const spread = Math.max(r,g,b) - Math.min(r,g,b);
-  const pale = lum > 0.62 && spread <= 48;             // белый и серый: жёлтый и зелёный сюда не попадают
+  const pale = lum > 0.62 && spread <= 48;
   const hx = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
   const mix = (k, t) => "#" + hx(r + (t - r) * k) + hx(g + (t - g) * k) + hx(b + (t - b) * k);
   return [mix(pale ? .34 : .28, 0), hex, pale ? "#ffffff" : mix(.34, 255)];
@@ -969,13 +963,13 @@ function mcText(str, shine){
   return segs.map(x => {
     if(x.g){ si += 1; return glyphImg(x.g); }
     const t = tones(x.c || "#f4eefb");
-    const idx = si++;                                  // грубая фаза, точную поставит syncTitleWave
+    const idx = si++;
     return '<span class="sh" style="--c1:' + t[0] + ";--c2:" + t[1] + ";--c3:" + t[2] +
       ";animation-delay:" + (-0.55 * idx).toFixed(2) + 's">' + esc(x.t) + "</span>";
   }).join("");
 }
 
-function titleIcon(v){                                 // иконка приходит вместе с титулом, если она есть
+function titleIcon(v){
   const u = cosIcon(v);
   return u ? '<img class="tic" alt="" loading="lazy" decoding="async" src="' + esc(u) +
     '" onerror="this.remove()">' : "";
@@ -993,7 +987,6 @@ function iconUrl(base, id){
 
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
 
-/* ---------- таблица уровней (hive-bedrock-data с CDN) ---------- */
 let HD = null, hdTried = false;
 async function loadHiveData(){
   if(hdTried) return HD;
@@ -1004,8 +997,8 @@ async function loadHiveData(){
   }
   return HD;
 }
-const CAPS = {                             // потолки взяты с сайта Hive
-  bed:100, sky:100, murder:100,            // с престижем
+const CAPS = {
+  bed:100, sky:100, murder:100,
   dr:75, hide:75,
   sg:50, ctf:50,
   build:30,
@@ -1031,16 +1024,14 @@ function gameLevel(c, code){
   return levelFromXP(num(c,"xp"), code) || 0;
 }
 
-/* ---------- запрос ---------- */
 function urlFor(game){
   const path = game === "main" ? "/game/all/main/" + encodeURIComponent(state.nick)
              : game === "all"  ? "/game/all/all/" + encodeURIComponent(state.nick)
                                : "/game/all/" + game + "/" + encodeURIComponent(state.nick);
   return API + path;
 }
-async function pullAll(){                         // /game/all/all/{ник} — все игры одним запросом
-  noteRequest();                                    // всё ещё считаем — цифра в подвале информативна,
-                                                     // но больше не блокирует снятие среза
+async function pullAll(){
+  noteRequest();
   let res;
   try{ res = await fetch(urlFor("all"), { cache:"no-store", headers: HIVE_HEADERS }); }
   catch(e){ throw new Error(T("netErr")); }
@@ -1049,14 +1040,14 @@ async function pullAll(){                         // /game/all/all/{ник} — 
     throw new Error(T("limitErr") + (ra ? T("limitWait", Math.ceil(ra/60)) : ""));
   }
   if(!res.ok) throw new Error(T("httpErr", res.status));
-  const data = await res.json();                  // плоский объект: {main:{…}, bed:{…}, …} — без обёртки
+  const data = await res.json();
   return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
 }
 async function snapshot(){
   if(!state.nick){ toast(T("needNick")); return; }
   const n = nickKey();
   const btn = $("#fetchBtn");
-  if(btn.disabled) return;                     // идёт запрос или ещё действует пауза — просто игнорируем клик
+  if(btn.disabled) return;
   state.lastSnapAt = Date.now(); save();
   btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
   const now = Date.now(), snap = { t: now, n, g: {} };
@@ -1072,7 +1063,7 @@ async function snapshot(){
         snap.g[g] = gd;
         state.dead = state.dead.filter(x => x !== g);
       } else if(g !== "main" && !state.dead.includes(g)){
-        state.dead.push(g);                      // игру в этот аккаунт не играли
+        state.dead.push(g);
       }
     }
     const md = snap.g.main;
@@ -1082,11 +1073,11 @@ async function snapshot(){
       if(url){
         state.avatars[who] = url;
         const keys = Object.keys(state.avatars);
-        if(keys.length > 60) delete state.avatars[keys[0]];   // не копим бесконечно
+        if(keys.length > 60) delete state.avatars[keys[0]];
       }
       const cc = md.username_cc;
       if(cc && cc.toLowerCase() === n && cc !== state.nick){
-        state.nick = cc;                          // правильный регистр из профиля
+        state.nick = cc;
         const inp = $("#nick"); if(inp) inp.value = cc;
       }
     }
@@ -1094,7 +1085,7 @@ async function snapshot(){
   if(Object.keys(snap.g).length){
     const mine = mySnaps(), prev = mine[mine.length-1];
     if(prev){
-      snap.old = [];                       // что не удалось обновить в этот раз
+      snap.old = [];
       for(const g in prev.g) if(!(g in snap.g)){
         snap.g[g] = prev.g[g];
         snap.old.push(g);
@@ -1108,12 +1099,11 @@ async function snapshot(){
   btn.classList.remove("busy"); btn.textContent = T("snap");
   renderSnap(); renderTrend();
   if(failed) toast(failed);
-  const wait = SNAP_GAP - (Date.now() - state.lastSnapAt);   // держим кнопку выключенной остаток паузы
+  const wait = SNAP_GAP - (Date.now() - state.lastSnapAt);
   if(wait > 0) setTimeout(() => { btn.disabled = false; }, wait);
   else btn.disabled = false;
 }
 
-/* ---------- поиск игроков ---------- */
 const searchCache = new Map();
 let searchTimer = null, searchSeq = 0;
 
@@ -1122,11 +1112,11 @@ async function searchPlayers(q){
   const url = API + "/player/search/" + encodeURIComponent(q);
   let res = null;
   for(let attempt = 0; attempt < 2; attempt++){
-    noteRequest();                           // каждая попытка — реальный запрос
+    noteRequest();
     try{ res = await fetch(url, { cache:"no-store" }); break; }
     catch(e){
       if(attempt === 0 && budgetLeft() > 0){ await new Promise(r => setTimeout(r, 700)); continue; }
-      throw new Error(T("netErr"));          // сеть или CORS, а не пустой результат
+      throw new Error(T("netErr"));
     }
   }
   if(res.status === 429) throw new Error(T("limitErr"));
@@ -1146,7 +1136,7 @@ async function searchPlayers(q){
           icon: cosIcon(pick(it, "avatar", "equipped_avatar")) || pick(it, "avatar_url", "icon")
                 || state.avatars[String(pick(it, "username", "username_cc", "name") || "").toLowerCase()] }
   ).filter(x => x.name);
-  if(list.length) searchCache.set(q, list);   // неудачный ответ не запоминаем
+  if(list.length) searchCache.set(q, list);
   return list;
 }
 
@@ -1179,7 +1169,7 @@ function showSugg(html){
   box.classList.remove("hidden");
   box.querySelectorAll("button,.note2").forEach((el, i) => el.style.setProperty("--i", i));
   box.style.animation = "none";
-  void box.offsetWidth;                       // перезапуск появления при новом наборе
+  void box.offsetWidth;
   box.style.animation = "";
   box.querySelectorAll("button[data-n]").forEach(b => b.onclick = () => {
     $("#nick").value = b.dataset.n;
@@ -1197,7 +1187,7 @@ function askSearch(q){
   searchTimer = setTimeout(async () => {
     try{
       const list = await searchPlayers(query);
-      if(seq !== searchSeq) return;                 // ответ устарел
+      if(seq !== searchSeq) return;
       if(!list.length){ showSugg('<div class="note2">' + esc(T("noPlayers")) + "</div>"); return; }
       showSugg(list.map(x => {
         const i = x.name.toLowerCase().indexOf(query.toLowerCase());
@@ -1222,7 +1212,6 @@ function askSearch(q){
   }, 450);
 }
 
-/* ---------- диагностика ---------- */
 function showRaw(text){
   const m = document.createElement("div");
   m.className = "modal";
@@ -1239,10 +1228,10 @@ function showRaw(text){
 }
 let diagBusy = false;
 async function diag(){
-  if(diagBusy) return;                                 // запрос уже в пути
+  if(diagBusy) return;
   if(!state.nick){ toast(T("needNick")); return; }
   const btn = $("#diagBtn");
-  if(btn && btn.disabled) return;                       // ещё действует пауза — просто игнорируем клик
+  if(btn && btn.disabled) return;
   noteRequest();
   const url = urlFor("main");
   diagBusy = true;
@@ -1255,12 +1244,11 @@ async function diag(){
   }catch(e){ st = T("noReq"); txt = String(e && e.message || e); }
   finally{
     diagBusy = false;
-    state.lastDiag = Date.now(); save(); tickDiag();   // отсчёт с момента ответа, а не нажатия
+    state.lastDiag = Date.now(); save(); tickDiag();
   }
   showRaw(url + "\n\n" + st + "\n\n" + String(txt).slice(0, 40000));
 }
 
-/* ---------- плитки ---------- */
 function sizeClass(v){
   const n = String(v).length;
   return n <= 6 ? "" : n <= 9 ? "sm" : n <= 12 ? "xs" : "xxs";
@@ -1288,8 +1276,8 @@ function reveal(root){
   });
 }
 
-const WAVE = 5;                                        // длительность titleWave, секунды
-function syncTitleWave(){                             // одна волна на всю строку титула
+const WAVE = 5;
+function syncTitleWave(){
   const box = document.querySelector(".title");
   if(!box) return;
   const els = [...box.querySelectorAll(".sh")];
@@ -1298,7 +1286,7 @@ function syncTitleWave(){                             // одна волна н�
   const w = Math.max(...els.map(e => e.offsetLeft + e.offsetWidth)) - x0;
   if(!(w > 0)) return;
   box.style.setProperty("--w", w + "px");
-  els.forEach(e => {                                  // сдвиг фазы = реальный отступ куска
+  els.forEach(e => {
     e.style.animationDelay = (WAVE * ((e.offsetLeft - x0) / w - 1)).toFixed(3) + "s";
   });
 }
@@ -1307,22 +1295,21 @@ addEventListener("resize", syncTitleWave);
 function fitText(root){
   const all = (root || document).querySelectorAll(".tile b");
   const jobs = [];
-  all.forEach(el => {                                  // сначала только чтение
+  all.forEach(el => {
     if(el.closest(".tile.wide, .tile.w2")) return;
     if(el.scrollWidth > el.clientWidth + 1)
       jobs.push({ el, size: parseFloat(getComputedStyle(el).fontSize) || 24 });
   });
-  jobs.forEach(j => {                                  // затем правки только там, где надо
-    const ratio = j.el.clientWidth / j.el.scrollWidth; // сразу нужный масштаб, без перебора
+  jobs.forEach(j => {
+    const ratio = j.el.clientWidth / j.el.scrollWidth;
     let size = Math.max(10, Math.floor(j.size * ratio));
     j.el.style.fontSize = size + "px";
     if(size > 10 && j.el.scrollWidth > j.el.clientWidth + 1)
-      j.el.style.fontSize = (size - 1) + "px";         // одна страховочная проверка
+      j.el.style.fontSize = (size - 1) + "px";
   });
 }
 addEventListener("resize", () => fitText());
 
-/* ---------- метрики игры ---------- */
 const KILL_KEY = /(^|_)kills$/;
 const KILL_EXTRA = /^(murders|murderer_eliminations|eliminations)$/;
 function killsParts(c){
@@ -1341,15 +1328,15 @@ function killsOf(c){
   return p.base + (state.finals ? p.fin : 0);
 }
 
-const RATING_ORDER = [                                // Build Battle: от лучшей оценки к худшей
+const RATING_ORDER = [
   "rating_love_received", "love_ratings",
   "rating_great_received", "great_ratings",
   "rating_good_received", "good_ratings",
   "rating_okay_received", "okay_ratings",
   "rating_meh_received", "meh_ratings"
 ];
-function orderedKeys(cur){                             // рейтинги идут единым блоком в фикс. порядке,
-  const keys = Object.keys(cur);                        // остальные поля остаются на своих местах
+function orderedKeys(cur){
+  const keys = Object.keys(cur);
   const ratingKeys = keys.filter(k => RATING_ORDER.includes(k))
     .sort((a, b) => RATING_ORDER.indexOf(a) - RATING_ORDER.indexOf(b));
   if(!ratingKeys.length) return keys;
@@ -1362,7 +1349,7 @@ function orderedKeys(cur){                             // рейтинги ид�
   });
   return out;
 }
-function hasKillField(c){                               // отличает "0 убийств" от "тут убийств не бывает"
+function hasKillField(c){
   if(!c) return false;
   for(const key of Object.keys(c)){
     if(typeof c[key] !== "number") continue;
@@ -1379,7 +1366,7 @@ function metrics(cur, old){
   };
   const played = num(cur,"played") || num(cur,"games_played");
   const wins = num(cur,"victories"), deaths = num(cur,"deaths");
-  const kills = killsOf(cur);            // учитывает murders, hider_kills и прочие
+  const kills = killsOf(cur);
   let firstTile = null;
 
   for(const k of orderedKeys(cur)){
@@ -1427,7 +1414,7 @@ function openGame(code, from){
     '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  requestAnimationFrame(() => {                        // окно уже на экране, содержимое следом
+  requestAnimationFrame(() => {
     const box = m.querySelector(".mbody");
     if(!box) return;
     box.innerHTML =
@@ -1474,7 +1461,6 @@ function openKills(from){
   mountModal(m, from);
 }
 
-/* ---------- косметика ---------- */
 function cosGroups(src){
   const g = {}, set = (b, kind, v) => { (g[b] = g[b] || {})[kind] = v; };
   const main = Object.assign({}, src);
@@ -1593,7 +1579,6 @@ function cosmeticsHTML(main){
   return out;
 }
 
-/* ---------- главный экран ---------- */
 function renderSnap(){
   const mine = mySnaps();
   const last = mine[mine.length-1], prev = mine[mine.length-2];
@@ -1642,7 +1627,7 @@ function renderSnap(){
 
   if(main) renderStreak(main, body);
 
-  let cols = null;                       // левая колонка — игры, правая — косметика
+  let cols = null;
   const col = which => {
     if(!cols){
       cols = document.createElement("div");
@@ -1655,7 +1640,7 @@ function renderSnap(){
 
   const playedOf = c => num(c,"played") || num(c,"games_played");
   const codes = state.games.filter(g => g !== "main" && last.g[g] && playedOf(last.g[g]))
-    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));   // ноль игр — карточки нет
+    .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
 
   if(codes.length){
     let P=0, W=0, K=0, D=0, LV=0, PR=0, XP=0, pP=0, pW=0, pK=0;
@@ -1727,7 +1712,7 @@ function renderSnap(){
 function renderStreak(main, body){
   const cur = pick(main, "daily_login_streak", "login_streak");
   const best = pick(main, "longest_daily_login_streak", "longest_login_streak");
-  const gday = ts => Math.floor(ts / 86400000);          // игровые сутки: 00:00 UTC
+  const gday = ts => Math.floor(ts / 86400000);
   const today = gday(Date.now());
 
   let updated = null;
@@ -1764,7 +1749,7 @@ function tickStatus(){
   const mine = mySnaps();
   const last = mine[mine.length-1];
   const btn = $("#fetchBtn");
-  const locked = Date.now() - state.lastSnapAt < SNAP_GAP;   // не мешаем собственной паузе кнопки
+  const locked = Date.now() - state.lastSnapAt < SNAP_GAP;
   if(!btn.classList.contains("busy") && !locked){
     btn.disabled = false;
     btn.textContent = T("snap");
@@ -1772,7 +1757,6 @@ function tickStatus(){
   $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t));
 }
 
-/* ---------- динамика ---------- */
 const DERIVED = {
   __winrate: c => { const p = num(c,"played") || num(c,"games_played");
     return p ? +(num(c,"victories") / p * 100).toFixed(2) : null; },
@@ -1785,7 +1769,7 @@ function metricVal(c, k){
   return typeof c[k] === "number" ? c[k] : null;
 }
 
-const TREND_RANGES = [                                 // мс; null = без ограничения
+const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
 ];
 function renderTrend(){
@@ -1814,27 +1798,33 @@ function renderTrend(){
   if(opts.includes(keepM)) mSel.value = keepM;
   const metric = mSel.value;
 
-  const keepR = rSel.value || "all";                     // пересобираем каждый раз — иначе подписи
-  rSel.innerHTML = TREND_RANGES.map(([v]) =>              // остаются на старом языке до перезагрузки
+  const keepR = rSel.value || "all";
+  rSel.innerHTML = TREND_RANGES.map(([v]) =>
     '<option value="' + v + '">' + esc(T("range" + (v === "all" ? "All" : v))) + "</option>").join("");
   rSel.value = keepR;
   const range = TREND_RANGES.find(x => x[0] === rSel.value) || TREND_RANGES[0];
   const cutoff = range[1] === null ? -Infinity : Date.now() - range[1];
 
-  const pts = mine
-    .filter(s => s.g[game] && !(s.old || []).includes(game) && metricVal(s.g[game], metric) !== null
-      && s.t >= cutoff)
+  const bounded = range[1] !== null;
+  const all = mine
+    .filter(s => s.g[game] && !(s.old || []).includes(game) && metricVal(s.g[game], metric) !== null)
     .map(s => ({ t:s.t, v:metricVal(s.g[game], metric) }))
-    .sort((a, b) => a.t - b.t);                           // срезы из копии могут лежать не по порядку
+    .sort((a, b) => a.t - b.t);
+  let pts = all.filter(p => p.t >= cutoff);
+  if(bounded){                                           // значение на начало периода — из последнего
+    const before = all.filter(p => p.t < cutoff).pop();  // среза до него, чтобы линия шла от левого края
+    if(before) pts.unshift({ t: cutoff, v: before.v });
+  }
+  pts = pts.filter((p, i, arr) => i === 0 || i === arr.length - 1 || p.v !== arr[i-1].v);
   if(pts.length < 2){ body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendFew")) + "</p>"; return; }
 
   const unit = metric === "__winrate" ? "%" : "";
   const fmtM = n => (metric === "__kd" || metric === "__winrate" ? n.toFixed(2) : nf(n)) + unit;
   const W = 300, H = 110;
   const vs = pts.map(p => p.v), min = Math.min(...vs), max = Math.max(...vs), span = (max - min) || 1;
-  const t0 = pts[0].t, t1 = pts[pts.length-1].t, tspan = (t1 - t0) || 1;
-  const x = i => (pts[i].t - t0) / tspan * W;            // по времени, а не по номеру среза —
-                                                          // иначе частые срезы сжимают график в точку
+  const t0 = bounded ? cutoff : pts[0].t;               // ось — ровно выбранный период до текущего момента
+  const t1 = bounded ? Date.now() : pts[pts.length-1].t, tspan = (t1 - t0) || 1;
+  const x = i => (pts[i].t - t0) / tspan * W;
   const y = v => H - (v - min) / span * (H - 10) - 5;
   const path = pts.map((p,i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
   const grew = vs[vs.length-1] - vs[0];
@@ -1848,16 +1838,16 @@ function renderTrend(){
     pts.slice(0, -1).map((p, i) => '<i class="dot sm" style="left:' +
       (x(i) / W * 100).toFixed(2) + "%;top:" + (y(p.v) / H * 100).toFixed(2) + '%"></i>').join("") +
     '<i class="dot" style="left:' + lastX + '%;top:' + lastY + '%"></i></div>' +
-    '<div class="tmeta"><span>' + esc(when(pts[0].t)) + "</span><span>" +
-    esc(when(pts[pts.length-1].t)) + "</span></div>" +
+    '<div class="tmeta"><span>' + esc(when(t0)) + "</span><span>" +
+    esc(when(t1)) + "</span></div>" +
     '<p class="sub">' + esc(T("trendGrowth", derivedLabel(metric),
       fmtM(vs[0]), fmtM(vs[vs.length-1]),
       (grew >= 0 ? "+" : "−") + fmtM(Math.abs(grew)))) + "</p></div>";
 }
 $("#trendGame").onchange = renderTrend;
 $("#trendMetric").onchange = renderTrend;
+$("#trendRange").onchange = renderTrend;
 
-/* ---------- настройки и язык ---------- */
 function renderChips(){
   const box = $("#gameChips"); box.innerHTML = "";
   GAMES.forEach(([code]) => {
@@ -1905,8 +1895,8 @@ $("#nick").oninput = e => {
   const was = nickKey();
   state.nick = e.target.value.trim();
   if(nickKey() !== was){
-    state.dead = [];                       // «нет данных» относилось к прошлому нику
-    state.lastDiag = 0;                    // проверку профиля можно делать сразу
+    state.dead = [];
+    state.lastDiag = 0;
     tickDiag();
   }
   save();
@@ -1947,7 +1937,7 @@ $("#importFile").onchange = e => {
       };
       if(!clean.games.length) clean.games = ["main","bed","sky","dr"];
       state = Object.assign(state, clean);
-      state.reqLog = []; state.lastSnapAt = 0;   // счётчик запросов не импортируем
+      state.reqLog = []; state.lastSnapAt = 0;
       save();
       $("#nick").value = state.nick; $("#lang").value = state.lang || "auto";
       applyLang(); toast(T("imported"));
@@ -1968,16 +1958,16 @@ function tickDiag(){
   const b = $("#diagBtn");
   if(!b || diagBusy) return;
   const left = DIAG_CD - (Date.now() - state.lastDiag);
-  b.textContent = T("diagBtn");                 // без цифр — просто подпись
+  b.textContent = T("diagBtn");
   if(left > 0){ b.disabled = true; setTimeout(tickDiag, Math.min(left, 5000)); }
   else b.disabled = false;
 }
 
-let snapScroll = 0;                         // где стоял профиль, когда с него ушли
+let snapScroll = 0;
 document.querySelectorAll(".tabs button").forEach(b => {
   b.onclick = () => {
     const v = b.dataset.v;
-    if(!$("#vSnap").classList.contains("hidden")) snapScroll = scrollY;   // уходим с профиля
+    if(!$("#vSnap").classList.contains("hidden")) snapScroll = scrollY;
     $("#vSnap").classList.toggle("hidden", v !== "snap");
     $("#vTrend").classList.toggle("hidden", v !== "trend");
     $("#vSet").classList.toggle("hidden", v !== "set");
@@ -1985,15 +1975,15 @@ document.querySelectorAll(".tabs button").forEach(b => {
     b.setAttribute("aria-current","page");
     if(v === "trend") renderTrend();
     if(v === "snap") renderSnap();
-    wheelTo = null;                           // инерция не должна тянуть новую вкладку
+    wheelTo = null;
     if(v === "snap"){
-      scrollTo(0, snapScroll);                // профиль возвращается на прежнее место
-      requestAnimationFrame(() => scrollTo(0, snapScroll));   // после перерисовки высота уже своя
-    } else scrollTo(0, 0);                    // остальные вкладки открываются сверху
+      scrollTo(0, snapScroll);
+      requestAnimationFrame(() => scrollTo(0, snapScroll));
+    } else scrollTo(0, 0);
     const sec = v === "snap" ? $("#vSnap") : v === "trend" ? $("#vTrend") : $("#vSet");
     reveal(sec);
     sec.classList.remove("swap");
-    void sec.offsetWidth;                     // перезапуск анимации
+    void sec.offsetWidth;
     sec.classList.add("swap");
   };
 });
@@ -2010,7 +2000,7 @@ function onScroll(){
 
     const max = document.documentElement.scrollHeight - innerHeight;
     const p = max > 40 ? Math.min(1, scrollY / max) : 0;
-    const v = Math.round(p * 20) / 20;              // шаг 5%, чтобы не дёргать стиль зря
+    const v = Math.round(p * 20) / 20;
     if(v !== lastShade){
       lastShade = v;
       shadeEl.style.setProperty("--sd", v);
@@ -2022,10 +2012,10 @@ addEventListener("pointerdown", e => {
   const b = e.target.closest &&
     e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button");
   if(!b || b.disabled) return;
-  const t = b.matches(".tabs button") ? b.firstElementChild : b;   // у вкладок анимируем подпись
+  const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
   t.classList.remove("press");
-  void t.offsetWidth;                       // перезапуск, если жмут подряд
+  void t.offsetWidth;
   t.classList.add("press");
   setTimeout(() => t.classList.remove("press"), 440);
 }, { passive:true });
@@ -2033,11 +2023,10 @@ addEventListener("pointerdown", e => {
 addEventListener("scroll", onScroll, { passive:true });
 addEventListener("resize", onScroll, { passive:true });
 
-/* ---------- инерция колеса мыши ---------- */
 let wheelTo = null, wheelRAF = 0;
 const dropWheel = () => {
   wheelTo = null;
-  if(wheelRAF){ cancelAnimationFrame(wheelRAF); wheelRAF = 0; }   // иначе кадр доедет до нуля
+  if(wheelRAF){ cancelAnimationFrame(wheelRAF); wheelRAF = 0; }
 };
 function wheelStep(){
   if(wheelTo === null){ wheelRAF = 0; return; }
@@ -2049,9 +2038,9 @@ function wheelStep(){
 addEventListener("wheel", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   if(e.ctrlKey || e.shiftKey || e.defaultPrevented) return;
-  if(document.documentElement.classList.contains("locked")) return;   // открыто окно
-  if(e.target.closest && e.target.closest(".modal,.sugg")) return;     // свой скролл внутри
-  if(e.deltaMode === 0 && Math.abs(e.deltaY) < 15) return;             // тачпад: он уже плавный
+  if(document.documentElement.classList.contains("locked")) return;
+  if(e.target.closest && e.target.closest(".modal,.sugg")) return;
+  if(e.deltaMode === 0 && Math.abs(e.deltaY) < 15) return;
   const max = document.documentElement.scrollHeight - innerHeight;
   if(max <= 0) return;
   e.preventDefault();
@@ -2060,8 +2049,8 @@ addEventListener("wheel", e => {
   wheelTo = Math.max(0, Math.min(max, from + step));
   if(!wheelRAF) wheelRAF = requestAnimationFrame(wheelStep);
 }, { passive:false });
-addEventListener("touchstart", dropWheel, { passive:true });          // другой способ прокрутки
-addEventListener("keydown", dropWheel);                               // перебивает инерцию
+addEventListener("touchstart", dropWheel, { passive:true });
+addEventListener("keydown", dropWheel);
 addEventListener("pointerdown", dropWheel, { passive:true });
 
 applyLang();
