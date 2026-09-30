@@ -66,7 +66,12 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .phead::after{content:"";display:block;height:2px;margin-top:12px;border-radius:2px;
   background:linear-gradient(90deg,var(--gold),rgba(255,192,46,0) 70%)}
 #hero{position:relative}
-#hero .idline{padding-right:58px}
+#hero .idline{padding-right:106px}
+.corner{position:absolute;top:-8px;right:0;z-index:2;display:flex;align-items:center;gap:8px}
+.shareBtn{width:38px;height:38px;flex:none;border-radius:11px;padding:0;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:var(--soft);
+  display:grid;place-items:center;transition:transform .12s ease,color .2s ease,border-color .2s ease}
+.shareBtn:active{transform:scale(.93);color:var(--gold);border-color:rgba(255,192,46,.6)}
 .myBtn{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;
   padding:6px 12px;border-radius:11px;border:1.5px solid rgba(255,192,46,.5);background:transparent;
   color:var(--gold);font-size:13.5px;font-weight:700;line-height:1.2;cursor:pointer;
@@ -107,7 +112,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   .myBtn:hover{background:rgba(255,192,46,.08);border-color:var(--gold)}
   .tq:hover{border-color:rgba(255,192,46,.6);color:var(--gold)}
 }
-.mainBtn{position:absolute;top:-8px;right:0;z-index:2;width:46px;height:46px;border-radius:13px;padding:0;
+.mainBtn{position:relative;flex:none;width:46px;height:46px;border-radius:13px;padding:0;
   border:2px dashed rgba(255,192,46,.55);background:rgba(255,192,46,.06);color:var(--gold);
   display:grid;place-items:center;cursor:pointer;
   transition:transform .12s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
@@ -124,6 +129,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 @media (min-width:900px){
   .modal.mpick .inner{max-width:520px;overflow:visible}
   .mainBtn:hover{background:rgba(255,192,46,.13);border-color:var(--gold)}
+  .shareBtn:hover{color:var(--gold);border-color:rgba(255,192,46,.6)}
   .mainBtn.set:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.4)}
 }
 .idline{display:flex;align-items:center;gap:9px;padding:0;margin:0;font-size:24px;font-weight:800;
@@ -605,6 +611,19 @@ const HIVE_HEADERS = {
   "X-Hive-Resolve-Stat-Track": "true",
   "X-Hive-API-Version": "2024-03-29"
 };
+const PROXY = "https://misty-sky-2dcb.zhoski-demon.workers.dev/?url=";   // свой воркер на Cloudflare, вшит
+async function hiveFetch(url, opts){                   // сначала через прокси; при любой его ошибке — напрямую
+  const ctl = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = ctl && setTimeout(() => ctl.abort(), 7000);   // завис прокси — не ждём вечно
+  try{
+    const r = await fetch(PROXY + encodeURIComponent(url), Object.assign({}, opts, ctl ? { signal: ctl.signal } : {}));
+    if(r.ok){ r.__via = "proxy"; return r; }
+  }catch(e){}
+  finally{ if(timer) clearTimeout(timer); }
+  const r = await fetch(url, opts);
+  r.__via = "direct";
+  return r;
+}
 const KEY = "hive.tracker.v1";
 const DIAG_CD = 5 * 1000;
 const REQ_LIMIT = 80;
@@ -653,6 +672,8 @@ const STR = {
     trendFew:"По этой метрике мало точек.", trendGrowth:"%1: %2 → %3 · прирост %4",
     streak:"Серия входов", bestStreak:"Лучшая серия", quests:"Квестов выполнено",
     friends:"Друзья", playerNumber:"Номер игрока", firstJoin:"Первый вход",
+    limitHive:"Hive отдаёт статистику одного игрока не чаще 3 раз в час. Попробуйте через ~%1 мин",
+    limitHiveLater:"Hive отдаёт статистику одного игрока не чаще 3 раз в час. Попробуйте чуть позже",
     limitErr:"лимит запросов", limitWait:", ждать %1 мин", netErr:"сеть или CORS: браузер не пустил запрос",
     httpErr:"ответ %1", noReq:"запрос не ушёл (CORS или сеть)",
     killsTitle:"Из чего сложились убийства", counted:"учтено", skippedF:"не учтено",
@@ -667,7 +688,9 @@ const STR = {
     mainTitle:"Основной профиль", mainAdd:"Добавить основной профиль",
     mainHint:"Ваш аккаунт на Hive. К нему всегда можно вернуться одним нажатием, какой бы профиль вы ни смотрели.",
     mainSave:"Сохранить", mainOpen:"Открыть профиль", mainClear:"Убрать", mainSaved:"Основной профиль сохранён",
+    viaProxy:"через прокси", viaDirect:"напрямую",
     myProfile:"Мой профиль", minChars:"Введите хотя бы 4 символа",
+    share:"Поделиться профилем", linkCopied:"Ссылка на профиль скопирована", linkCopy:"Скопируйте ссылку:",
     tqHead:"Как получить", tqLoading:"Загружаю…", tqNone:"Hive не отдаёт данных об этом титуле",
     tqLevel:"Уровень %1 в %2", tqAch:"Достижение: %1", tqStore:"Покупка в магазине: %1",
     tqStoreBare:"Покупка в магазине", tqLegacy:"Больше не выдаётся",
@@ -710,6 +733,8 @@ const STR = {
     trendFew:"Not enough points for this metric.", trendGrowth:"%1: %2 → %3 · gain %4",
     streak:"Login streak", bestStreak:"Longest streak", quests:"Quests completed",
     friends:"Friends", playerNumber:"Player number", firstJoin:"First joined",
+    limitHive:"Hive serves one player's stats at most 3 times an hour. Try again in ~%1 min",
+    limitHiveLater:"Hive serves one player's stats at most 3 times an hour. Try again a bit later",
     limitErr:"rate limited", limitWait:", wait %1 min", netErr:"network or CORS: the browser blocked it",
     httpErr:"HTTP %1", noReq:"request did not go through (CORS or network)",
     killsTitle:"How the kill total adds up", counted:"counted", skippedF:"not counted",
@@ -724,7 +749,9 @@ const STR = {
     mainTitle:"Main profile", mainAdd:"Add main profile",
     mainHint:"Your own Hive account. You can jump back to it in one tap, whatever profile you're looking at.",
     mainSave:"Save", mainOpen:"Open profile", mainClear:"Remove", mainSaved:"Main profile saved",
+    viaProxy:"via proxy", viaDirect:"direct",
     myProfile:"My profile", minChars:"Type at least 4 characters",
+    share:"Share profile", linkCopied:"Profile link copied", linkCopy:"Copy the link:",
     tqHead:"How to get", tqLoading:"Loading…", tqNone:"Hive provides no data for this title",
     tqLevel:"Level %1 in %2", tqAch:"Achievement: %1", tqStore:"Store purchase: %1",
     tqStoreBare:"Store purchase", tqLegacy:"No longer available",
@@ -882,6 +909,21 @@ if(!state.tagged){
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];
 state.lastSnapAt = state.lastSnapAt || 0;
+state.hits = state.hits || [];            // {n, t} — удачные запросы статистики игрока, для подсказки «когда можно снова»
+const HIVE_WINDOW = 60 * 60 * 1000, HIVE_PER_PLAYER = 3;
+function noteHit(n){
+  const t0 = Date.now() - HIVE_WINDOW;
+  state.hits = state.hits.filter(h => h.t > t0);
+  state.hits.push({ n, t: Date.now() }); save();
+}
+function limitMsg(n){                     // сколько ждать: старейший из запросов за последний час выпадет из окна
+  const t0 = Date.now() - HIVE_WINDOW;
+  const mine = state.hits.filter(h => h.n === n && h.t > t0).sort((a, b) => a.t - b.t);
+  if(!mine.length) return T("limitHiveLater");
+  const k = Math.max(0, mine.length - HIVE_PER_PLAYER);   // если запросов больше трёх — ждём, пока лишние выйдут из окна
+  const wait = Math.max(1, Math.ceil((mine[k].t + HIVE_WINDOW - Date.now()) / 60000));
+  return T("limitHive", wait);
+}
 state.avatars = state.avatars || {};
 
 function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
@@ -1127,15 +1169,36 @@ function urlFor(game){
 async function pullAll(){
   noteRequest();
   let res;
-  try{ res = await fetch(urlFor("all"), { cache:"no-store", headers: HIVE_HEADERS }); }
+  try{ res = await hiveFetch(urlFor("all"), { cache:"no-store", headers: HIVE_HEADERS }); }
   catch(e){ throw new Error(T("netErr")); }
   if(res.status === 429){
-    const ra = res.headers.get("Retry-After");
-    throw new Error(T("limitErr") + (ra ? T("limitWait", Math.ceil(ra/60)) : ""));
+    const ra = +res.headers.get("Retry-After");          // обычно браузер этот заголовок не показывает (CORS)
+    const err = new Error(ra ? T("limitHive", Math.max(1, Math.ceil(ra / 60))) : limitMsg(nickKey()));
+    err.limited = true;
+    throw err;
   }
+  noteHit(nickKey());
   if(!res.ok) throw new Error(T("httpErr", res.status));
   const data = await res.json();
   return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
+}
+async function pullEach(){                            // запасной путь: у Hive лимит считается на пару «игрок + режим»,
+  const out = {}, missing = [];                        // у /all/all он свой, а у каждой игры — отдельный
+  await Promise.all(state.games.map(async g => {
+    try{
+      noteRequest();
+      const res = await hiveFetch(urlFor(g), { cache:"no-store", headers: HIVE_HEADERS });
+      if(res.status === 404){ missing.push(g); return; }
+      if(!res.ok) return;                              // 429 по этой игре — возьмём из прошлого среза
+      let d = await res.json();
+      if(d && typeof d === "object" && !Array.isArray(d)){
+        const ks = Object.keys(d);                     // /main приходит обёрнутым: {"main": {...}}
+        if(ks.length === 1 && d[ks[0]] && typeof d[ks[0]] === "object" && !Array.isArray(d[ks[0]])) d = d[ks[0]];
+      }
+      if(d && typeof d === "object" && !Array.isArray(d) && Object.keys(d).length) out[g] = d;
+    }catch(e){}
+  }));
+  return Object.keys(out).length ? { data: out, missing } : null;
 }
 async function snapshot(){
   if(!state.nick){ toast(T("needNick")); return; }
@@ -1147,16 +1210,22 @@ async function snapshot(){
   const now = Date.now(), snap = { t: now, n, g: {} };
   let failed = "";
   try{
-    const r = await pullAll();
+    let data, missing = null;                          // missing === null — ответ полный, по нему можно судить о «мёртвых» играх
+    try{ data = (await pullAll()).data; }
+    catch(e){
+      if(!e.limited) throw e;
+      const r = await pullEach();                      // общий запрос на лимите — собираем по играм
+      if(!r) throw e;
+      data = r.data; missing = r.missing;
+    }
     state.last[lk("_all")] = Date.now();
-    const data = r.data;
     for(const [g] of GAMES){
       const gd = data[g];
       const hasData = gd && typeof gd === "object" && Object.keys(gd).length > 0;
       if(hasData){
         snap.g[g] = gd;
         state.dead = state.dead.filter(x => x !== g);
-      } else if(g !== "main" && !state.dead.includes(g)){
+      } else if(g !== "main" && !state.dead.includes(g) && (missing === null || missing.includes(g))){
         state.dead.push(g);
       }
     }
@@ -1208,7 +1277,7 @@ async function searchPlayers(q){
   let res = null;
   for(let attempt = 0; attempt < 2; attempt++){
     noteRequest();
-    try{ res = await fetch(url, { cache:"no-store" }); break; }
+    try{ res = await hiveFetch(url, { cache:"no-store" }); break; }
     catch(e){
       if(attempt === 0 && budgetLeft() > 0){ await new Promise(r => setTimeout(r, 700)); continue; }
       throw new Error(T("netErr"));
@@ -1340,6 +1409,24 @@ function niceNick(n){                                // ник в том рег�
   }
   return nickKey() === k && state.nick ? state.nick : String(n).trim();
 }
+const SITE = "https://deman-zez.github.io/HiveMC-Profile-Tracker/";
+const SHARE_SVG = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" ' +
+  'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+function profileLink(n){                              // с диска (file://, content://) ссылка вела бы в никуда — берём сайт
+  const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : SITE;
+  return base + "?nick=" + encodeURIComponent(n);
+}
+async function shareProfile(){
+  if(!state.nick) return;
+  const url = profileLink(state.nick);
+  if(navigator.share){                                // на телефоне — системное меню «Поделиться»
+    try{ await navigator.share({ title: state.nick + " · Hive", url }); return; }
+    catch(e){ if(e && e.name === "AbortError") return; }   // закрыли меню — это не ошибка
+  }
+  try{ await navigator.clipboard.writeText(url); toast(T("linkCopied")); }
+  catch(e){ prompt(T("linkCopy"), url); }             // буфер недоступен — даём скопировать вручную
+}
 function switchNick(n){                               // открыть профиль по нику — как выбор из подсказок
   state.nick = n; $("#nick").value = n;
   state.dead = []; state.lastDiag = 0;
@@ -1429,8 +1516,9 @@ async function diag(){
   if(btn){ btn.disabled = true; btn.textContent = T("snapping"); }
   let st, txt;
   try{
-    const r = await fetch(url, { cache:"no-store", headers: HIVE_HEADERS });
-    st = "HTTP " + r.status + " " + (r.statusText || "");
+    const r = await hiveFetch(url, { cache:"no-store", headers: HIVE_HEADERS });
+    st = "HTTP " + r.status + " " + (r.statusText || "") + " · " + (r.__via === "proxy" ? T("viaProxy") : T("viaDirect"));
+    if(r.ok) noteHit(nickKey());
     txt = await r.text();
   }catch(e){ st = T("noReq"); txt = String(e && e.message || e); }
   finally{
@@ -1748,7 +1836,7 @@ async function loadTitleCatalogue(){
     }catch(e){}
     noteRequest();
     let res;
-    try{ res = await fetch(API + "/catalogue/titles", { cache:"no-store" }); }
+    try{ res = await hiveFetch(API + "/catalogue/titles", { cache:"no-store" }); }
     catch(e){ throw new Error(T("netErr")); }
     if(!res.ok) throw new Error(T("httpErr", res.status));
     let d = await res.json();
@@ -1791,7 +1879,7 @@ async function loadTitleMeta(){
     const codes = GAMES.map(g => g[0]).filter(g => g !== "main");
     const res = await Promise.allSettled(codes.map(async g => {   // по одному запросу на игру, параллельно
       noteRequest();
-      const r = await fetch(API + "/game/meta/" + g, { cache:"no-store" });
+      const r = await hiveFetch(API + "/game/meta/" + g, { cache:"no-store" });
       if(!r.ok) throw new Error("HTTP " + r.status);
       const m = await r.json(), out = [];
       const lu = m && m.levelUnlocks;
@@ -1988,7 +2076,9 @@ function renderSnap(){
     ? '<button class="mainBtn set" id="mainBtn" title="' + esc(state.main) + '" aria-label="' +
         esc(T("mainTitle")) + '">' + pavHTML(state.main) + "</button>"
     : '<button class="mainBtn" id="mainBtn" aria-label="' + esc(T("mainAdd")) + '">' + PLUS_SVG + "</button>";
-  hero.innerHTML = mainBtn + '<h1 class="idline">' +
+  const shareBtn = state.nick ? '<button class="shareBtn" id="shareBtn" type="button" aria-label="' +
+    esc(T("share")) + '" title="' + esc(T("share")) + '">' + SHARE_SVG + "</button>" : "";
+  hero.innerHTML = '<div class="corner">' + shareBtn + mainBtn + "</div>" + '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
       idHTML + "</h1>" +
     '<div class="hero"><div class="ava"><span>' +
@@ -2004,7 +2094,10 @@ function renderSnap(){
       "</p>" : "") + "</div>";
   syncTitleWave();
   $("#mainBtn").onclick = e => openMainPicker(e.currentTarget);
+  const sb = $("#shareBtn"); if(sb) sb.onclick = shareProfile;
   if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; save(); } }
+  if(state.nick){ const pn = niceNick(state.nick);
+    if(pn !== state.nick){ state.nick = pn; $("#nick").value = pn; save(); renderSnap(); return; } }
   const other = !!state.main && state.main.toLowerCase() !== nickKey();
   const myHTML = other ? '<span class="myAv">' + pavHTML(state.main) + '</span><span class="myT">' +
     esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
@@ -2413,7 +2506,7 @@ function onScroll(){
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.mainBtn,.myBtn");
+    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.mainBtn,.myBtn,.shareBtn");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
@@ -2457,6 +2550,16 @@ addEventListener("keydown", dropWheel);
 addEventListener("pointerdown", dropWheel, { passive:true });
 
 applyLang();
+(function openFromLink(){                              // ?nick=DemanZeZ — сразу открыть профиль и снять срез
+  let n = "";
+  try{ n = (new URLSearchParams(location.search).get("nick") || "").trim(); }catch(e){}
+  if(!n || !/^[a-zA-Z0-9 ]{1,32}$/.test(n)) return;
+  try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
+                                                       // убираем параметр, чтобы обновление страницы не снимало срез снова
+  if(n.toLowerCase() !== nickKey()) switchNick(niceNick(n));
+  const last = mySnaps().pop();
+  if(!last || Date.now() - last.t > 10 * 60 * 1000) snapshot();   // срез моложе 10 минут — просто показываем его
+})();
 loadHiveData().then(() => { if(HD){ renderSnap(); } });
 setInterval(tickStatus, 30000);
 </script>
