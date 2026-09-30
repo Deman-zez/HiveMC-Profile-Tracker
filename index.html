@@ -65,6 +65,67 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .phead .sub{margin-top:4px}
 .phead::after{content:"";display:block;height:2px;margin-top:12px;border-radius:2px;
   background:linear-gradient(90deg,var(--gold),rgba(255,192,46,0) 70%)}
+#hero{position:relative}
+#hero .idline{padding-right:58px}
+.myBtn{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:6px 12px;border-radius:11px;border:1.5px solid rgba(255,192,46,.5);background:transparent;
+  color:var(--gold);font-size:13.5px;font-weight:700;line-height:1.2;cursor:pointer;
+  transition:transform .12s ease,background .2s ease,border-color .2s ease}
+.myBtn:active{transform:scale(.985);background:rgba(255,192,46,.08)}
+.myBtn.hidden{display:none}
+.myBtn .myAv{width:22px;height:22px;flex:none;border-radius:7px;padding:2px;
+  background:linear-gradient(160deg,#ffd970,#d99a15)}
+.myBtn .myAv .pav{border-radius:5px}
+.myBtn .myAv .pav i{font-size:11px}
+.myBtn .myN{color:var(--text);font-weight:600;opacity:.8;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.stick .myBtn{width:auto;margin:0 0 0 auto;padding:4px 10px 4px 4px;font-size:12.5px;gap:7px;
+  flex:none;white-space:nowrap}
+.stick #stickNick{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stick .myBtn .myN{display:none}
+.tlist .trow{display:flex;align-items:center;gap:10px}
+.tlist .trow > .tt{flex:1;min-width:0}
+.tq:not(.ok){display:none}
+.tq{flex:none;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);
+  background:none;color:var(--soft);font-size:13px;font-weight:800;line-height:1;padding:0;
+  display:grid;place-items:center;cursor:pointer;transition:transform .12s ease,border-color .2s ease,color .2s ease}
+.tq:active{transform:scale(.9);border-color:var(--gold);color:var(--gold)}
+.tqpop{position:fixed;z-index:60;width:max-content;max-width:min(230px,calc(100vw - 20px));
+  padding:8px 11px 9px;border-radius:11px;background:#221036;border:1px solid rgba(255,192,46,.3);
+  color:var(--text);font-size:12.5px;line-height:1.4;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.tqpop b{display:block;margin-bottom:2px;font-size:10.5px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--gold)}
+.tqpop span{display:block;overflow-wrap:anywhere}
+.tqpop::after{content:"";position:absolute;left:var(--ax,50%);bottom:-6px;width:10px;height:10px;
+  margin-left:-5px;background:#221036;border-right:1px solid rgba(255,192,46,.3);
+  border-bottom:1px solid rgba(255,192,46,.3);transform:rotate(45deg)}
+.tqpop.below::after{bottom:auto;top:-6px;transform:rotate(225deg)}
+@keyframes tqIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: no-preference){ .tqpop{animation:tqIn .16s ease-out} }
+@media (min-width:900px){
+  .myBtn{max-width:340px}
+  .myBtn:hover{background:rgba(255,192,46,.08);border-color:var(--gold)}
+  .tq:hover{border-color:rgba(255,192,46,.6);color:var(--gold)}
+}
+.mainBtn{position:absolute;top:-8px;right:0;z-index:2;width:46px;height:46px;border-radius:13px;padding:0;
+  border:2px dashed rgba(255,192,46,.55);background:rgba(255,192,46,.06);color:var(--gold);
+  display:grid;place-items:center;cursor:pointer;
+  transition:transform .12s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.mainBtn:active{transform:scale(.95)}
+.mainBtn.set{border:none;padding:3px;background:linear-gradient(160deg,#ffd970,#d99a15);
+  box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.pav{display:grid;place-items:center;width:100%;height:100%;border-radius:10px;overflow:hidden;
+  background:linear-gradient(155deg,hsl(var(--h) 58% 46%),hsl(calc(var(--h) + 34) 62% 28%))}
+.pav img{width:154%;height:154%;margin:-27%;object-fit:contain;display:block}
+.pav i{font-style:normal;color:#fff;font-size:19px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.mpick .mhint{margin:0 0 16px}
+.mpick .nickbox{z-index:5}
+.mpick .mextra{margin-top:14px;gap:9px}
+@media (min-width:900px){
+  .modal.mpick .inner{max-width:520px;overflow:visible}
+  .mainBtn:hover{background:rgba(255,192,46,.13);border-color:var(--gold)}
+  .mainBtn.set:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.4)}
+}
 .idline{display:flex;align-items:center;gap:9px;padding:0;margin:0;font-size:24px;font-weight:800;
   line-height:1.2}
 .idline .lvl{color:var(--gold);font-size:16px;font-weight:800}
@@ -288,6 +349,15 @@ svg.line{width:100%;height:100%;display:block}
 .chart .dot.sm{width:6px;height:6px;border-width:1px;box-shadow:none;opacity:.75}
 .chart .dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--gold);
   border:2px solid var(--bg-b);transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(255,192,46,.5)}
+.tsum{display:flex;align-items:flex-end;gap:12px;margin-top:14px;padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.07)}
+.tsv small{display:block;color:var(--soft);font-size:11.5px;margin-bottom:2px}
+.tsv b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.tsa{color:var(--soft);font-size:18px;padding-bottom:2px}
+.tsd{margin-left:auto;align-self:center;padding:5px 10px;border-radius:9px;font-size:13.5px;font-weight:800;
+  background:var(--tile);color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tsd.up{background:rgba(79,212,138,.14);color:var(--green)}
+.tsd.down{background:rgba(255,107,90,.14);color:#ff8a7a}
 .tmeta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;
   font-size:12px;color:var(--soft)}
 
@@ -459,11 +529,13 @@ html.locked, html.locked body{overflow:hidden}
 <div id="spot" aria-hidden="true"></div>
 
 <div id="stick" class="stick"><div class="wrap" style="padding:0;display:flex;align-items:center;gap:9px">
-<span class="nk" id="stickNick"></span><span class="tag" id="stickTag"></span></div></div>
+<span class="nk" id="stickNick"></span><span class="tag" id="stickTag"></span>
+<button class="myBtn hidden" id="stickMy" type="button"></button></div></div>
 <div class="wrap">
   <section id="vSnap">
     <div id="hero"></div>
     <button class="primary" id="fetchBtn"></button>
+    <button class="myBtn hidden" id="myBtn" type="button"></button>
     <p class="sub" id="subtitle"></p>
     <div id="snapBody"></div>
   </section>
@@ -472,10 +544,10 @@ html.locked, html.locked body{overflow:hidden}
     <div class="phead"><h1 id="trendHead"></h1><p class="sub" id="trendSub"></p></div>
     <div class="row2" style="margin-top:12px">
       <select id="trendGame"></select>
-      <select id="trendMetric"></select>
+      <select id="trendRange"></select>
     </div>
     <div class="row2" style="margin-top:10px">
-      <select id="trendRange"></select>
+      <select id="trendMetric"></select>
     </div>
     <div id="trendBody"></div>
   </section>
@@ -592,7 +664,16 @@ const STR = {
     total:"Итого", wait:"ждать %1", showAllCos:"Показать все", misc:"Разное",
     liteLabel:"Меньше анимаций (плавнее прокрутка)",
     noPlayers:"Никого не нашлось",
+    mainTitle:"Основной профиль", mainAdd:"Добавить основной профиль",
+    mainHint:"Ваш аккаунт на Hive. К нему всегда можно вернуться одним нажатием, какой бы профиль вы ни смотрели.",
+    mainSave:"Сохранить", mainOpen:"Открыть профиль", mainClear:"Убрать", mainSaved:"Основной профиль сохранён",
+    myProfile:"Мой профиль", minChars:"Введите хотя бы 4 символа",
+    tqHead:"Как получить", tqLoading:"Загружаю…", tqNone:"Hive не отдаёт данных об этом титуле",
+    tqLevel:"Уровень %1 в %2", tqAch:"Достижение: %1", tqStore:"Покупка в магазине: %1",
+    tqStoreBare:"Покупка в магазине", tqLegacy:"Больше не выдаётся",
+    tqWas:"раньше: уровень %1 в %2", tqUntil:"до %1", tqInactive:" · сейчас не выдаётся",
     trendSub:"Как менялись показатели от среза к срезу",
+    trendWas:"было", trendNow:"стало",
     rangeAll:"Всё время", range24h:"24 часа", range7d:"7 дней", range30d:"30 дней",
     setSub:"Ник, отслеживаемые игры и ограничения запросов",
     sumNoFinals:"Без финальных убийств", sumWithFinals:"С финальными убийствами",
@@ -640,7 +721,16 @@ const STR = {
     total:"Total", wait:"wait %1", showAllCos:"Show all", misc:"Other",
     liteLabel:"Fewer animations (smoother scrolling)",
     noPlayers:"No players found",
+    mainTitle:"Main profile", mainAdd:"Add main profile",
+    mainHint:"Your own Hive account. You can jump back to it in one tap, whatever profile you're looking at.",
+    mainSave:"Save", mainOpen:"Open profile", mainClear:"Remove", mainSaved:"Main profile saved",
+    myProfile:"My profile", minChars:"Type at least 4 characters",
+    tqHead:"How to get", tqLoading:"Loading…", tqNone:"Hive provides no data for this title",
+    tqLevel:"Level %1 in %2", tqAch:"Achievement: %1", tqStore:"Store purchase: %1",
+    tqStoreBare:"Store purchase", tqLegacy:"No longer available",
+    tqWas:"was: level %1 in %2", tqUntil:"until %1", tqInactive:" · not available now",
     trendSub:"How your stats moved from snapshot to snapshot",
+    trendWas:"from", trendNow:"now",
     rangeAll:"All time", range24h:"24 hours", range7d:"7 days", range30d:"30 days",
     setSub:"Username, tracked games and request limits",
     sumNoFinals:"Without final kills", sumWithFinals:"With final kills",
@@ -777,6 +867,8 @@ const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","inde
 const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
 const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
 
+let saveWarned = false;                              // объявлено до первого save(): на чистом браузере
+                                                     // save() вызывается ещё при разборе состояния
 const DEFAULT_GAMES = GAMES.map(g => g[0]).filter(g => g !== "wars");
 let state = load() || { nick:"", games:DEFAULT_GAMES, lang:"auto",
   finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
@@ -793,7 +885,6 @@ state.lastSnapAt = state.lastSnapAt || 0;
 state.avatars = state.avatars || {};
 
 function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
-let saveWarned = false;
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(state)); saveWarned = false; }
   catch(e){
@@ -831,7 +922,10 @@ const nice = v => { const t = String(v).trim();
 const hasMC = v => typeof v === "string" &&
   /[§&][0-9a-z]|[\uE000-\uF8FF]|[\uDB80-\uDBBF][\uDC00-\uDFFF]/i.test(v);
 const pretty = s => String(s).replace(/[_-]+/g," ").replace(/\b\w/g, c => c.toUpperCase()).trim();
-const NAME = c => { const g = GAMES.find(x => x[0] === c); return g ? (L === "ru" ? g[1] : g[2]) : c; };
+const EXTRA_GAMES = { gi:"Ghost Invasion", mob:"Mob Game", parkour:"Parkour Worlds",
+  "sky-kits":"SkyWars Kits", "sky-classic":"SkyWars Classic" };
+const NAME = c => { const g = GAMES.find(x => x[0] === c);
+  return g ? (L === "ru" ? g[1] : g[2]) : (EXTRA_GAMES[c] || c); };
 const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
 const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
 
@@ -1076,6 +1170,7 @@ async function snapshot(){
         if(keys.length > 60) delete state.avatars[keys[0]];
       }
       const cc = md.username_cc;
+      if(cc && state.main && state.main.toLowerCase() === cc.toLowerCase()) state.main = cc;
       if(cc && cc.toLowerCase() === n && cc !== state.nick){
         state.nick = cc;
         const inp = $("#nick"); if(inp) inp.value = cc;
@@ -1189,27 +1284,123 @@ function askSearch(q){
       const list = await searchPlayers(query);
       if(seq !== searchSeq) return;
       if(!list.length){ showSugg('<div class="note2">' + esc(T("noPlayers")) + "</div>"); return; }
-      showSugg(list.map(x => {
-        const i = x.name.toLowerCase().indexOf(query.toLowerCase());
-        const nm = i < 0 ? esc(x.name)
-          : esc(x.name.slice(0, i)) + '<span class="hit">' +
-            esc(x.name.slice(i, i + query.length)) + "</span>" +
-            esc(x.name.slice(i + query.length));
-        const tag = rankTag(x.rank);
-        const letter = x.name.trim().charAt(0).toUpperCase() || "?";
-        return '<button type="button" data-n="' + esc(x.name) + '">' +
-          '<span class="av" style="--h:' + hueOf(x.uuid || x.name) + '"><span>' +
-            (x.icon ? '<img alt="" loading="lazy" src="' + esc(x.icon) + '">'
-                    : "<i>" + esc(letter) + "</i>") +
-          "</span></span>" +
-          '<span class="nm">' + nm + "</span>" +
-          (tag ? '<span class="tag" style="color:' + tag.c + '">[' + tag.t + "]</span>" : "") +
-          "</button>";
-      }).join(""));
+      showSugg(list.map(x => suggRow(x, query)).join(""));
     }catch(e){
       if(seq === searchSeq) showSugg('<div class="note2">' + esc(e.message) + "</div>");
     }
   }, 450);
+}
+
+function suggRow(x, query){                           // одна строка подсказки: аватар, ник с подсветкой, ранг
+  const i = x.name.toLowerCase().indexOf(query.toLowerCase());
+  const nm = i < 0 ? esc(x.name)
+    : esc(x.name.slice(0, i)) + '<span class="hit">' +
+      esc(x.name.slice(i, i + query.length)) + "</span>" +
+      esc(x.name.slice(i + query.length));
+  const tag = rankTag(x.rank);
+  const letter = x.name.trim().charAt(0).toUpperCase() || "?";
+  return '<button type="button" data-n="' + esc(x.name) + '">' +
+    '<span class="av" style="--h:' + hueOf(x.uuid || x.name) + '"><span>' +
+      (x.icon ? '<img alt="" loading="lazy" src="' + esc(x.icon) + '">'
+              : "<i>" + esc(letter) + "</i>") +
+    "</span></span>" +
+    '<span class="nm">' + nm + "</span>" +
+    (tag ? '<span class="tag" style="color:' + tag.c + '">[' + tag.t + "]</span>" : "") +
+    "</button>";
+}
+
+/* ---------- основной профиль ---------- */
+const PLUS_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
+  '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>';
+function pavHTML(name){                               // маленький аватар: картинка из кэша или буква на цветной плитке
+  const url = state.avatars[String(name).toLowerCase()];
+  const letter = String(name).trim().charAt(0).toUpperCase() || "?";
+  return '<span class="pav" style="--h:' + hueOf(String(name).toLowerCase()) + '">' +   // цвет не зависит от регистра
+    (url ? '<img alt="" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
+      'document.createElement(\'i\'),{textContent:' + JSON.stringify(letter).replace(/"/g, "&quot;") + '}))">'
+         : "<i>" + esc(letter) + "</i>") + "</span>";
+}
+function mainRankStyle(){                             // цвет ника по подписке из последнего среза своего профиля
+  const k = String(state.main || "").toLowerCase();
+  for(let i = state.snaps.length - 1; i >= 0; i--){
+    const m = state.snaps[i].g && state.snaps[i].g.main;
+    if(m && String(m.username || m.username_cc || "").toLowerCase() === k){
+      const tag = rankTag(pick(m, "rank", "player_rank"));
+      return tag ? ' style="color:' + tag.c2 + ';opacity:1"' : "";
+    }
+  }
+  return "";
+}
+function niceNick(n){                                // ник в том регистре, как он в игре: DemanZeZ, а не demanzez
+  const k = String(n || "").trim().toLowerCase();
+  if(!k) return n;
+  for(let i = state.snaps.length - 1; i >= 0; i--){
+    const m = state.snaps[i].g && state.snaps[i].g.main;
+    if(m && String(m.username || m.username_cc || "").toLowerCase() === k && m.username_cc) return m.username_cc;
+  }
+  return nickKey() === k && state.nick ? state.nick : String(n).trim();
+}
+function switchNick(n){                               // открыть профиль по нику — как выбор из подсказок
+  state.nick = n; $("#nick").value = n;
+  state.dead = []; state.lastDiag = 0;
+  save(); tickDiag(); renderSnap(); renderTrend();
+}
+function openMainPicker(from){
+  const cur = state.main || "";
+  const viewing = cur && cur.toLowerCase() === nickKey();
+  const m = document.createElement("div");
+  m.className = "modal mpick";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("mainTitle")) +
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
+    '<p class="sub mhint">' + esc(T("mainHint")) + "</p>" +
+    '<div class="nickbox"><input id="mainNick" type="text" autocapitalize="none" autocomplete="off" ' +
+      'spellcheck="false" placeholder="' + esc(T("nickPh")) + '" value="' + esc(cur) + '">' +
+      '<div class="sugg hidden" id="mainSugg"></div></div>' +
+    '<button class="primary" id="mainSave">' + esc(T("mainSave")) + "</button>" +
+    (cur ? '<div class="chips btns mextra">' +
+      (viewing ? "" : '<button class="mini" id="mainOpen">' + esc(T("mainOpen")) + "</button>") +
+      '<button class="mini" id="mainClear">' + esc(T("mainClear")) + "</button></div>" : "") +
+    "</div>";
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  mountModal(m, from);
+
+  const inp = m.querySelector("#mainNick"), box = m.querySelector("#mainSugg");
+  let tmr = null, seq = 0;
+  const hide = () => box.classList.add("hidden");
+  const show = html => {
+    box.innerHTML = html; box.classList.remove("hidden");
+    box.querySelectorAll("button,.note2").forEach((el, i) => el.style.setProperty("--i", i));
+    box.querySelectorAll("button[data-n]").forEach(b => b.onclick = () => { inp.value = b.dataset.n; hide(); });
+  };
+  inp.oninput = () => {                               // тот же поиск, что и в настройках
+    clearTimeout(tmr);
+    const q = inp.value.trim();
+    if(!/^[a-zA-Z0-9 ]*$/.test(q) || !q){ hide(); return; }
+    if(q.length < 4){ show('<div class="note2">' + esc(T("minChars")) + "</div>"); return; }
+    const my = ++seq;
+    tmr = setTimeout(async () => {
+      try{
+        const list = await searchPlayers(q);
+        if(my !== seq) return;
+        show(list.length ? list.map(x => suggRow(x, q)).join("")
+                         : '<div class="note2">' + esc(T("noPlayers")) + "</div>");
+      }catch(e){ if(my === seq) show('<div class="note2">' + esc(e.message) + "</div>"); }
+    }, 450);
+  };
+  inp.onblur = () => setTimeout(hide, 180);
+  inp.onkeydown = e => { if(e.key === "Enter") m.querySelector("#mainSave").click(); };
+
+  m.querySelector("#mainSave").onclick = () => {
+    const v = inp.value.trim();
+    if(!v){ toast(T("needNick")); return; }
+    state.main = niceNick(v.slice(0, 32));
+    if(!state.nick){ state.nick = state.main; $("#nick").value = state.main; state.dead = []; }
+    save(); closeModal(m); toast(T("mainSaved")); renderSnap(); renderTrend();
+  };
+  const op = m.querySelector("#mainOpen");
+  if(op) op.onclick = () => { closeModal(m); switchNick(state.main); };
+  const cl = m.querySelector("#mainClear");
+  if(cl) cl.onclick = () => { delete state.main; save(); closeModal(m); renderSnap(); };
 }
 
 function showRaw(text){
@@ -1517,11 +1708,199 @@ function itemHTML(base, it){
     "</div></div>";
 }
 function rowsHTML(base, arr){
+  const withHow = /title/.test(base);                 // «?» только у титулов, у костюмов не нужно
   return '<div class="tlist">' + arr.map(it => {
     const n = typeof it === "string" ? it : (pick(it, "display", "name", "id") || "");
-    return "<div>" + titleIcon(it) + (hasMC(n) ? mcText(n) : esc(nice(n))) + "</div>";
+    const u = it && typeof it === "object" ? (pick(it, "UUID", "uuid") || "") : "";
+    const body = titleIcon(it) + (hasMC(n) ? mcText(n) : esc(nice(n)));
+    return withHow
+      ? '<div class="trow"><span class="tt">' + body + '</span><button type="button" class="tq" data-t="' +
+        esc(n) + '" data-u="' + esc(u) + '" aria-label="?">?</button></div>'
+      : "<div>" + body + "</div>";
   }).join("") + "</div>";
 }
+
+/* ---------- «за что дают титул» ---------- */
+const TCAT_KEY = "hive.tracker.titles.v2";            // v2 — старый кэш мог сохранить пустой список
+let TCAT = null, tcatP = null;
+const stripTitle = s => String(s || "").replace(/[§&][0-9a-z]/gi, "").replace(/[‘’`´]/g, "'")
+  .replace(/[\uE000-\uF8FF]|[\uDB80-\uDBBF][\uDC00-\uDFFF]/g, "");
+const exactTitle = s => stripTitle(s).replace(/\s+/g, " ").trim().toLowerCase();
+const looseTitle = s => stripTitle(s).replace(/\([^)]*\)/g, " ")   // () и (?) — место под число
+  .replace(/#?[\d.,]+[kKmM%]?/g, " ")                               // уже подставленные числа
+  .replace(/\s+/g, " ").trim().toLowerCase();
+function indexCat(list){
+  const byU = new Map(), byExact = new Map(), byLoose = new Map();
+  list.forEach(e => {
+    if(e.u) byU.set(e.u, e);
+    const a = exactTitle(e.d), b = looseTitle(e.d);
+    if(a && !byExact.has(a)) byExact.set(a, e);
+    if(b && !byLoose.has(b)) byLoose.set(b, e);
+  });
+  return { byU, byExact, byLoose };
+}
+async function loadTitleCatalogue(){
+  if(TCAT) return TCAT;
+  if(!tcatP) tcatP = (async () => {
+    try{                                                // каталог почти не меняется — держим сутки
+      const c = JSON.parse(localStorage.getItem(TCAT_KEY) || "null");
+      if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d)) return (TCAT = indexCat(c.d));
+    }catch(e){}
+    noteRequest();
+    let res;
+    try{ res = await fetch(API + "/catalogue/titles", { cache:"no-store" }); }
+    catch(e){ throw new Error(T("netErr")); }
+    if(!res.ok) throw new Error(T("httpErr", res.status));
+    let d = await res.json();
+    if(d && !Array.isArray(d) && typeof d === "object"){  // массив, {что-то: [...]} или {UUID: {...}}
+      const arr = Object.values(d).find(Array.isArray);
+      d = arr || Object.entries(d).filter(([, v]) => v && typeof v === "object")
+        .map(([k, v]) => Object.assign({ UUID: k }, v));
+    }
+    if(!Array.isArray(d)) d = [];
+    const slim = d.map(x => {                           // храним только то, что нужно для подсказки
+      const ud = x.unlock_data || {};
+      return { u:x.UUID || x.uuid, d:x.display || x.name || x.title, x:{ type:ud.type, active:ud.active, metadata:ud.metadata,
+        offer: ud.store_offer && ud.store_offer.name } };
+    });
+    if(slim.length) try{ localStorage.setItem(TCAT_KEY, JSON.stringify({ t:Date.now(), d:slim })); }catch(e){}
+    return (TCAT = indexCat(slim));
+  })();
+  try{ return await tcatP; } finally { tcatP = null; }
+}
+/* второй источник — /game/meta/{игра}: levelUnlocks = { уровень: [{ globalCosmetic:{ type:"hub_title", display } }] }.
+   Покрывает уровневые титулы, которых нет в каталоге (Hive признаёт, что там не хватает ~100 титулов) */
+const TMETA_KEY = "hive.tracker.titlemeta";
+let TMETA = null, tmetaP = null;
+function indexMeta(list){
+  const byExact = new Map(), byLoose = new Map();
+  list.forEach(e => {
+    const a = exactTitle(e.d), b = looseTitle(e.d);
+    if(a && !byExact.has(a)) byExact.set(a, e);
+    if(b && !byLoose.has(b)) byLoose.set(b, e);
+  });
+  return { byExact, byLoose };
+}
+async function loadTitleMeta(){
+  if(TMETA) return TMETA;
+  if(!tmetaP) tmetaP = (async () => {
+    try{                                                // уровни наград меняются редко — держим неделю
+      const c = JSON.parse(localStorage.getItem(TMETA_KEY) || "null");
+      if(c && Date.now() - c.t < 7 * 86400000 && Array.isArray(c.d) && c.d.length) return (TMETA = indexMeta(c.d));
+    }catch(e){}
+    const codes = GAMES.map(g => g[0]).filter(g => g !== "main");
+    const res = await Promise.allSettled(codes.map(async g => {   // по одному запросу на игру, параллельно
+      noteRequest();
+      const r = await fetch(API + "/game/meta/" + g, { cache:"no-store" });
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      const m = await r.json(), out = [];
+      const lu = m && m.levelUnlocks;
+      if(lu && typeof lu === "object") for(const [lvl, arr] of Object.entries(lu)){
+        (Array.isArray(arr) ? arr : []).forEach(u => {
+          const gc = u && u.globalCosmetic;
+          if(gc && gc.type === "hub_title" && gc.display) out.push({ d: gc.display, g, l: lvl });
+          else if(u && /title/i.test(u.type || "") && u.name) out.push({ d: u.name, g, l: lvl });
+        });
+      }
+      return out;
+    }));
+    const all = res.flatMap(r => r.status === "fulfilled" ? r.value : []);
+    if(!all.length) return indexMeta([]);             // всё упало — не кэшируем, в следующий раз попробуем снова
+    try{ localStorage.setItem(TMETA_KEY, JSON.stringify({ t:Date.now(), d:all })); }catch(e){}
+    return (TMETA = indexMeta(all));
+  })();
+  try{ return await tmetaP; } finally { tmetaP = null; }
+}
+const isoDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || "")); return m ? m[3] + "." + m[2] + "." + m[1] : v; };
+function titleHow(e){
+  if(!e || !e.x || !e.x.type) return T("tqNone");
+  const x = e.x, md = x.metadata && !Array.isArray(x.metadata) ? x.metadata : {};
+  let t;
+  if(x.type === "GAME_LEVEL") t = T("tqLevel", md.level, NAME(md.game));
+  else if(x.type === "ACHIEVEMENT") t = md.requirement ? T("tqAch", md.requirement) : T("tqNone");
+  else if(x.type === "STORE_PURCHASE") t = x.offer ? T("tqStore", x.offer) : T("tqStoreBare");
+  else if(x.type === "LEGACY"){
+    t = T("tqLegacy");
+    if(md.originalUnlockType === "GAME_LEVEL" && md.level) t += " · " + T("tqWas", md.level, NAME(md.game));
+    else if(md.description) t += " · " + md.description;
+    else if(md.requirement) t += " · " + md.requirement;
+    if(md.lastAvailable) t += ", " + T("tqUntil", isoDate(md.lastAvailable));
+  }
+  else t = pretty(String(x.type).toLowerCase());
+  if(x.active === false && x.type !== "LEGACY") t += T("tqInactive");
+  return t;
+}
+let tqData = null, tqDataP = null;
+function loadTqData(){                                  // каталог + награды за уровни, один раз на сессию
+  if(tqData) return Promise.resolve(tqData);
+  if(!tqDataP) tqDataP = (async () => {
+    let cat = null, meta = null;
+    try{ cat = await loadTitleCatalogue(); }catch(e){}
+    try{ meta = await loadTitleMeta(); }catch(e){}
+    const d = { cat, meta };
+    if(cat || (meta && meta.byExact.size)) tqData = d;  // если всё упало — попробуем в следующий раз
+    return d;
+  })().finally(() => { tqDataP = null; });
+  return tqDataP;
+}
+function howFor(d, t, u){                               // текст «как получить» или null, если данных нет
+  const ex = exactTitle(t), lo = looseTitle(t);
+  const e = d.cat && ((u && d.cat.byU.get(u)) || d.cat.byExact.get(ex) || d.cat.byLoose.get(lo));
+  if(e && e.x && e.x.type) return titleHow(e);
+  const m = d.meta && (d.meta.byExact.get(ex) || d.meta.byLoose.get(lo));
+  return m ? T("tqLevel", m.l, NAME(m.g)) : null;
+}
+async function markTq(root){                            // «?» остаётся только там, где есть что показать
+  const btns = [...(root || document).querySelectorAll(".tq:not(.ok)")];
+  if(!btns.length) return;
+  const d = await loadTqData();
+  btns.forEach(b => {
+    if(!b.isConnected) return;
+    const h = howFor(d, b.dataset.t, b.dataset.u);
+    if(h){ b.dataset.how = h; b.classList.add("ok"); } else b.remove();
+  });
+}
+let tqPop = null;
+function closeTq(){ if(tqPop){ tqPop.remove(); tqPop = null; } }
+async function openTq(btn){
+  closeTq();
+  const pop = document.createElement("div");
+  pop.className = "tqpop"; pop.__btn = btn; pop.__t = performance.now();
+  const setText = t => { pop.innerHTML = '<b>' + esc(T("tqHead")) + "</b><span>" + esc(t) + "</span>"; };
+  setText(T("tqLoading"));
+  document.body.append(pop); tqPop = pop;
+  const place = () => {                                 // над кнопкой, правым краем к ней — так всегда влезает
+    const r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    const vw = Math.min(document.documentElement.clientWidth,
+      window.visualViewport ? visualViewport.width : Infinity);
+    const left = Math.min(Math.max(10, r.right + 4 - w), vw - w - 10);
+    let top = r.top - h - 10, below = false;
+    if(top < 8){ top = r.bottom + 10; below = true; }
+    pop.style.left = left + "px"; pop.style.top = top + "px";
+    pop.style.setProperty("--ax", (r.left + r.width / 2 - left) + "px");
+    pop.classList.toggle("below", below);
+  };
+  place();
+  try{
+    const h = btn.dataset.how || howFor(await loadTqData(), btn.dataset.t, btn.dataset.u);
+    if(tqPop !== pop) return;
+    setText(h || T("tqNone"));
+  }catch(err){ if(tqPop === pop) setText(err.message); }
+  if(tqPop === pop) place();
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".tq");
+  if(b){
+    e.stopPropagation();
+    if(tqPop && tqPop.__btn === b) closeTq(); else openTq(b);
+    return;
+  }
+  if(tqPop && !(e.target.closest && e.target.closest(".tqpop"))) closeTq();
+}, true);
+addEventListener("scroll", () => {                   // при прокрутке подсказка не должна висеть в воздухе,
+  if(tqPop && performance.now() - tqPop.__t > 300) closeTq();   // но случайный сдвиг в момент касания её не гасит
+}, true);
+addEventListener("resize", closeTq);
 function listHTML(base, arr){
   const part = arr.slice(0, LIMIT(base));
   return LIST_KIND(base) ? rowsHTML(base, part)
@@ -1540,6 +1919,7 @@ function openCos(base, arr, from){
     if(!box) return;
     box.innerHTML = '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
       : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div>";
+    markTq(box);
   });
 }
 
@@ -1604,7 +1984,11 @@ function renderSnap(){
   $("#stickNick").innerHTML = idHTML;
   $("#stickTag").innerHTML = "";
 
-  hero.innerHTML = '<h1 class="idline">' +
+  const mainBtn = state.main
+    ? '<button class="mainBtn set" id="mainBtn" title="' + esc(state.main) + '" aria-label="' +
+        esc(T("mainTitle")) + '">' + pavHTML(state.main) + "</button>"
+    : '<button class="mainBtn" id="mainBtn" aria-label="' + esc(T("mainAdd")) + '">' + PLUS_SVG + "</button>";
+  hero.innerHTML = mainBtn + '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
       idHTML + "</h1>" +
     '<div class="hero"><div class="ava"><span>' +
@@ -1619,6 +2003,14 @@ function renderSnap(){
     (title ? '<p class="title">' + mcText(cosName(title) || title, true) + titleIcon(title) +
       "</p>" : "") + "</div>";
   syncTitleWave();
+  $("#mainBtn").onclick = e => openMainPicker(e.currentTarget);
+  if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; save(); } }
+  const other = !!state.main && state.main.toLowerCase() !== nickKey();
+  const myHTML = other ? '<span class="myAv">' + pavHTML(state.main) + '</span><span class="myT">' +
+    esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
+  ["#myBtn", "#stickMy"].forEach(sel => {
+    const b = $(sel); b.classList.toggle("hidden", !other); b.innerHTML = myHTML;
+  });
 
   tickStatus();
 
@@ -1707,6 +2099,7 @@ function renderSnap(){
       esc(T("deadNote", state.dead.map(NAME).join(", "))) + "</div>");
   fitText(body);
   reveal(body);
+  markTq(body);
 }
 
 function renderStreak(main, body){
@@ -1840,9 +2233,10 @@ function renderTrend(){
     '<i class="dot" style="left:' + lastX + '%;top:' + lastY + '%"></i></div>' +
     '<div class="tmeta"><span>' + esc(when(t0)) + "</span><span>" +
     esc(when(t1)) + "</span></div>" +
-    '<p class="sub">' + esc(T("trendGrowth", derivedLabel(metric),
-      fmtM(vs[0]), fmtM(vs[vs.length-1]),
-      (grew >= 0 ? "+" : "−") + fmtM(Math.abs(grew)))) + "</p></div>";
+    '<div class="tsum"><div class="tsv"><small>' + esc(T("trendWas")) + "</small><b>" + esc(fmtM(vs[0])) +
+      '</b></div><span class="tsa">→</span><div class="tsv"><small>' + esc(T("trendNow")) + "</small><b>" +
+      esc(fmtM(vs[vs.length-1])) + '</b></div><span class="tsd ' + (grew > 0 ? "up" : grew < 0 ? "down" : "") +
+      '">' + esc((grew > 0 ? "+" : grew < 0 ? "−" : "±") + fmtM(Math.abs(grew))) + "</span></div></div>";
 }
 $("#trendGame").onchange = renderTrend;
 $("#trendMetric").onchange = renderTrend;
@@ -1926,6 +2320,7 @@ $("#importFile").onchange = e => {
         lang: ["auto","ru","en"].includes(p.lang) ? p.lang : state.lang,
         finals: typeof p.finals === "boolean" ? p.finals : state.finals,
         lite: typeof p.lite === "boolean" ? p.lite : !!state.lite,
+        main: typeof p.main === "string" && p.main.trim() ? p.main.trim().slice(0, 32) : state.main,
         games: Array.isArray(p.games) ? p.games.filter(g => codes.includes(g)) : state.games,
         snaps: p.snaps.filter(x => x && typeof x.t === "number" && x.g && typeof x.g === "object")
                       .slice(-300),
@@ -1953,6 +2348,14 @@ $("#wipeBtn").onclick = () => {
   save(); renderSnap(); renderTrend();
 };
 $("#fetchBtn").onclick = snapshot;
+function goMain(){                                     // открыть свой профиль и сразу обновить
+  if(!state.main) return;
+  wheelTo = null; scrollTo(0, 0);
+  if(state.main.toLowerCase() !== nickKey()) switchNick(state.main);
+  snapshot();
+}
+$("#myBtn").onclick = goMain;
+$("#stickMy").onclick = goMain;
 $("#diagBtn").onclick = diag;
 function tickDiag(){
   const b = $("#diagBtn");
@@ -2010,7 +2413,7 @@ function onScroll(){
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button");
+    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.mainBtn,.myBtn");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
