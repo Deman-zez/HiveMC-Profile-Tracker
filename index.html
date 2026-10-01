@@ -355,6 +355,20 @@ svg.line{width:100%;height:100%;display:block}
 .chart .dot.sm{width:6px;height:6px;border-width:1px;box-shadow:none;opacity:.75}
 .chart .dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--gold);
   border:2px solid var(--bg-b);transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(255,192,46,.5)}
+.seg{display:flex;gap:4px;padding:4px;margin:0 0 14px;border-radius:12px;background:rgba(0,0,0,.3);
+  border:1px solid var(--edge)}
+.seg button{flex:1;padding:9px 10px;border:none;border-radius:9px;background:none;color:var(--soft);
+  font-size:14px;font-weight:600;cursor:pointer;transition:background .2s ease,color .2s ease}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#2a1442;font-weight:800}
+.act{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.07);font-size:14.5px}
+.act:first-child{border-top:none;padding-top:2px}
+.act .ag{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act .ar{flex:none;padding:3px 9px;border-radius:8px;font-size:12.5px;font-weight:800;
+  background:var(--tile);color:var(--soft)}
+.act .ar.w{background:rgba(79,212,138,.14);color:var(--green)}
+.act .ar.l{background:rgba(255,107,90,.14);color:#ff8a7a}
+.act .at{flex:none;min-width:84px;text-align:right;color:var(--soft);font-size:12.5px}
+.acth{margin:12px 0 0;font-size:12px;opacity:.8}
 .tsum{display:flex;align-items:flex-end;gap:12px;margin-top:14px;padding-top:12px;
   border-top:1px solid rgba(255,255,255,.07)}
 .tsv small{display:block;color:var(--soft);font-size:11.5px;margin-bottom:2px}
@@ -556,6 +570,7 @@ html.locked, html.locked body{overflow:hidden}
       <select id="trendMetric"></select>
     </div>
     <div id="trendBody"></div>
+    <div id="trendAct"></div>
   </section>
 
   <section id="vSet" class="hidden">
@@ -689,6 +704,12 @@ const STR = {
     mainHint:"Ваш аккаунт на Hive. К нему всегда можно вернуться одним нажатием, какой бы профиль вы ни смотрели.",
     mainSave:"Сохранить", mainOpen:"Открыть профиль", mainClear:"Убрать", mainSaved:"Основной профиль сохранён",
     viaProxy:"через прокси", viaDirect:"напрямую",
+    tfAll:"Всё время", tfMonth:"Этот месяц", monthHint:"Статистика за %1 — месяц считается по UTC",
+    monthRank:"Место в рейтинге за месяц", monthNone:"В этом месяце в этот режим ещё не играли",
+    actTitle:"Последние игры", actWin:"Победа", actLoss:"Поражение", actPlayed:"Сыграна",
+    actLocker:"Открыт предмет", actEmpty:"Недавних игр нет",
+    actHint:"Hive показывает игры только после выхода с сервера и скрывает их, если включён режим «Не в сети».",
+    agoNow:"только что", agoMin:"%1 мин назад", agoH:"%1 ч назад",
     myProfile:"Мой профиль", minChars:"Введите хотя бы 4 символа",
     share:"Поделиться профилем", linkCopied:"Ссылка на профиль скопирована", linkCopy:"Скопируйте ссылку:",
     tqHead:"Как получить", tqLoading:"Загружаю…", tqNone:"Hive не отдаёт данных об этом титуле",
@@ -750,6 +771,12 @@ const STR = {
     mainHint:"Your own Hive account. You can jump back to it in one tap, whatever profile you're looking at.",
     mainSave:"Save", mainOpen:"Open profile", mainClear:"Remove", mainSaved:"Main profile saved",
     viaProxy:"via proxy", viaDirect:"direct",
+    tfAll:"All time", tfMonth:"This month", monthHint:"Stats for %1 — months follow UTC",
+    monthRank:"Monthly leaderboard place", monthNone:"No games in this mode this month yet",
+    actTitle:"Recent games", actWin:"Win", actLoss:"Loss", actPlayed:"Played",
+    actLocker:"Item unlocked", actEmpty:"No recent games",
+    actHint:"Hive only shows games after the player logs off, and hides them while Appear Offline is on.",
+    agoNow:"just now", agoMin:"%1 min ago", agoH:"%1 h ago",
     myProfile:"My profile", minChars:"Type at least 4 characters",
     share:"Share profile", linkCopied:"Profile link copied", linkCopy:"Copy the link:",
     tqHead:"How to get", tqLoading:"Loading…", tqNone:"Hive provides no data for this title",
@@ -1689,18 +1716,65 @@ function openGame(code, from){
   }
   const m = document.createElement("div");
   m.className = "modal";
+  const seg = code === "main" ? "" :                    // у профиля целиком месячной статистики нет
+    '<div class="seg" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
+    '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
-    '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  requestAnimationFrame(() => {
-    const box = m.querySelector(".mbody");
-    if(!box) return;
+  const box = m.querySelector(".mbody");
+  const fillAll = () => {
     box.innerHTML =
       (old ? '<p class="sub" style="margin:0 0 14px">' + esc(T("sinceHint", when(prev.t))) + "</p>" : "") +
       tilesHTML(metrics(cur, old), bar);
     fitText(m);
+  };
+  m.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+    m.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    if(b.dataset.tf === "month") fillMonth(box, code, m); else fillAll();
   });
+  requestAnimationFrame(fillAll);                       // по умолчанию — за всё время
+}
+
+const MONTHLY = {};                                    // ник → { t, d }: месячная статистика, держим 15 минут
+async function loadMonthly(){
+  const n = nickKey(), c = MONTHLY[n];
+  if(c && Date.now() - c.t < 15 * 60 * 1000) return c.d;
+  const d0 = new Date();                               // месяц у Hive считается по UTC
+  const url = API + "/game/monthly/player/all/" + encodeURIComponent(state.nick) + "/" +
+    d0.getUTCFullYear() + "/" + (d0.getUTCMonth() + 1);
+  noteRequest();
+  let res;
+  try{ res = await hiveFetch(url, { cache:"no-store", headers: HIVE_HEADERS }); }
+  catch(e){ if(c) return c.d; throw new Error(T("netErr")); }
+  if(res.status === 429){ if(c) return c.d; throw new Error(T("limitHiveLater")); }
+  if(res.status === 404){ MONTHLY[n] = { t: Date.now(), d: {} }; return {}; }
+  if(!res.ok){ if(c) return c.d; throw new Error(T("httpErr", res.status)); }
+  let d = await res.json();
+  if(!d || typeof d !== "object" || Array.isArray(d)) d = {};
+  MONTHLY[n] = { t: Date.now(), d };
+  return d;
+}
+async function fillMonth(box, code, m){
+  box.innerHTML = '<p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p>";
+  try{
+    const d = await loadMonthly();
+    if(!box.isConnected || !m.querySelector('.seg [data-tf="month"][aria-pressed="true"]')) return;
+    const raw = d && d[code];
+    const c = raw && typeof raw === "object" && !Array.isArray(raw) ? Object.assign({}, raw) : null;
+    if(!c || !(num(c, "played") || num(c, "games_played"))){
+      box.innerHTML = '<p class="sub" style="margin:0">' + esc(T("monthNone")) + "</p>"; return;
+    }
+    const place = typeof c.human_index === "number" ? c.human_index
+      : typeof c.index === "number" ? c.index + 1 : 0;   // index считается с нуля
+    delete c.id;
+    const month = new Date().toLocaleString(L === "ru" ? "ru-RU" : "en-US", { month:"long", timeZone:"UTC" });
+    box.innerHTML = '<p class="sub" style="margin:0 0 14px">' + esc(T("monthHint", month)) + "</p>" +
+      tilesHTML(metrics(c, null), place ? '<div class="tile wide"><b>#' + nf(place) + "</b><small>" +
+        esc(T("monthRank")) + "</small></div>" : "");
+    fitText(m);
+  }catch(e){ if(box.isConnected) box.innerHTML = '<p class="sub" style="margin:0">' + esc(e.message) + "</p>"; }
 }
 
 function openKills(from){
@@ -2258,7 +2332,62 @@ function metricVal(c, k){
 const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
 ];
+const ACT = {};                                        // UUID → { t, d }: лента последних игр, держим 2 минуты
+function agoText(sec){
+  const diff = Date.now() - sec * 1000;
+  if(diff < 60000) return T("agoNow");
+  if(diff < 3600000) return T("agoMin", Math.floor(diff / 60000));
+  if(diff < 86400000) return T("agoH", Math.floor(diff / 3600000));
+  return when(sec * 1000);
+}
+function actHTML(list){
+  const rows = (list || []).slice().sort((a, b) => (b.time || 0) - (a.time || 0)).map(e => {
+    const t = typeof e.time === "number" ? agoText(e.time) : "";
+    if(e.type === "ROUND_PLAYED"){
+      const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
+      return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
+        esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
+    }
+    let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";   // формат разблокировок Hive ещё дополняет
+    if(what && typeof what === "object") what = pick(what, "name", "human_name", "id", "type") || "";
+    return '<div class="act"><span class="ag">' + esc(T("actLocker")) +
+      (what ? " · " + esc(pretty(String(what))) : "") + '</span><span class="at">' + esc(t) + "</span></div>";
+  }).join("");
+  return "<h2>" + esc(T("actTitle")) + '</h2><div class="card">' +
+    (rows || '<p class="sub" style="margin:0">' + esc(T("actEmpty")) + "</p>") +
+    '<p class="sub acth">' + esc(T("actHint")) + "</p></div>";
+}
+async function renderActivity(){
+  const box = $("#trendAct"); if(!box) return;
+  const mine = mySnaps(), last = mine[mine.length - 1];
+  const uuid = last && last.g.main && pick(last.g.main, "UUID", "uuid");
+  if(!uuid){ box.innerHTML = ""; return; }
+  const c = ACT[uuid];
+  if(c && c.d) box.innerHTML = actHTML(c.d);
+  else if(!c || !c.p) box.innerHTML = "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
+    esc(T("tqLoading")) + "</p></div>";
+  if($("#vTrend").classList.contains("hidden")) return;   // вкладка закрыта — запрос не тратим
+  if(c && (c.p || Date.now() - c.t < 2 * 60 * 1000)) return;
+  ACT[uuid] = Object.assign({}, c, { p: true });
+  try{
+    noteRequest();
+    const res = await hiveFetch(API + "/player/activity/" + encodeURIComponent(uuid), { cache:"no-store" });
+    if(!res.ok) throw new Error(T("httpErr", res.status));
+    let d = await res.json();
+    if(!Array.isArray(d)) d = (d && Object.values(d).find(Array.isArray)) || [];
+    ACT[uuid] = { t: Date.now(), d };
+  }catch(e){
+    ACT[uuid] = c && c.d ? { t: c.t, d: c.d } : { t: Date.now(), d: null, err: e.message };
+  }
+  const cur = mySnaps().pop();                          // пока ждали, могли переключить ник
+  if(!cur || !cur.g.main || pick(cur.g.main, "UUID", "uuid") !== uuid) return;
+  const r = ACT[uuid];
+  box.innerHTML = r.d ? actHTML(r.d) : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
+    esc(r.err || "") + "</p></div>";
+}
+
 function renderTrend(){
+  renderActivity();
   const gSel = $("#trendGame"), mSel = $("#trendMetric"), rSel = $("#trendRange"), body = $("#trendBody");
   const mine = mySnaps();
   const withData = state.games.filter(g => mine.some(s => s.g[g]));
