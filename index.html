@@ -102,6 +102,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   text-transform:uppercase;color:var(--gold)}
 .tqpop span{display:block;overflow-wrap:anywhere}
 .tqpop.itip{text-align:center}
+.tqpop .tg{display:block;margin-top:5px;font-size:11.5px;font-weight:700;color:var(--soft)}
 .tqpop .tn{font-size:13.5px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--text);margin:0}
 .tqpop .rr{font-size:12px;font-weight:800;margin-top:2px}
 .it[data-tn]{cursor:pointer}
@@ -364,6 +365,18 @@ svg.line{width:100%;height:100%;display:block}
 .syncrow .mini{flex:none}
 #vSet .syncacts{margin-top:12px}
 #vSet .hint.bad{color:#ff8a7a;opacity:1}
+.pkl{margin-top:12px}
+.pkw{border-top:1px solid rgba(255,255,255,.07)}
+.pkw summary{display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer;list-style:none;font-size:15px}
+.pkw summary::-webkit-details-marker{display:none}
+.pkw summary::after{content:"›";color:var(--soft);font-size:18px;line-height:1;transition:transform .2s ease}
+.pkw[open] summary::after{transform:rotate(90deg)}
+.pkw summary span:first-child{flex:1;min-width:0}
+.pks{flex:none;color:var(--gold);font-weight:700;font-size:13.5px}
+.pkc{display:flex;align-items:center;gap:10px;padding:7px 0 7px 12px;font-size:13.5px;color:var(--soft)}
+.pkc span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkc b{flex:none;min-width:68px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.pkw:last-child .pkc:last-child{padding-bottom:4px}
 .seg{display:flex;gap:4px;padding:4px;margin:0 0 14px;border-radius:12px;background:rgba(0,0,0,.3);
   border:1px solid var(--edge)}
 .seg button{flex:1;padding:9px 10px;border:none;border-radius:9px;background:none;color:var(--soft);
@@ -649,10 +662,10 @@ const HIVE_HEADERS = {
   "X-Hive-Resolve-Stat-Track": "true",
   "X-Hive-API-Version": "2024-03-29"
 };
-const PROXY = "https://misty-sky-2dcb.zhoski-demon.workers.dev/?url=";   // свой воркер на Cloudflare, вшит
-async function hiveFetch(url, opts){                   // сначала через прокси; при любой его ошибке — напрямую
+const PROXY = "https://misty-sky-2dcb.zhoski-demon.workers.dev/?url=";
+async function hiveFetch(url, opts){
   const ctl = typeof AbortController === "function" ? new AbortController() : null;
-  const timer = ctl && setTimeout(() => ctl.abort(), 7000);   // завис прокси — не ждём вечно
+  const timer = ctl && setTimeout(() => ctl.abort(), 7000);
   try{
     const r = await fetch(PROXY + encodeURIComponent(url), Object.assign({}, opts, ctl ? { signal: ctl.signal } : {}));
     if(r.ok){ r.__via = "proxy"; return r; }
@@ -742,6 +755,18 @@ const STR = {
     agoNow:"только что", agoMin:"%1 мин назад", agoH:"%1 ч назад",
     myProfile:"Мой профиль", minChars:"Введите хотя бы 4 символа",
     share:"Поделиться профилем", linkCopied:"Ссылка на профиль скопирована", linkCopy:"Скопируйте ссылку:",
+    pkStars:"Звёзд собрано", pkDone:"Трасс пройдено",
+    tqGoneLine:"Больше не выдаётся", tqMerchant:"Покупка у торговца испытаний",
+    tqParkourStage:"Пройти %1-й этап паркура в хабе (до %2)", tqParkourBefore:"Пройти паркур в хабе (до %1)",
+    tqGift:"%1-й ежедневный подарок · %2", tqSeason:"Играть в %2 в %1-м сезоне",
+    tqSeasonRank:", в титуле — место в сезоне", tqTop:"Топ-%1 лидерборда %2",
+    tqVeteran:"Играть в %1 больше года", tqPlayers:"Выдан игрокам %1",
+    tqTrain:"Кататься на поезде в хабе целый час", tqBirthday:"День рождения Hive (%2)",
+    tqContest:"Участие в конкурсе %1", tqContestWin:"Победа в конкурсе %1",
+    tqBoost:"Буст Discord-сервера Hive", tqSecret:"Секрет!", tqTranslator:"Помощь с переводом Hive",
+    tqFeatured:"Работа попала в рассылку The Buzz", tqFree:"Бесплатно в магазине Hive: %1",
+    tqTalk:"Поговорить с %1", tqComplete:"Выполнить: %1", tqBefore:"до %1",
+    tqChallenge:"испытание «%1»", tqPlush:"плюшевая игрушка %1 (Makeship)",
     tqHead:"Как получить", tqLoading:"Загружаю…", tqPrestige:"Престиж %1 в %2", tqBuy:"Покупка: %1",
     tqQuest:"магазин квестов, %1", tqParkour:"Пройти любой паркур в хабе", tqStreak:"Заходить на сервер %1 дней подряд",
     tqBuzz:"Код из рассылки The Buzz (%1)", tqNone:"Hive не отдаёт данных об этом титуле",
@@ -818,6 +843,8 @@ const STR = {
     agoNow:"just now", agoMin:"%1 min ago", agoH:"%1 h ago",
     myProfile:"My profile", minChars:"Type at least 4 characters",
     share:"Share profile", linkCopied:"Profile link copied", linkCopy:"Copy the link:",
+    pkStars:"Stars collected", pkDone:"Courses completed",
+    tqGoneLine:"No longer available",
     tqHead:"How to get", tqLoading:"Loading…", tqPrestige:"Prestige %1 in %2", tqBuy:"Purchase: %1",
     tqQuest:"Quest Store, %1", tqParkour:"Complete any hub parkour course", tqStreak:"Join the server %1 days in a row",
     tqBuzz:"Code from The Buzz newsletter (%1)", tqNone:"Hive provides no data for this title",
@@ -962,13 +989,16 @@ const SKIP = new Set(["UUID","uuid","xuid","mcid","username","username_cc","inde
 const COS_ORDER = ["hub_title","title","costume","avatar","backbling","back_bling","mount","pet","hat"];
 const COS_WORDS = /^(hub_title|title|costume|avatar|backbling|back_bling|mount|pet|hat|emote|victory_dance|win_celebration|projectile_trail|death_cry|pet_pin|stat_track)s?$/;
 
-let saveWarned = false;                              // объявлено до первого save(): на чистом браузере
-                                                     // save() вызывается ещё при разборе состояния
+let saveWarned = false;
 const DEFAULT_GAMES = GAMES.map(g => g[0]).filter(g => g !== "wars");
 let state = load() || { nick:"", games:DEFAULT_GAMES, lang:"auto",
   finals:true, snaps:[], last:{}, dead:[], lastDiag:0 };
 state.last = state.last || {}; state.dead = state.dead || []; state.lang = state.lang || "auto";
 if(state.finals === undefined) state.finals = true;
+if(!Array.isArray(state.games) || !state.games.length ||
+   (state.games.length === 4 && ["main","bed","sky","dr"].every(g => state.games.includes(g)))){
+  state.games = DEFAULT_GAMES.slice();
+}
 if(!state.tagged){
   const n = (state.nick || "").trim().toLowerCase();
   state.snaps.forEach(x => { if(!x.n) x.n = n; });
@@ -977,18 +1007,18 @@ if(!state.tagged){
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];
 state.lastSnapAt = state.lastSnapAt || 0;
-state.hits = state.hits || [];            // {n, t} — удачные запросы статистики игрока, для подсказки «когда можно снова»
+state.hits = state.hits || [];
 const HIVE_WINDOW = 60 * 60 * 1000, HIVE_PER_PLAYER = 3;
 function noteHit(n){
   const t0 = Date.now() - HIVE_WINDOW;
   state.hits = state.hits.filter(h => h.t > t0);
   state.hits.push({ n, t: Date.now() }); save();
 }
-function limitMsg(n){                     // сколько ждать: старейший из запросов за последний час выпадет из окна
+function limitMsg(n){
   const t0 = Date.now() - HIVE_WINDOW;
   const mine = state.hits.filter(h => h.n === n && h.t > t0).sort((a, b) => a.t - b.t);
   if(!mine.length) return T("limitHiveLater");
-  const k = Math.max(0, mine.length - HIVE_PER_PLAYER);   // если запросов больше трёх — ждём, пока лишние выйдут из окна
+  const k = Math.max(0, mine.length - HIVE_PER_PLAYER);
   const wait = Math.max(1, Math.ceil((mine[k].t + HIVE_WINDOW - Date.now()) / 60000));
   return T("limitHive", wait);
 }
@@ -1210,17 +1240,17 @@ const CAPS = {
   bridge:20, ground:20
 };
 const CAP_DEFAULT = 75;
-let META_GAMES = {};                                   // игра → { max, xp:[[опыт, уровень], …] } из /game/meta
+let META_GAMES = {};
 try{ const c = JSON.parse(localStorage.getItem("hive.tracker.titlemeta.v2") || "null");
   if(c && c.g && typeof c.g === "object") META_GAMES = c.g; }catch(e){}
-function maxLevelOf(code){                             // 1) данные Hive, 2) пакет с CDN, 3) вшитая таблица
+function maxLevelOf(code){
   const mg = META_GAMES[code]; if(mg && mg.max) return mg.max;
   try{ const g = HD && HD.Games && HD.Games[code]; if(g && g.max_level) return g.max_level; }catch(e){}
   return CAPS[code] || CAP_DEFAULT;
 }
 function levelFromXP(xp, code){
   const mg = META_GAMES[code];
-  if(mg && Array.isArray(mg.xp) && mg.xp.length && xp >= 0){   // последний порог, который уже пройден
+  if(mg && Array.isArray(mg.xp) && mg.xp.length && xp >= 0){
     let lv = null;
     for(const [need, l] of mg.xp){ if(xp >= need) lv = l; else break; }
     if(lv !== null) return lv;
@@ -1250,7 +1280,7 @@ async function pullAll(){
   try{ res = await hiveFetch(urlFor("all"), { cache:"no-store", headers: HIVE_HEADERS }); }
   catch(e){ throw new Error(T("netErr")); }
   if(res.status === 429){
-    const ra = +res.headers.get("Retry-After");          // обычно браузер этот заголовок не показывает (CORS)
+    const ra = +res.headers.get("Retry-After");
     const err = new Error(ra ? T("limitHive", Math.max(1, Math.ceil(ra / 60))) : limitMsg(nickKey()));
     err.limited = true;
     throw err;
@@ -1260,17 +1290,17 @@ async function pullAll(){
   const data = await res.json();
   return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
 }
-async function pullEach(){                            // запасной путь: у Hive лимит считается на пару «игрок + режим»,
-  const out = {}, missing = [];                        // у /all/all он свой, а у каждой игры — отдельный
-  await Promise.all(state.games.map(async g => {
+async function pullEach(){
+  const out = {}, missing = [];
+  await Promise.all(state.games.concat("parkour").map(async g => {
     try{
       noteRequest();
       const res = await hiveFetch(urlFor(g), { cache:"no-store", headers: HIVE_HEADERS });
       if(res.status === 404){ missing.push(g); return; }
-      if(!res.ok) return;                              // 429 по этой игре — возьмём из прошлого среза
+      if(!res.ok) return;
       let d = await res.json();
       if(d && typeof d === "object" && !Array.isArray(d)){
-        const ks = Object.keys(d);                     // /main приходит обёрнутым: {"main": {...}}
+        const ks = Object.keys(d);
         if(ks.length === 1 && d[ks[0]] && typeof d[ks[0]] === "object" && !Array.isArray(d[ks[0]])) d = d[ks[0]];
       }
       if(d && typeof d === "object" && !Array.isArray(d) && Object.keys(d).length) out[g] = d;
@@ -1288,11 +1318,11 @@ async function snapshot(){
   const now = Date.now(), snap = { t: now, n, g: {} };
   let failed = "";
   try{
-    let data, missing = null;                          // missing === null — ответ полный, по нему можно судить о «мёртвых» играх
+    let data, missing = null;
     try{ data = (await pullAll()).data; }
     catch(e){
       if(!e.limited) throw e;
-      const r = await pullEach();                      // общий запрос на лимите — собираем по играм
+      const r = await pullEach();
       if(!r) throw e;
       data = r.data; missing = r.missing;
     }
@@ -1307,6 +1337,8 @@ async function snapshot(){
         state.dead.push(g);
       }
     }
+    if(data.parkour && typeof data.parkour === "object" && !Array.isArray(data.parkour) && data.parkour.parkours)
+      snap.g.parkour = data.parkour;
     const md = snap.g.main;
     if(md){
       const url = cosIcon(pick(md, "equipped_avatar", "avatar_equipped"));
@@ -1337,7 +1369,7 @@ async function snapshot(){
     state.snaps.push(snap);
     if(state.snaps.length > 300) state.snaps.shift();
     save();
-    syncSoon();                                        // новый срез — отправить на другие устройства
+    syncSoon();
   }
   btn.classList.remove("busy"); btn.textContent = T("snap");
   renderSnap(); renderTrend();
@@ -1439,7 +1471,7 @@ function askSearch(q){
   }, 450);
 }
 
-function suggRow(x, query){                           // одна строка подсказки: аватар, ник с подсветкой, ранг
+function suggRow(x, query){
   const i = x.name.toLowerCase().indexOf(query.toLowerCase());
   const nm = i < 0 ? esc(x.name)
     : esc(x.name.slice(0, i)) + '<span class="hit">' +
@@ -1457,18 +1489,17 @@ function suggRow(x, query){                           // одна строка �
     "</button>";
 }
 
-/* ---------- основной профиль ---------- */
 const PLUS_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
   '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>';
-function pavHTML(name){                               // маленький аватар: картинка из кэша или буква на цветной плитке
+function pavHTML(name){
   const url = state.avatars[String(name).toLowerCase()];
   const letter = String(name).trim().charAt(0).toUpperCase() || "?";
-  return '<span class="pav" style="--h:' + hueOf(String(name).toLowerCase()) + '">' +   // цвет не зависит от регистра
+  return '<span class="pav" style="--h:' + hueOf(String(name).toLowerCase()) + '">' +
     (url ? '<img alt="" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
       'document.createElement(\'i\'),{textContent:' + JSON.stringify(letter).replace(/"/g, "&quot;") + '}))">'
          : "<i>" + esc(letter) + "</i>") + "</span>";
 }
-function mainRankStyle(){                             // цвет ника по подписке из последнего среза своего профиля
+function mainRankStyle(){
   const k = String(state.main || "").toLowerCase();
   for(let i = state.snaps.length - 1; i >= 0; i--){
     const m = state.snaps[i].g && state.snaps[i].g.main;
@@ -1479,7 +1510,7 @@ function mainRankStyle(){                             // цвет ника по 
   }
   return "";
 }
-function niceNick(n){                                // ник в том регистре, как он в игре: DemanZeZ, а не demanzez
+function niceNick(n){
   const k = String(n || "").trim().toLowerCase();
   if(!k) return n;
   for(let i = state.snaps.length - 1; i >= 0; i--){
@@ -1492,21 +1523,21 @@ const SITE = "https://deman-zez.github.io/HiveMC-Profile-Tracker/";
 const SHARE_SVG = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" ' +
   'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
-function profileLink(n){                              // с диска (file://, content://) ссылка вела бы в никуда — берём сайт
+function profileLink(n){
   const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : SITE;
   return base + "?nick=" + encodeURIComponent(n);
 }
 async function shareProfile(){
   if(!state.nick) return;
   const url = profileLink(state.nick);
-  if(navigator.share){                                // на телефоне — системное меню «Поделиться»
+  if(navigator.share){
     try{ await navigator.share({ title: state.nick + " · Hive", url }); return; }
-    catch(e){ if(e && e.name === "AbortError") return; }   // закрыли меню — это не ошибка
+    catch(e){ if(e && e.name === "AbortError") return; }
   }
   try{ await navigator.clipboard.writeText(url); toast(T("linkCopied")); }
-  catch(e){ prompt(T("linkCopy"), url); }             // буфер недоступен — даём скопировать вручную
+  catch(e){ prompt(T("linkCopy"), url); }
 }
-function switchNick(n){                               // открыть профиль по нику — как выбор из подсказок
+function switchNick(n){
   state.nick = n; $("#nick").value = n;
   state.dead = []; state.lastDiag = 0;
   save(); tickDiag(); renderSnap(); renderTrend();
@@ -1538,7 +1569,7 @@ function openMainPicker(from){
     box.querySelectorAll("button,.note2").forEach((el, i) => el.style.setProperty("--i", i));
     box.querySelectorAll("button[data-n]").forEach(b => b.onclick = () => { inp.value = b.dataset.n; hide(); });
   };
-  inp.oninput = () => {                               // тот же поиск, что и в настройках
+  inp.oninput = () => {
     clearTimeout(tmr);
     const q = inp.value.trim();
     if(!/^[a-zA-Z0-9 ]*$/.test(q) || !q){ hide(); return; }
@@ -1768,7 +1799,7 @@ function openGame(code, from){
   }
   const m = document.createElement("div");
   m.className = "modal";
-  const seg = code === "main" ? "" :                    // у профиля целиком месячной статистики нет
+  const seg = code === "main" ? "" :
     '<div class="seg" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
     '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
@@ -1786,14 +1817,14 @@ function openGame(code, from){
     m.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
     if(b.dataset.tf === "month") fillMonth(box, code, m); else fillAll();
   });
-  requestAnimationFrame(fillAll);                       // по умолчанию — за всё время
+  requestAnimationFrame(fillAll);
 }
 
-const MONTHLY = {};                                    // ник → { t, d }: месячная статистика, держим 15 минут
+const MONTHLY = {};
 async function loadMonthly(){
   const n = nickKey(), c = MONTHLY[n];
   if(c && Date.now() - c.t < 15 * 60 * 1000) return c.d;
-  const d0 = new Date();                               // месяц у Hive считается по UTC
+  const d0 = new Date();
   const url = API + "/game/monthly/player/all/" + encodeURIComponent(state.nick) + "/" +
     d0.getUTCFullYear() + "/" + (d0.getUTCMonth() + 1);
   noteRequest();
@@ -1819,7 +1850,7 @@ async function fillMonth(box, code, m){
       box.innerHTML = '<p class="sub" style="margin:0">' + esc(T("monthNone")) + "</p>"; return;
     }
     const place = typeof c.human_index === "number" ? c.human_index
-      : typeof c.index === "number" ? c.index + 1 : 0;   // index считается с нуля
+      : typeof c.index === "number" ? c.index + 1 : 0;
     delete c.id;
     const month = new Date().toLocaleString(L === "ru" ? "ru-RU" : "en-US", { month:"long", timeZone:"UTC" });
     box.innerHTML = '<p class="sub" style="margin:0 0 14px">' + esc(T("monthHint", month)) + "</p>" +
@@ -1924,7 +1955,7 @@ function itemHTML(base, it){
     "</div></div>";
 }
 function rowsHTML(base, arr){
-  const withHow = /title/.test(base);                 // «?» только у титулов, у костюмов не нужно
+  const withHow = /title/.test(base);
   return '<div class="tlist">' + arr.map(it => {
     const n = typeof it === "string" ? it : (pick(it, "display", "name", "id") || "");
     const u = it && typeof it === "object" ? (pick(it, "UUID", "uuid") || "") : "";
@@ -1936,14 +1967,13 @@ function rowsHTML(base, arr){
   }).join("") + "</div>";
 }
 
-/* ---------- «за что дают титул» ---------- */
-const TCAT_KEY = "hive.tracker.titles.v2";            // v2 — старый кэш мог сохранить пустой список
+const TCAT_KEY = "hive.tracker.titles.v2";
 let TCAT = null, tcatP = null;
 const stripTitle = s => String(s || "").replace(/[§&][0-9a-z]/gi, "").replace(/[‘’`´]/g, "'")
   .replace(/[\uE000-\uF8FF]|[\uDB80-\uDBBF][\uDC00-\uDFFF]/g, "");
 const exactTitle = s => stripTitle(s).replace(/\s+/g, " ").trim().toLowerCase();
-const looseTitle = s => stripTitle(s).replace(/\([^)]*\)/g, " ")   // () и (?) — место под число
-  .replace(/#?[\d.,]+[kKmM%]?/g, " ")                               // уже подставленные числа
+const looseTitle = s => stripTitle(s).replace(/\([^)]*\)/g, " ")
+  .replace(/#?[\d.,]+[kKmM%]?/g, " ")
   .replace(/\s+/g, " ").trim().toLowerCase();
 function indexCat(list){
   const byU = new Map(), byExact = new Map(), byLoose = new Map();
@@ -1958,7 +1988,7 @@ function indexCat(list){
 async function loadTitleCatalogue(){
   if(TCAT) return TCAT;
   if(!tcatP) tcatP = (async () => {
-    try{                                                // каталог почти не меняется — держим сутки
+    try{
       const c = JSON.parse(localStorage.getItem(TCAT_KEY) || "null");
       if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d)) return (TCAT = indexCat(c.d));
     }catch(e){}
@@ -1968,13 +1998,13 @@ async function loadTitleCatalogue(){
     catch(e){ throw new Error(T("netErr")); }
     if(!res.ok) throw new Error(T("httpErr", res.status));
     let d = await res.json();
-    if(d && !Array.isArray(d) && typeof d === "object"){  // массив, {что-то: [...]} или {UUID: {...}}
+    if(d && !Array.isArray(d) && typeof d === "object"){
       const arr = Object.values(d).find(Array.isArray);
       d = arr || Object.entries(d).filter(([, v]) => v && typeof v === "object")
         .map(([k, v]) => Object.assign({ UUID: k }, v));
     }
     if(!Array.isArray(d)) d = [];
-    const slim = d.map(x => {                           // храним только то, что нужно для подсказки
+    const slim = d.map(x => {
       const ud = x.unlock_data || {};
       return { u:x.UUID || x.uuid, d:x.display || x.name || x.title, x:{ type:ud.type, active:ud.active, metadata:ud.metadata,
         offer: ud.store_offer && ud.store_offer.name } };
@@ -1984,9 +2014,7 @@ async function loadTitleCatalogue(){
   })();
   try{ return await tcatP; } finally { tcatP = null; }
 }
-/* второй источник — /game/meta/{игра}: levelUnlocks = { уровень: [{ globalCosmetic:{ type:"hub_title", display } }] }.
-   Покрывает уровневые титулы, которых нет в каталоге (Hive признаёт, что там не хватает ~100 титулов) */
-const TMETA_KEY = "hive.tracker.titlemeta.v2";       // v2: вместе с титулами храним потолки и таблицу опыта
+const TMETA_KEY = "hive.tracker.titlemeta.v2";
 let TMETA = null, tmetaP = null;
 function indexMeta(list){
   const byExact = new Map(), byLoose = new Map();
@@ -2000,21 +2028,21 @@ function indexMeta(list){
 async function loadTitleMeta(){
   if(TMETA) return TMETA;
   if(!tmetaP) tmetaP = (async () => {
-    try{                                                // уровни наград меняются редко — держим неделю
+    try{
       const c = JSON.parse(localStorage.getItem(TMETA_KEY) || "null");
       if(c && Date.now() - c.t < 7 * 86400000 && Array.isArray(c.d) && c.d.length && c.g) return (TMETA = indexMeta(c.d));
     }catch(e){}
     const codes = GAMES.map(g => g[0]).filter(g => g !== "main");
     const games = {};
-    const res = await Promise.allSettled(codes.map(async g => {   // по одному запросу на игру, параллельно
+    const res = await Promise.allSettled(codes.map(async g => {
       noteRequest();
       const r = await hiveFetch(API + "/game/meta/" + g, { cache:"no-store" });
       if(!r.ok) throw new Error("HTTP " + r.status);
       const m = await r.json(), out = [];
-      if(m && typeof m === "object"){                  // потолок уровня и пороги опыта
+      if(m && typeof m === "object"){
         const xp = Object.entries(m.experienceToLevel || {})
           .map(([x, l]) => [+x, +l]).filter(([x, l]) => isFinite(x) && isFinite(l)).sort((a, b) => a[0] - b[0]);
-        const mono = xp.every((p, i) => !i || p[1] >= xp[i - 1][1]);   // странную таблицу не используем
+        const mono = xp.every((p, i) => !i || p[1] >= xp[i - 1][1]);
         if(+m.maxLevel > 0 || (xp.length && mono)) games[g] = { max: +m.maxLevel || 0, xp: mono ? xp : [] };
       }
       const lu = m && m.levelUnlocks;
@@ -2028,11 +2056,11 @@ async function loadTitleMeta(){
       return out;
     }));
     const all = res.flatMap(r => r.status === "fulfilled" ? r.value : []);
-    if(!all.length && !Object.keys(games).length) return indexMeta([]);   // всё упало — не кэшируем
+    if(!all.length && !Object.keys(games).length) return indexMeta([]);
     try{ localStorage.setItem(TMETA_KEY, JSON.stringify({ t:Date.now(), d:all, g:games })); }catch(e){}
     const first = !Object.keys(META_GAMES).length;
     META_GAMES = games;
-    if(first && Object.keys(games).length) setTimeout(renderSnap, 0);   // уровни пересчитаются по данным Hive
+    if(first && Object.keys(games).length) setTimeout(renderSnap, 0);
     return (TMETA = indexMeta(all));
   })();
   try{ return await tmetaP; } finally { tmetaP = null; }
@@ -2053,13 +2081,10 @@ function titleHow(e){
     if(md.lastAvailable) t += ", " + T("tqUntil", isoDate(md.lastAvailable));
   }
   else t = pretty(String(x.type).toLowerCase());
-  if(x.active === false && x.type !== "LEGACY") t += T("tqInactive");
+  if(x.active === false && x.type !== "LEGACY") t += GONE;
   return t;
 }
 let tqData = null, tqDataP = null;
-/* третий (и главный) источник — официальная страница support.playhive.com/hub-titles:
-   там описан каждый титул, включая паркур, питомцев, транспорт, коды из рассылки и ивенты.
-   У сайта поддержки нет CORS, поэтому только через наш прокси */
 const TINFO_KEY = "hive.tracker.titleinfo";
 const SUPPORT_TITLES = "https://support.playhive.com/hub-titles/";
 let TINFO = null, tinfoP = null;
@@ -2073,7 +2098,7 @@ function parseSupportTitles(html){
     if(/^H[23]$/.test(el.tagName)){ gone = /unobtainable/i.test(t); game = ""; return; }
     const m = /^Hub titles that can be unlocked by playing (.+?):?$/i.exec(t);
     if(m){ game = m[1]; return; }
-    const i = t.indexOf(" - ");                          // «Название - как получить»
+    const i = t.indexOf(" - ");
     if(i <= 0) return;
     const n = t.slice(0, i).replace(/\(Stat Track\)/i, "").trim(), d = t.slice(i + 3).trim();
     if(n && d && n.length <= 60) out.push({ n, d, g: game, o: gone ? 1 : 0 });
@@ -2087,8 +2112,8 @@ function indexInfo(list){
     if(!key) return;
     const safe = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const rx = safe.replace(/(^|\s)(#?)x(%?)(?=\s|$)/g, (m, a, h, p) => a + h + "[\\d.,]+[kmb]?" + p);
-    if(rx !== safe){ pats.push({ re: new RegExp("^" + rx + "$"), e }); return; }   // «x» — место под число
-    if(exact.has(key) && exact.get(key).d !== e.d) dup.add(key);   // одно имя, разные способы — не гадаем
+    if(rx !== safe){ pats.push({ re: new RegExp("^" + rx + "$"), e }); return; }
+    if(exact.has(key) && exact.get(key).d !== e.d) dup.add(key);
     else exact.set(key, e);
   });
   dup.forEach(k => exact.delete(k));
@@ -2101,32 +2126,84 @@ function infoFor(idx, t){
 const ITEM_RU = [[/ pet$/i, "питомец"], [/ mount$/i, "транспорт"], [/ costumes?$/i, "костюм"],
   [/ bundle$/i, "набор"], [/ rank$/i, "ранг"], [/ pass$/i, "пропуск"], [/ back bling$/i, "украшение для спины"],
   [/ ticket$/i, "билет"]];
+const GONE = "\u0001";
+function itemRu(item){
+  let s = item.trim();
+  const mk = /^limited edition (.+?) plushie from Makeship$/i.exec(s);
+  if(mk) return T("tqPlush", mk[1]);
+  for(const [re, w] of ITEM_RU) if(re.test(s)) return w + " " + s.replace(re, "");
+  return s;
+}
+function buyText(raw){
+  let item = raw, extra = "";
+  const q = /\s+from the Quest Store\s*\((.+)\)$/i.exec(item);
+  if(q){ item = item.slice(0, q.index); extra = " · " + T("tqQuest", q[1]); }
+  const c = /,? and completing the '(.+?)' challenge$/i.exec(item);
+  if(c){ item = item.slice(0, c.index); extra += " · " + T("tqChallenge", c[1]); }
+  const fh = /\s+from (?:the )?Hive Store$/i.exec(item);
+  if(fh) item = item.slice(0, fh.index);
+  return T("tqBuy", itemRu(item)) + extra;
+}
+const INFO_RU = [
+  [/^Awarded for reaching level (\d+) in (.+?)(?: during (.+))?$/i, m => T("tqLevel", m[1], m[2]) + (m[3] ? " · " + m[3] : "")],
+  [/^Could be obtained by purchasing (?:the )?(.+?) before (?:the )?(.+)$/i, m => buyText(m[1]) + " · " + T("tqBefore", m[2])],
+  [/^(?:Obtained|Could be obtained) by purchasing (?:the |a |an )?(.+)$/i, m => buyText(m[1])],
+  [/^Could be purchased from the Challenge Merchant during (.+)$/i, m => T("tqMerchant") + " · " + m[1]],
+  [/^Can be purchased from the Challenge Merchant$/i, () => T("tqMerchant")],
+  [/^(?:Unlocked|Obtained) by completing stage (\d+) of the hub parkour, before (.+)$/i, m => T("tqParkourStage", m[1], m[2])],
+  [/^Obtained by completing a hub parkour course, before (.+)$/i, m => T("tqParkourBefore", m[1])],
+  [/^Unlocked by completing one of the hub parkour courses$/i, () => T("tqParkour")],
+  [/^Awarded for joining the server for (\d+) days in a row$/i, m => T("tqStreak", m[1])],
+  [/^Obtained by redeeming the code included in (?:the )?(.+?)(?:'s)? issue of The Buzz newsletter$/i, m => T("tqBuzz", m[1])],
+  [/^(?:\w+ )?included in (?:the )?(.+?) issue of The Buzz newsletter$/i, m => T("tqBuzz", m[1])],
+  [/^Obtained by opening the (\d+)(?:st|nd|rd|th) .*?daily gift during (.+)$/i, m => T("tqGift", m[1], m[2])],
+  [/^Awarded to players who played (.+?) during Season (\d+)( \(displays season ranking\))?$/i,
+    m => T("tqSeason", m[2], m[1]) + (m[3] ? T("tqSeasonRank") : "")],
+  [/^Awarded to the top ([\d,]+) players on the (.+?) leaderboard$/i, m => T("tqTop", m[1].replace(/,/g, " "), m[2])],
+  [/^Awarded to (?:\w+ )?players who played (.+?) for over a year(?: \((.+)\))?$/i, m => T("tqVeteran", m[1]) + (m[2] ? " · " + m[2] : "")],
+  [/^Awarded to (.+?) players(?: \((.+)\))?$/i, m => T("tqPlayers", m[1]) + (m[2] ? " · " + m[2] : "")],
+  [/^(?:Awarded for riding|Obtained by riding) the (?:train|Monorail)(?: in the (?:Arcade )?hub)? for (?:an|one) hour(?: during (.+))?$/i,
+    m => T("tqTrain") + (m[1] ? " · " + m[1] : "")],
+  [/^Could be obtained on The Hive's (\d+)\w* birthday \((.+)\)$/i, m => T("tqBirthday", m[1], m[2])],
+  [/^Awarded for participating in the (.+?) (?:competition|contest)(?: \((.+)\))?$/i, m => T("tqContest", m[1]) + (m[2] ? " · " + m[2] : "")],
+  [/^Awarded to (?:the )?winners(?: and runners up)? of the (.+?)(?: build| video)? (?:competition|contest)(?: \((.+)\))?$/i,
+    m => T("tqContestWin", m[1]) + (m[2] ? " · " + m[2] : "")],
+  [/^Obtained by Nitro Boosting/i, () => T("tqBoost")],
+  [/^It's a secret!?$/i, () => T("tqSecret")],
+  [/^Awarded for contributing to the improvement of The Hive's translations$/i, () => T("tqTranslator")],
+  [/^Obtained by having your artwork or video featured on The Buzz$/i, () => T("tqFeatured")],
+  [/^Obtained by collecting the FREE (.+?) from the Hive Store$/i, m => T("tqFree", itemRu(m[1]))],
+  [/^Obtained by talking to (.+?) during (.+)$/i, m => T("tqTalk", m[1]) + " · " + m[2]],
+  [/^(?:Awarded for completing|Obtained by completing) (.+)$/i, m => T("tqComplete", m[1].replace(/^the /i, ""))]
+];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MON_RU = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+const MON_RU_G = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const SEASON_RU = { Summer:"лето", Winter:"зима", Spring:"весна", Autumn:"осень", Fall:"осень", Halloween:"Хэллоуин" };
+function ruDates(str){
+  const mi = n => MONTHS.indexOf(n[0].toUpperCase() + n.slice(1).toLowerCase());
+  return str
+    .replace(/(\d{1,2})(?:st|nd|rd|th)?(?: of)? (January|February|March|April|May|June|July|August|September|October|November|December) (\d{4})/gi,
+      (m, d, mon, y) => d + " " + MON_RU_G[mi(mon)] + " " + y)
+    .replace(/(до )(January|February|March|April|May|June|July|August|September|October|November|December) (\d{4})/gi,
+      (m, pre, mon, y) => pre + MON_RU_G[mi(mon)] + " " + y)
+    .replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December) (\d{4})/gi,
+      (m, mon, y) => MON_RU[mi(mon)] + " " + y)
+    .replace(/\b(Summer|Winter|Spring|Autumn|Fall|Halloween) (\d{4})/g, (m, w, y) => SEASON_RU[w] + " " + y);
+}
 function infoText(e){
   const d = e.d.replace(/\s+/g, " ").replace(/\s*\.$/, "").trim();
-  const gone = e.o ? T("tqInactive") : "";
+  const gone = e.o ? GONE : "";
   let m;
   if((m = /^Awarded for reaching level (\d+)$/i.exec(d)) && e.g) return T("tqLevel", m[1], e.g) + gone;
   if((m = /^Awarded for reaching Prestige ([IVX]+)(?: in (.+))?$/i.exec(d))) return T("tqPrestige", m[1], m[2] || e.g) + gone;
-  if(L !== "ru") return d + gone;                       // по-английски показываем как у Hive
-  if((m = /^Awarded for reaching level (\d+) in (.+?)(?: during (.+))?$/i.exec(d)))
-    return T("tqLevel", m[1], m[2]) + (m[3] ? " · " + m[3] : "") + gone;
-  if((m = /^(?:Obtained|Could be obtained) by purchasing (?:the |a |an |The )?(.+)$/i.exec(d))){
-    let item = m[1], where = "";
-    const q = /\s+from the Quest Store\s*\((.+)\)$/i.exec(item);
-    if(q){ item = item.slice(0, q.index); where = " · " + T("tqQuest", q[1]); }
-    for(const [re, w] of ITEM_RU) if(re.test(item)){ item = w + " " + item.replace(re, ""); break; }
-    return T("tqBuy", item) + where + gone;
-  }
-  if(/hub parkour course/i.test(d) && !/before/i.test(d)) return T("tqParkour") + gone;
-  if((m = /^Awarded for joining the server for (\d+) days in a row$/i.exec(d))) return T("tqStreak", m[1]) + gone;
-  if((m = /^Obtained by redeeming the code included in (?:the )?(.+?)(?:'s)? issue of The Buzz newsletter$/i.exec(d)))
-    return T("tqBuzz", m[1]) + gone;
-  return d + gone;                                      // редкие случаи — как написано у Hive
+  if(L === "ru") for(const [re, f] of INFO_RU){ const mm = re.exec(d); if(mm) return ruDates(f(mm)) + gone; }
+  return d + gone;
 }
 async function loadTitleInfo(){
   if(TINFO) return TINFO;
   if(!tinfoP) tinfoP = (async () => {
-    try{                                                // страницу обновляют раз в несколько недель — держим сутки
+    try{
       const c = JSON.parse(localStorage.getItem(TINFO_KEY) || "null");
       if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d) && c.d.length) return (TINFO = indexInfo(c.d));
     }catch(e){}
@@ -2134,13 +2211,13 @@ async function loadTitleInfo(){
     const r = await fetch(PROXY + encodeURIComponent(SUPPORT_TITLES), { cache:"no-store" });
     if(!r.ok) throw new Error(T("httpErr", r.status));
     const list = parseSupportTitles(await r.text());
-    if(list.length < 50) throw new Error("parse");      // страница поменяла вид — лучше молча обойтись без неё
+    if(list.length < 50) throw new Error("parse");
     try{ localStorage.setItem(TINFO_KEY, JSON.stringify({ t:Date.now(), d:list })); }catch(e){}
     return (TINFO = indexInfo(list));
   })();
   try{ return await tinfoP; } finally { tinfoP = null; }
 }
-function loadTqData(){                                  // официальная страница + каталог + награды за уровни
+function loadTqData(){
   if(tqData) return Promise.resolve(tqData);
   if(!tqDataP) tqDataP = (async () => {
     let cat = null, meta = null, info = null;
@@ -2148,12 +2225,12 @@ function loadTqData(){                                  // официальна�
     try{ cat = await loadTitleCatalogue(); }catch(e){}
     try{ meta = await loadTitleMeta(); }catch(e){}
     const d = { cat, meta, info };
-    if(info || cat || (meta && meta.byExact.size)) tqData = d;  // если всё упало — попробуем в следующий раз
+    if(info || cat || (meta && meta.byExact.size)) tqData = d;
     return d;
   })().finally(() => { tqDataP = null; });
   return tqDataP;
 }
-function howFor(d, t, u){                               // текст «как получить» или null, если данных нет
+function howFor(d, t, u){
   const inf = d.info && infoFor(d.info, t);
   if(inf) return infoText(inf);
   const ex = exactTitle(t), lo = looseTitle(t);
@@ -2162,7 +2239,7 @@ function howFor(d, t, u){                               // текст «как �
   const m = d.meta && (d.meta.byExact.get(ex) || d.meta.byLoose.get(lo));
   return m ? T("tqLevel", m.l, NAME(m.g)) : null;
 }
-async function markTq(root){                            // «?» остаётся только там, где есть что показать
+async function markTq(root){
   const btns = [...(root || document).querySelectorAll(".tq:not(.ok)")];
   if(!btns.length) return;
   const d = await loadTqData();
@@ -2178,10 +2255,14 @@ async function openTq(btn){
   closeTq();
   const pop = document.createElement("div");
   pop.className = "tqpop"; pop.__btn = btn; pop.__t = performance.now();
-  const setText = t => { pop.innerHTML = '<b>' + esc(T("tqHead")) + "</b><span>" + esc(t) + "</span>"; };
+  const setText = t => {
+    const [main, gone] = String(t).split(GONE);
+    pop.innerHTML = "<b>" + esc(T("tqHead")) + "</b><span>" + esc(main) + "</span>" +
+      (gone !== undefined ? '<small class="tg">' + esc(T("tqGoneLine")) + "</small>" : "");
+  };
   setText(T("tqLoading"));
   document.body.append(pop); tqPop = pop;
-  const place = () => {                                 // над кнопкой, правым краем к ней — так всегда влезает
+  const place = () => {
     const r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
     const vw = Math.min(document.documentElement.clientWidth,
       window.visualViewport ? visualViewport.width : Infinity);
@@ -2204,7 +2285,7 @@ const RARITY = { common:["Обычный","Common","#c3bcd0"], uncommon:["Нео
   rare:["Редкий","Rare","#5fa8ff"], epic:["Эпический","Epic","#c77dff"], legendary:["Легендарный","Legendary","#ffc02e"],
   mythic:["Мифический","Mythic","#ff6b8a"], mythical:["Мифический","Mythic","#ff6b8a"],
   special:["Особый","Special","#ff9f43"], exclusive:["Эксклюзивный","Exclusive","#ff9f43"] };
-const HOVER = matchMedia("(hover: hover) and (pointer: fine)").matches;   // мышь — по наведению, палец — по нажатию
+const HOVER = matchMedia("(hover: hover) and (pointer: fine)").matches;
 function openItemTip(el){
   closeTq();
   const name = el.dataset.tn; if(!name) return;
@@ -2215,7 +2296,7 @@ function openItemTip(el){
   pop.innerHTML = '<b class="tn">' + esc(name) + "</b>" + (rk ? '<span class="rr" style="color:' +
     (r ? r[2] : "var(--soft)") + '">' + esc(r ? r[L === "ru" ? 0 : 1] : pretty(el.dataset.tr)) + "</span>" : "");
   document.body.append(pop); tqPop = pop;
-  const rc = el.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;   // над предметом, по центру
+  const rc = el.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
   const vw = Math.min(document.documentElement.clientWidth, window.visualViewport ? visualViewport.width : Infinity);
   const left = Math.min(Math.max(10, rc.left + rc.width / 2 - w / 2), vw - w - 10);
   let top = rc.top - h - 10, below = false;
@@ -2244,10 +2325,10 @@ document.addEventListener("click", e => {
     return;
   }
   if(tqPop && !(e.target.closest && e.target.closest(".tqpop")) &&
-     !(tqPop.__btn && tqPop.__btn.contains(e.target))) closeTq();   // клик по самому предмету под мышью — не гасим
+     !(tqPop.__btn && tqPop.__btn.contains(e.target))) closeTq();
 }, true);
-addEventListener("scroll", () => {                   // при прокрутке подсказка не должна висеть в воздухе,
-  if(tqPop && performance.now() - tqPop.__t > 300) closeTq();   // но случайный сдвиг в момент касания её не гасит
+addEventListener("scroll", () => {
+  if(tqPop && performance.now() - tqPop.__t > 300) closeTq();
 }, true);
 addEventListener("resize", closeTq);
 function listHTML(base, arr){
@@ -2272,7 +2353,36 @@ function openCos(base, arr, from){
   });
 }
 
-function cosmeticsHTML(main){
+function fmtTicks(t){
+  const ms = Math.round(t * 50), m = Math.floor(ms / 60000), sec = Math.floor(ms % 60000 / 1000);
+  return (m ? m + ":" + String(sec).padStart(2, "0") : sec) + "." + String(ms % 1000).padStart(3, "0");
+}
+function parkourHTML(pk){
+  const P = pk && pk.parkours;
+  if(!P || typeof P !== "object") return "";
+  const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+  const worlds = Object.entries(P).filter(([, v]) => isObj(v));
+  let done = 0;
+  const rows = worlds.map(([wk, w]) => {
+    const list = Object.entries(w).filter(([, v]) => isObj(v)).map(([ck, c]) => {
+      const t = typeof c.best_run_time === "number" && c.best_run_time > 0 ? c.best_run_time : null;
+      if(t) done++;
+      const stars = typeof c.course_stars === "number" ? c.course_stars
+        : Array.isArray(c.collected_stars) ? c.collected_stars.length : 0;
+      return '<div class="pkc"><span>' + esc(pretty(ck)) + '</span><span class="pks">★ ' + nf(stars) +
+        "</span><b>" + (t ? fmtTicks(t) : "—") + "</b></div>";
+    }).join("");
+    return '<details class="pkw"><summary><span>' + esc(pretty(wk)) + '</span><span class="pks">★ ' +
+      nf(+w.parkour_stars || 0) + "</span></summary>" + list + "</details>";
+  }).join("");
+  const total = typeof P.total_stars === "number" ? P.total_stars
+    : worlds.reduce((a, [, w]) => a + (+w.parkour_stars || 0), 0);
+  if(!worlds.length && !total) return "";
+  return '<div class="card"><h3>Parkour Worlds</h3>' +
+    tilesHTML([{ k: T("pkStars"), v: nf(total), d: "" }, { k: T("pkDone"), v: nf(done), d: "" }]) +
+    (rows ? '<div class="pkl">' + rows + "</div>" : "") + "</div>";
+}
+function cosmeticsHTML(main, extra){
   const g = cosGroups(main), keys = Object.keys(g);
   if(!keys.length) return "";
   const ordered = keys.slice().sort((x,y) => {
@@ -2294,6 +2404,7 @@ function cosmeticsHTML(main){
   if(counts.length) out += "<h3>" + esc(T("cosOpen")) + "</h3>" + tilesHTML(counts);
   if(worn) out += '<h3 style="margin-top:18px">' + esc(T("cosWorn")) + "</h3>" + worn;
   out += "</div>";
+  out += extra || "";
 
   ordered.forEach(k => {
     const arr = itemsNewFirst(g[k].un);
@@ -2433,7 +2544,7 @@ function renderSnap(){
   }
 
   if(main){
-    const html = cosmeticsHTML(main);
+    const html = cosmeticsHTML(main, parkourHTML(last.g.parkour));
     if(html) col("side").insertAdjacentHTML("beforeend", "<h2>" + esc(T("appearance")) + "</h2>" + html);
     col("side").insertAdjacentHTML("beforeend", "<h2>" + esc(T("profileAll")) +
       '</h2><div class="card" style="text-align:center">' +
@@ -2519,7 +2630,7 @@ function metricVal(c, k){
 const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
 ];
-const ACT = {};                                        // UUID → { t, d }: лента последних игр, держим 2 минуты
+const ACT = {};
 function agoText(sec){
   const diff = Date.now() - sec * 1000;
   if(diff < 60000) return T("agoNow");
@@ -2535,7 +2646,7 @@ function actHTML(list){
       return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
         esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
     }
-    let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";   // формат разблокировок Hive ещё дополняет
+    let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";
     if(what && typeof what === "object") what = pick(what, "name", "human_name", "id", "type") || "";
     return '<div class="act"><span class="ag">' + esc(T("actLocker")) +
       (what ? " · " + esc(pretty(String(what))) : "") + '</span><span class="at">' + esc(t) + "</span></div>";
@@ -2553,7 +2664,7 @@ async function renderActivity(){
   if(c && c.d) box.innerHTML = actHTML(c.d);
   else if(!c || !c.p) box.innerHTML = "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
     esc(T("tqLoading")) + "</p></div>";
-  if($("#vTrend").classList.contains("hidden")) return;   // вкладка закрыта — запрос не тратим
+  if($("#vTrend").classList.contains("hidden")) return;
   if(c && (c.p || Date.now() - c.t < 2 * 60 * 1000)) return;
   ACT[uuid] = Object.assign({}, c, { p: true });
   try{
@@ -2566,7 +2677,7 @@ async function renderActivity(){
   }catch(e){
     ACT[uuid] = c && c.d ? { t: c.t, d: c.d } : { t: Date.now(), d: null, err: e.message };
   }
-  const cur = mySnaps().pop();                          // пока ждали, могли переключить ник
+  const cur = mySnaps().pop();
   if(!cur || !cur.g.main || pick(cur.g.main, "UUID", "uuid") !== uuid) return;
   const r = ACT[uuid];
   box.innerHTML = r.d ? actHTML(r.d) : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
@@ -2613,8 +2724,8 @@ function renderTrend(){
     .map(s => ({ t:s.t, v:metricVal(s.g[game], metric) }))
     .sort((a, b) => a.t - b.t);
   let pts = all.filter(p => p.t >= cutoff);
-  if(bounded){                                           // значение на начало периода — из последнего
-    const before = all.filter(p => p.t < cutoff).pop();  // среза до него, чтобы линия шла от левого края
+  if(bounded){
+    const before = all.filter(p => p.t < cutoff).pop();
     if(before) pts.unshift({ t: cutoff, v: before.v });
   }
   pts = pts.filter((p, i, arr) => i === 0 || i === arr.length - 1 || p.v !== arr[i-1].v);
@@ -2624,7 +2735,7 @@ function renderTrend(){
   const fmtM = n => (metric === "__kd" || metric === "__winrate" ? n.toFixed(2) : nf(n)) + unit;
   const W = 300, H = 110;
   const vs = pts.map(p => p.v), min = Math.min(...vs), max = Math.max(...vs), span = (max - min) || 1;
-  const t0 = bounded ? cutoff : pts[0].t;               // ось — ровно выбранный период до текущего момента
+  const t0 = bounded ? cutoff : pts[0].t;
   const t1 = bounded ? Date.now() : pts[pts.length-1].t, tspan = (t1 - t0) || 1;
   const x = i => (pts[i].t - t0) / tspan * W;
   const y = v => H - (v - min) / span * (H - 10) - 5;
@@ -2740,7 +2851,7 @@ $("#importFile").onchange = e => {
         dead: Array.isArray(p.dead) ? p.dead.filter(g => codes.includes(g)) : [],
         tagged: 1
       };
-      if(!clean.games.length) clean.games = ["main","bed","sky","dr"];
+      if(!clean.games.length) clean.games = DEFAULT_GAMES.slice();
       state = Object.assign(state, clean);
       state.reqLog = []; state.lastSnapAt = 0;
       save();
@@ -2758,7 +2869,7 @@ $("#wipeBtn").onclick = () => {
   save(); renderSnap(); renderTrend();
 };
 $("#fetchBtn").onclick = snapshot;
-function goMain(){                                     // открыть свой профиль и сразу обновить
+function goMain(){
   if(!state.main) return;
   wheelTo = null; scrollTo(0, 0);
   if(state.main.toLowerCase() !== nickKey()) switchNick(state.main);
@@ -2867,11 +2978,8 @@ addEventListener("keydown", dropWheel);
 addEventListener("pointerdown", dropWheel, { passive:true });
 
 applyLang();
-/* ---------- синхронизация между устройствами ----------
-   Данные лежат в KV нашего воркера под ключом SHA-256(код). Код придумывает пользователь
-   и вводит одинаковым на всех устройствах; сам код на сервер не уходит. */
 const SYNC_URL = "https://misty-sky-2dcb.zhoski-demon.workers.dev/sync/";
-function sha256hex(str){                               // свой SHA-256: crypto.subtle не работает при открытии с диска
+function sha256hex(str){
   const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
     0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,
     0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,
@@ -2914,22 +3022,22 @@ async function gzipPack(obj){
 async function gzipUnpack(buf){
   return JSON.parse(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
 }
-const touchSettings = () => { state.setAt = Date.now(); };   // какая из настроек свежее — та и победит
-function syncPayload(){                                // ник, язык и «меньше анимаций» у каждого устройства свои
+const touchSettings = () => { state.setAt = Date.now(); };
+function syncPayload(){
   return { v: 1, snaps: state.snaps, main: state.main || "", games: state.games, finals: state.finals,
     avatars: state.avatars, setAt: state.setAt || 0 };
 }
 function mergeRemote(r){
   if(!r || typeof r !== "object") return;
   const seen = new Set(state.snaps.map(x => (x.n || "") + "|" + x.t));
-  (Array.isArray(r.snaps) ? r.snaps : []).forEach(x => {   // срезы — объединение без повторов
+  (Array.isArray(r.snaps) ? r.snaps : []).forEach(x => {
     if(!x || typeof x.t !== "number" || !x.g || typeof x.g !== "object") return;
     const k = (x.n || "") + "|" + x.t;
     if(!seen.has(k)){ seen.add(k); state.snaps.push(x); }
   });
   state.snaps.sort((a, b) => a.t - b.t);
   if(state.snaps.length > 300) state.snaps.splice(0, state.snaps.length - 300);
-  if((r.setAt || 0) > (state.setAt || 0)){              // настройки — у кого изменены позже
+  if((r.setAt || 0) > (state.setAt || 0)){
     const codes = GAMES.map(x => x[0]);
     if(typeof r.main === "string") state.main = r.main.trim().slice(0, 32) || undefined;
     if(Array.isArray(r.games)){ const g = r.games.filter(x => codes.includes(x)); if(g.length) state.games = g; }
@@ -2939,7 +3047,7 @@ function mergeRemote(r){
   if(r.avatars && typeof r.avatars === "object" && !Array.isArray(r.avatars))
     for(const [k, v] of Object.entries(r.avatars)) if(!state.avatars[k] && typeof v === "string") state.avatars[k] = v;
 }
-var syncBusy = false, syncAgain = false, syncTimer = null;   // var: renderSync вызывается из applyLang раньше этой строки
+var syncBusy = false, syncAgain = false, syncTimer = null;
 const syncSoon = () => { if(!state.sync) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); };
 async function syncNow(manual){
   if(!state.sync || !state.sync.id) return;
@@ -2947,14 +3055,14 @@ async function syncNow(manual){
   syncBusy = true; renderSync();
   try{
     const url = SYNC_URL + state.sync.id;
-    const res = await fetch(url, { cache:"no-store" });     // 1) забрать то, что сохранили другие устройства
+    const res = await fetch(url, { cache:"no-store" });
     if(res.ok) mergeRemote(await gzipUnpack(await res.arrayBuffer()));
     else if(res.status !== 404) throw new Error(await errText(res));
-    const up = await fetch(url, { method:"PUT", body: await gzipPack(syncPayload()),   // 2) отдать объединённое
+    const up = await fetch(url, { method:"PUT", body: await gzipPack(syncPayload()),
       headers: { "Content-Type": "application/octet-stream" } });
     if(!up.ok) throw new Error(await errText(up));
     state.sync.at = Date.now(); state.sync.err = ""; save();
-    applyLang();                                        // перерисовать всё: могли прийти срезы, игры, основной профиль
+    applyLang();
     if(manual) toast(T("syncDone"));
   }catch(e){
     const msg = e && e.name === "TypeError" ? T("netErr") : (e && e.message) || String(e);
@@ -2997,26 +3105,25 @@ $("#syncBtn").onclick = () => {
 };
 $("#syncCode").onkeydown = e => { if(e.key === "Enter" && !(state.sync && state.sync.id)) $("#syncBtn").click(); };
 $("#syncNowBtn").onclick = () => syncNow(true);
-$("#syncOffBtn").onclick = () => {                      // отключаем только это устройство, данные на сервере остаются
+$("#syncOffBtn").onclick = () => {
   delete state.sync; save(); $("#syncCode").value = ""; renderSync();
 };
-document.addEventListener("visibilitychange", () => {  // вернулись на вкладку — подтянуть изменения с других устройств
+document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible" && state.sync && Date.now() - (state.sync.at || 0) > 60000) syncNow(false);
 });
 
-(function openFromLink(){                              // ?nick=DemanZeZ — сразу открыть профиль и снять срез
+(function openFromLink(){
   let n = "";
   try{ n = (new URLSearchParams(location.search).get("nick") || "").trim(); }catch(e){}
   if(!n || !/^[a-zA-Z0-9 ]{1,32}$/.test(n)) return;
   try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){}
-                                                       // убираем параметр, чтобы обновление страницы не снимало срез снова
   if(n.toLowerCase() !== nickKey()) switchNick(niceNick(n));
   const last = mySnaps().pop();
-  if(!last || Date.now() - last.t > 10 * 60 * 1000) snapshot();   // срез моложе 10 минут — просто показываем его
+  if(!last || Date.now() - last.t > 10 * 60 * 1000) snapshot();
 })();
 loadHiveData().then(() => { if(HD){ renderSnap(); } });
 if(state.sync && state.sync.id) syncNow(false);
-loadTitleMeta().catch(() => {});                       // потолки уровней нужны всем, даже без списка титулов
+loadTitleMeta().catch(() => {});
 setInterval(tickStatus, 30000);
 </script>
 
