@@ -357,16 +357,24 @@ svg.line{width:100%;height:100%;display:block}
 #vSet .hint.bad{color:#ff8a7a;opacity:1}
 .pkl{margin-top:12px}
 .pkw{border-top:1px solid rgba(255,255,255,.07)}
-.pkw summary{display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer;list-style:none;font-size:15px}
-.pkw summary::-webkit-details-marker{display:none}
-.pkw summary::after{content:"›";color:var(--soft);font-size:18px;line-height:1;transition:transform .2s ease}
-.pkw[open] summary::after{transform:rotate(90deg)}
-.pkw summary span:first-child{flex:1;min-width:0}
+.pkh{display:flex;align-items:center;gap:10px;width:100%;padding:11px 0;border:none;background:none;
+  color:var(--text);font-size:15px;text-align:left;cursor:pointer}
+.pkh span:first-child{flex:1;min-width:0}
+.pkh i{font-style:normal;color:var(--soft);font-size:18px;line-height:1;width:12px;text-align:center;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.pkw.open .pkh i{transform:rotate(90deg)}
+.pkb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.2,.8,.2,1)}
+.pkw.open .pkb{grid-template-rows:1fr}
+.pkb > div{min-height:0;overflow:hidden;opacity:0;transform:translateY(-6px);
+  transition:opacity .24s ease,transform .32s cubic-bezier(.2,.8,.2,1)}
+.pkw.open .pkb > div{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){ .pkb,.pkb > div,.pkh i{transition:none} }
+.lite .pkb,.lite .pkb > div,.lite .pkh i{transition:none !important}
 .pks{flex:none;color:var(--gold);font-weight:700;font-size:13.5px}
 .pkc{display:flex;align-items:center;gap:10px;padding:7px 0 7px 12px;font-size:13.5px;color:var(--soft)}
 .pkc span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pkc b{flex:none;min-width:68px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-.pkw:last-child .pkc:last-child{padding-bottom:4px}
+.pkw:last-child .pkc:last-child{padding-bottom:6px}
 .seg{display:flex;gap:4px;padding:4px;margin:0 0 14px;border-radius:12px;background:rgba(0,0,0,.3);
   border:1px solid var(--edge)}
 .seg button{flex:1;padding:9px 10px;border:none;border-radius:9px;background:none;color:var(--soft);
