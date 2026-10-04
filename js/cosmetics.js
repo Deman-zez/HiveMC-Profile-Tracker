@@ -93,11 +93,23 @@ function fmtTicks(t){
   const ms = Math.round(t * 50), m = Math.floor(ms / 60000), sec = Math.floor(ms % 60000 / 1000);
   return (m ? m + ":" + String(sec).padStart(2, "0") : sec) + "." + String(ms % 1000).padStart(3, "0");
 }
+const PK_ORDER = ["rooftops", "jungle", "city", "volcano"];
+const PK_OPEN = new Set();
+document.addEventListener("click", e => {
+  const h = e.target.closest && e.target.closest(".pkw > .pkh");
+  if(!h) return;
+  const w = h.parentElement, open = !w.classList.contains("open");
+  w.classList.toggle("open", open);
+  h.setAttribute("aria-expanded", open);
+  if(open) PK_OPEN.add(w.dataset.w); else PK_OPEN.delete(w.dataset.w);
+});
 function parkourHTML(pk){
   const P = pk && pk.parkours;
   if(!P || typeof P !== "object") return "";
   const isObj = v => v && typeof v === "object" && !Array.isArray(v);
-  const worlds = Object.entries(P).filter(([, v]) => isObj(v));
+  const rank = k => { const i = PK_ORDER.indexOf(String(k).toLowerCase()); return i < 0 ? 99 : i; };
+  const worlds = Object.entries(P).filter(([, v]) => isObj(v))
+    .sort((a, b) => rank(a[0]) - rank(b[0]) || String(a[0]).localeCompare(String(b[0])));
   let done = 0;
   const rows = worlds.map(([wk, w]) => {
     const list = Object.entries(w).filter(([, v]) => isObj(v)).map(([ck, c]) => {
@@ -108,8 +120,11 @@ function parkourHTML(pk){
       return '<div class="pkc"><span>' + esc(pretty(ck)) + '</span><span class="pks">★ ' + nf(stars) +
         "</span><b>" + (t ? fmtTicks(t) : "—") + "</b></div>";
     }).join("");
-    return '<details class="pkw"><summary><span>' + esc(pretty(wk)) + '</span><span class="pks">★ ' +
-      nf(+w.parkour_stars || 0) + "</span></summary>" + list + "</details>";
+    const open = PK_OPEN.has(wk);
+    return '<div class="pkw' + (open ? " open" : "") + '" data-w="' + esc(wk) + '">' +
+      '<button type="button" class="pkh" aria-expanded="' + open + '"><span>' + esc(pretty(wk)) +
+      '</span><span class="pks">★ ' + nf(+w.parkour_stars || 0) + '</span><i aria-hidden="true">›</i></button>' +
+      '<div class="pkb"><div>' + list + "</div></div></div>";
   }).join("");
   const total = typeof P.total_stars === "number" ? P.total_stars
     : worlds.reduce((a, [, w]) => a + (+w.parkour_stars || 0), 0);
