@@ -599,7 +599,6 @@ html.locked, html.locked body{overflow:hidden}
 @media (min-width:900px){
   .lbr:hover{background:rgba(255,255,255,.05)}
   .lbr.me:hover{background:rgba(255,192,46,.14)}
-  .lbcard{max-width:760px}
 }
 @media (max-width:440px){
   .tabs{gap:2px;padding-left:6px;padding-right:6px}
@@ -616,3 +615,23 @@ html.locked, html.locked body{overflow:hidden}
 @keyframes lbFlash{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,192,46,0)}30%,70%{box-shadow:inset 0 0 0 2px var(--gold)}}
 .lbr.flash{animation:lbFlash 1.6s ease;background:rgba(255,192,46,.12)}
 #trendChartHead{margin-top:26px}
+.lbc,.lbhead{display:none}
+.mcmp .mhint{margin:0 0 16px}
+.mcmp .nickbox{position:relative;z-index:5}
+@media (min-width:900px){
+  .lbcard{padding:8px 10px}
+  .lbhead,.lbr{display:grid;grid-template-columns:64px minmax(0,1fr) 130px 130px 120px;gap:12px;align-items:center}
+  .lbhead{padding:8px 12px 10px;border-bottom:1px solid var(--edge);margin-bottom:4px;
+    color:var(--soft);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+  .lbhead span:nth-child(n+3),.lbc{text-align:right}
+  .lbr{padding:11px 12px}
+  .lbr .lbv{display:none}
+  .lbc{display:block;font-variant-numeric:tabular-nums;color:var(--soft);font-size:14.5px}
+  .lbc.lbcw{color:var(--text);font-weight:800;font-size:15.5px}
+  .lbfind,.lbme,#lbFound{max-width:none}
+  .modal.mcmp .inner{max-width:780px;min-height:440px}
+  .mcmp .cmpBody{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-top:14px}
+  .mcmp .cmpBody > .cmpc{margin-top:0}
+  .mcmp .cmpBody > .cmpc:first-child{grid-column:1 / -1}
+  .mcmp .cmpBody > .sub{grid-column:1 / -1}
+}
