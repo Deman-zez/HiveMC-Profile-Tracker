@@ -5,19 +5,19 @@ document.querySelectorAll(".tabs button").forEach(b => {
   b.onclick = () => {
     const v = b.dataset.v;
     if(!$("#vSnap").classList.contains("hidden")) snapScroll = scrollY;
-    $("#vSnap").classList.toggle("hidden", v !== "snap");
-    $("#vTrend").classList.toggle("hidden", v !== "trend");
-    $("#vSet").classList.toggle("hidden", v !== "set");
+    const views = { snap:"#vSnap", trend:"#vTrend", top:"#vTop", set:"#vSet" };
+    for(const [k, sel] of Object.entries(views)) $(sel).classList.toggle("hidden", v !== k);
     document.querySelectorAll(".tabs button").forEach(x => x.removeAttribute("aria-current"));
     b.setAttribute("aria-current","page");
     if(v === "trend") renderTrend();
+    if(v === "top") renderLb();
     if(v === "snap") renderSnap();
     wheelTo = null;
     if(v === "snap"){
       scrollTo(0, snapScroll);
       requestAnimationFrame(() => scrollTo(0, snapScroll));
     } else scrollTo(0, 0);
-    const sec = v === "snap" ? $("#vSnap") : v === "trend" ? $("#vTrend") : $("#vSet");
+    const sec = $(views[v] || "#vSnap");
     reveal(sec);
     sec.classList.remove("swap");
     void sec.offsetWidth;

@@ -15,7 +15,7 @@ async function searchPlayers(q){
     }
   }
   if(res.status === 429) throw new Error(T("limitErr"));
-  if(!res.ok) throw new Error(T("httpErr", res.status));
+  if(!res.ok) throw new Error(httpMsg(res.status));
   let data;
   try{ data = await res.json(); }
   catch(e){ throw new Error(T("badJson")); }

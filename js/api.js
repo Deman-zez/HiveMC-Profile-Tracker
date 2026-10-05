@@ -18,7 +18,7 @@ async function pullAll(){
     throw err;
   }
   noteHit(nickKey());
-  if(!res.ok) throw new Error(T("httpErr", res.status));
+  if(!res.ok) throw new Error(httpMsg(res.status));
   const data = await res.json();
   return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
 }

@@ -149,9 +149,20 @@ function openGame(code, from){
     const cap = maxLevelOf(code);
     const lv = Math.floor(cap ? Math.min(lvRaw, cap) : lvRaw);
     const note = T("level") + (num(cur,"prestige") ? " · " + T("prestige") + " " + cur.prestige : "");
+    const mg = META_GAMES[code], xp = num(cur, "xp");
+    let next = "";
+    if(cap && lv >= cap) next = '<small class="lvmax">' + esc(T("lvMax")) + "</small>";
+    else if(mg && Array.isArray(mg.xp) && xp){
+      const a = mg.xp.find(([, l]) => l === lv), b = mg.xp.find(([, l]) => l === lv + 1);
+      if(a && b && b[0] > xp && b[0] > a[0]){
+        const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
+        next = '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
+          "<small>" + esc(T("lvNext", lv + 1, nf(b[0] - xp))) + "</small></div>";
+      }
+    }
     bar = '<div class="tile wide lvl"><b>' + (cap ? lv + " / " + cap : lv) + "</b>" +
       (cap ? '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div>' : "") +
-      "<small>" + note + "</small></div>";
+      "<small>" + note + "</small>" + next + "</div>";
   }
   const m = document.createElement("div");
   m.className = "modal";
@@ -159,7 +170,8 @@ function openGame(code, from){
     '<div class="seg" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
     '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div></div>';
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div>' +
+    (code === "main" ? "" : '<button type="button" class="mini lbgo">' + esc(T("lbOpen")) + "</button>") + "</div>";
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
   const box = m.querySelector(".mbody");
@@ -173,6 +185,8 @@ function openGame(code, from){
     m.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
     if(b.dataset.tf === "month") fillMonth(box, code, m); else fillAll();
   });
+  const go = m.querySelector(".lbgo");
+  if(go) go.onclick = () => { closeModal(m); openLb(code); };
   requestAnimationFrame(fillAll);
 }
 const MONTHLY = {};
@@ -188,7 +202,7 @@ async function loadMonthly(){
   catch(e){ if(c) return c.d; throw new Error(T("netErr")); }
   if(res.status === 429){ if(c) return c.d; throw new Error(T("limitHiveLater")); }
   if(res.status === 404){ MONTHLY[n] = { t: Date.now(), d: {} }; return {}; }
-  if(!res.ok){ if(c) return c.d; throw new Error(T("httpErr", res.status)); }
+  if(!res.ok){ if(c) return c.d; throw new Error(httpMsg(res.status)); }
   let d = await res.json();
   if(!d || typeof d !== "object" || Array.isArray(d)) d = {};
   MONTHLY[n] = { t: Date.now(), d };

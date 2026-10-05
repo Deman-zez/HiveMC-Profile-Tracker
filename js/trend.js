@@ -54,7 +54,7 @@ async function renderActivity(){
   try{
     noteRequest();
     const res = await hiveFetch(API + "/player/activity/" + encodeURIComponent(uuid), { cache:"no-store" });
-    if(!res.ok) throw new Error(T("httpErr", res.status));
+    if(!res.ok) throw new Error(httpMsg(res.status));
     let d = await res.json();
     if(!Array.isArray(d)) d = (d && Object.values(d).find(Array.isArray)) || [];
     ACT[uuid] = { t: Date.now(), d };

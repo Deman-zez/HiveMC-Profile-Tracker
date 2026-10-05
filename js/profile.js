@@ -64,6 +64,7 @@ function renderSnap(){
   if(!last) return;
 
   if(main) renderStreak(main, body);
+  body.insertAdjacentHTML("beforeend", todayHTML(mine));
 
   let cols = null;
   const col = which => {
@@ -99,7 +100,9 @@ function renderSnap(){
     tiles.push(LV ? { k:T("levelSum"), v:nf(LV) + (PR ? " (+" + PR + ")" : ""), d:"" }
                   : { k:T("xpTotal"), v:nf(XP), d:"" });
     body.insertAdjacentHTML("beforeend", "<h2>" + esc(T("totalOver", codes.length)) + "</h2>" +
-      '<div class="card">' + tilesHTML(tiles) + "</div>");
+      '<div class="card">' + tilesHTML(tiles) +
+      '<button type="button" class="mini cmpgo">' + esc(T("cmpBtn")) + "</button></div>");
+    const cg = body.querySelector(".cmpgo"); if(cg) cg.onclick = () => openCompare(cg);
 
     const most = codes[0];
     const cards = codes.map(g => {
@@ -192,4 +195,32 @@ function tickStatus(){
     btn.textContent = T("snap");
   }
   $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t));
+}
+
+function todayHTML(mine){
+  const last = mine[mine.length - 1]; if(!last) return "";
+  const day0 = Math.floor(Date.now() / 86400000) * 86400000;
+  if(last.t < day0) return "";
+  let base = null;
+  for(let i = mine.length - 2; i >= 0; i--) if(mine[i].t < day0){ base = mine[i]; break; }
+  if(!base){ const first = mine.find(x => x.t >= day0); if(first && first !== last) base = first; }
+  if(!base) return "";
+  const playedOf = c => num(c,"played") || num(c,"games_played");
+  const skip = new Set([...(last.old || []), ...(base.old || []), "main", "parkour"]);
+  let P = 0, W = 0, K = 0, X = 0;
+  for(const g of Object.keys(last.g)){
+    const a = last.g[g], b = base.g[g];
+    if(skip.has(g) || !a || !b || Array.isArray(a) || Array.isArray(b)) continue;
+    P += Math.max(0, playedOf(a) - playedOf(b));
+    W += Math.max(0, num(a,"victories") - num(b,"victories"));
+    K += Math.max(0, killsOf(a) - killsOf(b));
+    X += Math.max(0, num(a,"xp") - num(b,"xp"));
+  }
+  const at = new Date(day0).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US", { hour:"2-digit", minute:"2-digit" });
+  const inner = P || W || K || X
+    ? tilesHTML([{ k:T("tdPlayed"), v:"+" + nf(P), d:"" }, { k:T("tdWins"), v:"+" + nf(W), d:"" },
+                 { k:T("tdKills"), v:"+" + nf(K), d:"" }, { k:T("tdXp"), v:"+" + nf(X), d:"" }])
+    : '<p class="sub" style="margin:0">' + esc(T("todayNone")) + "</p>";
+  return "<h2>" + esc(T("today")) + '</h2><div class="card">' + inner +
+    '<p class="sub tdh">' + esc(T("todaySince", at)) + "</p></div>";
 }

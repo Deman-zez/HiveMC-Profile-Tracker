@@ -2,7 +2,17 @@
 
 const STR = {
   ru:{
-    tab1:"Профиль", tab2:"Динамика", tab3:"Настройки",
+    tab1:"Профиль", tab2:"Динамика", tab3:"Настройки", tab4:"Рейтинг",
+    topSub:"Лучшие игроки Hive по режимам", lbMonth:"%1 · идёт сейчас", lbSeason:"Сезон %1",
+    lbSub:"из %1 игр · %2", lbYou:"Ваше место: #%1", lbNotIn:"%1 нет в этом топе",
+    lbEmpty:"Этот рейтинг пуст или ещё не опубликован", lbLimit:"Hive временно ограничил запросы — попробуйте через пару минут",
+    lbOpen:"Рейтинг режима", lbHint:"Нажмите на игрока, чтобы открыть его профиль",
+    lvNext:"До %1 уровня — %2 опыта", lvMax:"Максимальный уровень",
+    today:"Сегодня", tdPlayed:"Игр", tdWins:"Побед", tdKills:"Убийств", tdXp:"Опыта",
+    todayNone:"Сегодня ещё не играли", todaySince:"С начала игрового дня в %1",
+    cmpBtn:"Сравнить с игроком", cmpTitle:"Сравнение", cmpHint:"Начните вводить ник соперника и выберите его из списка",
+    cmpTotal:"Всего", cmpNotFound:"Игрок не найден", cmpNoMe:"Сначала снимите срез этого профиля", cmpGo:"Сравнить",
+    hiveDown:"Сервер Hive сейчас не отвечает (ошибка %1) — это сбой на их стороне, попробуйте позже",
     snap:"Снять срез", snapping:"Запрашиваю…",
     noSnaps:"Срезов пока нет. Укажите ник в настройках и снимите первый.",
     lastSnap:"Последний срез: %1",
@@ -90,7 +100,17 @@ const STR = {
     killsHint:"Сверьте с титулом «Total Kills» в игре и включите или выключите финальные убийства в настройках — так сумма сойдётся точно."
   },
   en:{
-    tab1:"Profile", tab2:"Trend", tab3:"Settings",
+    tab1:"Profile", tab2:"Trend", tab3:"Settings", tab4:"Leaders",
+    topSub:"Top Hive players by mode", lbMonth:"%1 · in progress", lbSeason:"Season %1",
+    lbSub:"of %1 games · %2", lbYou:"Your place: #%1", lbNotIn:"%1 isn't in this top",
+    lbEmpty:"This leaderboard is empty or not published yet", lbLimit:"Hive is rate limiting right now — try again in a couple of minutes",
+    lbOpen:"Mode leaderboard", lbHint:"Tap a player to open their profile",
+    lvNext:"%2 XP to level %1", lvMax:"Max level",
+    today:"Today", tdPlayed:"Games", tdWins:"Wins", tdKills:"Kills", tdXp:"XP",
+    todayNone:"No games yet today", todaySince:"Since the game day started at %1",
+    cmpBtn:"Compare with a player", cmpTitle:"Compare", cmpHint:"Start typing a rival's username and pick it from the list",
+    cmpTotal:"Total", cmpNotFound:"Player not found", cmpNoMe:"Take a snapshot of this profile first", cmpGo:"Compare",
+    hiveDown:"Hive's server isn't responding (error %1) — that's on their side, try again later",
     snap:"Take snapshot", snapping:"Fetching…",
     noSnaps:"No snapshots yet. Set your username in settings and take the first one.",
     lastSnap:"Last snapshot: %1",

@@ -162,3 +162,5 @@ function iconUrl(base, id){
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
+
+function httpMsg(st){ return st >= 500 ? T("hiveDown", st) : T("httpErr", st); }

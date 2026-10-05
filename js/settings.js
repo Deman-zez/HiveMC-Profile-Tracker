@@ -18,6 +18,8 @@ function applyLang(){
   L = langCode();
   document.documentElement.lang = L;
   $("#tab1").textContent = T("tab1"); $("#tab2").textContent = T("tab2"); $("#tab3").textContent = T("tab3");
+  $("#tab4").textContent = T("tab4");
+  renderLb();
   $("#fetchBtn").textContent = T("snap");
   $("#trendHead").textContent = T("tab2"); $("#setHead").textContent = T("tab3");
   $("#trendSub").textContent = T("trendSub"); $("#setSub").textContent = T("setSub");

@@ -29,7 +29,7 @@ async function loadTitleCatalogue(){
     let res;
     try{ res = await hiveFetch(API + "/catalogue/titles", { cache:"no-store" }); }
     catch(e){ throw new Error(T("netErr")); }
-    if(!res.ok) throw new Error(T("httpErr", res.status));
+    if(!res.ok) throw new Error(httpMsg(res.status));
     let d = await res.json();
     if(d && !Array.isArray(d) && typeof d === "object"){
       const arr = Object.values(d).find(Array.isArray);
@@ -242,7 +242,7 @@ async function loadTitleInfo(){
     }catch(e){}
     noteRequest();
     const r = await fetch(PROXY + encodeURIComponent(SUPPORT_TITLES), { cache:"no-store" });
-    if(!r.ok) throw new Error(T("httpErr", r.status));
+    if(!r.ok) throw new Error(httpMsg(r.status));
     const list = parseSupportTitles(await r.text());
     if(list.length < 50) throw new Error("parse");
     try{ localStorage.setItem(TINFO_KEY, JSON.stringify({ t:Date.now(), d:list })); }catch(e){}
