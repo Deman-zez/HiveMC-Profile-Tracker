@@ -606,3 +606,13 @@ html.locked, html.locked body{overflow:hidden}
   .tabs button{font-size:13.5px}
   .tabs button > span{padding:11px 4px}
 }
+.lbfind{margin-top:10px}
+.lbfind .nickbox{flex:1;min-width:0}
+#lbFound .sub{margin:12px 2px 0}
+.lbfound{padding:6px;margin-top:12px}
+.lbmore,.actmore{display:block;margin:14px auto 0}
+.lbend{text-align:center;margin:12px 0 0;font-size:12px}
+.actn{color:var(--soft);font-weight:600;font-size:13px;margin-left:4px}
+@keyframes lbFlash{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,192,46,0)}30%,70%{box-shadow:inset 0 0 0 2px var(--gold)}}
+.lbr.flash{animation:lbFlash 1.6s ease;background:rgba(255,192,46,.12)}
+#trendChartHead{margin-top:26px}
