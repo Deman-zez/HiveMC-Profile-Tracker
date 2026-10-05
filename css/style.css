@@ -561,3 +561,48 @@ html.locked, html.locked body{overflow:hidden}
 .tile.tap{cursor:pointer}
 .tile.tap:active{transform:scale(.97)}
 .tile.tap b::after{content:"›";color:var(--soft);font-size:.7em;margin-left:6px;vertical-align:middle}
+
+.lbme{margin:14px 0 0;padding:11px 14px;border-radius:12px;background:rgba(255,192,46,.1);
+  border:1px solid rgba(255,192,46,.3);color:var(--gold);font-weight:700;font-size:14px}
+.lbcard{padding:6px}
+.lbr{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;border-radius:10px;
+  background:none;color:var(--text);text-align:left;cursor:pointer;transition:background .2s ease}
+.lbr:nth-child(even){background:rgba(255,255,255,.025)}
+.lbr:active{background:rgba(255,255,255,.06)}
+.lbp{flex:none;min-width:34px;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums}
+.lbr.p1 .lbp{color:#ffc02e}
+.lbr.p2 .lbp{color:#d9dceb}
+.lbr.p3 .lbp{color:#e39a5f}
+.lbn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:15px}
+.lbv{flex:none;text-align:right}
+.lbv b{display:block;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.lbv small{display:block;color:var(--soft);font-size:11.5px;margin-top:1px}
+.lbr.me{background:rgba(255,192,46,.1);box-shadow:inset 0 0 0 1px rgba(255,192,46,.4)}
+.lbr.me .lbn{color:var(--gold)}
+.lbh{margin:10px 2px 24px;font-size:12px}
+.lbgo{display:block;margin:14px 0 0}
+.lvnext{margin-top:10px}
+.bar.thin{height:6px;margin:2px 0 6px}
+.bar.thin i{background:var(--gold)}
+.lvmax{color:var(--gold) !important;font-weight:700;margin-top:6px !important}
+.tdh{margin:10px 0 0;font-size:12px}
+.cmpgo{display:block;margin:14px auto 0}
+.cmpBody{margin-top:6px}
+.cmpc h3{margin-bottom:6px}
+.cr{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;
+  padding:8px 0;border-top:1px solid rgba(255,255,255,.07);font-size:14px}
+.cr span{color:var(--soft);min-width:0}
+.cr b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;min-width:0}
+.cr b.up{color:var(--green)}
+.cr.ch{border-top:none;padding-top:0}
+.cr.ch b{color:var(--gold);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (min-width:900px){
+  .lbr:hover{background:rgba(255,255,255,.05)}
+  .lbr.me:hover{background:rgba(255,192,46,.14)}
+  .lbcard{max-width:760px}
+}
+@media (max-width:440px){
+  .tabs{gap:2px;padding-left:6px;padding-right:6px}
+  .tabs button{font-size:13.5px}
+  .tabs button > span{padding:11px 4px}
+}
