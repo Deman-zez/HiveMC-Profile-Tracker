@@ -1,6 +1,6 @@
 # HiveMC Profile Tracker
 
-A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. One HTML file — no build step, no dependencies, no backend. Open it and it works.
+A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. Plain HTML, CSS and JavaScript — no build step, no dependencies, no frameworks. Open it and it works.
 
 **Live:** https://deman-zez.github.io/HiveMC-Profile-Tracker/
 
@@ -62,7 +62,7 @@ The layout is not just a stretched phone screen. On screens 900px and wider it s
 - Detail views open as centred dialogs with their own scrolling; the page behind them stays put.
 - The tab bar turns into a floating centred pill, and cards, chips and buttons respond to hover.
 
-Everything stays in the same single file — there is no separate desktop build.
+The same page adapts to both — there is no separate desktop build.
 
 ## Getting started
 
@@ -85,7 +85,7 @@ Hive's public API still has its own rate limit. If you hit it, the app shows the
 
 ## Running locally
 
-Opening the file directly from disk usually works, but browsers often block storage on `file://` and `content://` origins, which means your snapshots will not persist. Serve it over HTTP instead:
+Keep the folder structure as it is — `index.html` loads the files from `css/` and `js/` next to it. Opening `index.html` directly from disk usually works, but browsers often block storage on `file://` and `content://` origins, which means your snapshots will not persist. Serve the folder over HTTP instead:
 
 ```bash
 python3 -m http.server 8080
@@ -95,7 +95,34 @@ Then open `http://localhost:8080`.
 
 ## How it is built
 
-Plain HTML, CSS and vanilla JS in a single ~113 KB file. No frameworks, no bundler, no build step.
+Plain HTML, CSS and vanilla JS. No frameworks, no bundler, no build step — the files in the repository are exactly what the browser loads.
+
+```
+index.html          page markup
+css/style.css       all styles, including desktop mode
+js/                 the app, loaded in order as plain scripts:
+  config.js         API address, built-in proxy, game list
+  i18n.js           English and Russian strings
+  state.js          saved data and request log
+  utils.js          shared helpers, Minecraft colours, title glyphs
+  levels.js         level caps and XP tables
+  api.js            snapshots
+  search.js         player search
+  main-profile.js   main profile and share links
+  diag.js           raw profile check
+  game.js           game cards, monthly stats, kill breakdown
+  cosmetics.js      locker and Parkour Worlds
+  titles.js         "how to get" hints and item tooltips
+  profile.js        profile screen
+  trend.js          charts and recent games
+  leaderboard.js    leaderboards: all time, monthly, BedWars seasons
+  compare.js        side-by-side comparison with another player
+  settings.js       settings screen
+  nav.js            tabs, sticky header, scrolling
+  sync.js           sync between devices
+  app.js            start-up
+worker/             Cloudflare Worker: API proxy and sync storage
+```
 
 - Stats come from the public API at `api.playhive.com/v0`: one request to `/game/all/all/{player}` per snapshot, plus `/player/search` for the username suggestions.
 - Requests send `X-Hive-Resolve-Stat-Track: true`, so Hive fills in the numbers in dynamic titles before returning them.
