@@ -72,15 +72,21 @@ async function lbMore(entry, game, period){
   }
 }
 function lbMe(){ return String(state.main || state.nick || "").trim().toLowerCase(); }
+function lbCells(name, place, p){
+  const played = num(p, "played") || num(p, "games_played"), wins = num(p, "victories");
+  const wr = played ? pct(wins, played) : "—";
+  return '<span class="lbp">' + (place ? nf(place) : "—") + '</span><span class="lbn">' + esc(name) + "</span>" +
+    '<span class="lbv"><b>' + nf(wins) + "</b><small>" + esc(T("lbSub", nf(played), wr)) + "</small></span>" +
+    '<span class="lbc lbcw">' + nf(wins) + '</span><span class="lbc">' + nf(played) + '</span><span class="lbc">' + wr + "</span>";
+}
 function lbRow(p, i, me){
   const name = lbName(p), place = lbPlaceOf(p, i);
-  const played = num(p, "played") || num(p, "games_played"), wins = num(p, "victories");
   const isMe = !!me && name.toLowerCase() === me;
   return '<button type="button" class="lbr' + (isMe ? " me" : "") + (place <= 3 ? " p" + place : "") +
-    '" data-n="' + esc(name) + '" data-p="' + place + '"><span class="lbp">' + nf(place) + '</span><span class="lbn">' +
-    esc(name) + '</span><span class="lbv"><b>' + nf(wins) + "</b><small>" +
-    esc(T("lbSub", nf(played), played ? pct(wins, played) : "—")) + "</small></span></button>";
+    '" data-n="' + esc(name) + '" data-p="' + place + '">' + lbCells(name, place, p) + "</button>";
 }
+const lbHead = () => '<div class="lbhead"><span>#</span><span>' + esc(T("lbColPlayer")) + "</span><span>" +
+  esc(T("wins")) + "</span><span>" + esc(T("played")) + "</span><span>" + esc(T("lbColWr")) + "</span></div>";
 function lbHTML(entry){
   const list = entry.d;
   if(!list.length) return '<p class="sub" style="margin-top:20px">' + esc(T("lbEmpty")) + "</p>";
@@ -91,7 +97,7 @@ function lbHTML(entry){
   const banner = who ? '<div class="lbme">' + esc(mine >= 0 ? T("lbYou", nf(lbPlaceOf(list[mine], mine))) : T("lbNotIn", who)) + "</div>" : "";
   const foot = entry.more ? '<button type="button" class="mini lbmore">' + esc(T("lbMore")) + "</button>"
     : '<p class="sub lbend">' + esc(T("lbEnd", nf(list.length))) + "</p>";
-  return banner + '<div class="card lbcard">' + rows + "</div>" + foot +
+  return banner + '<div class="card lbcard">' + lbHead() + rows + "</div>" + foot +
     '<p class="sub lbh">' + esc(T("lbHint")) + "</p>";
 }
 async function lbPlayerPlace(game, period, nick){
@@ -117,10 +123,8 @@ function lbFlash(place){
   return true;
 }
 function lbFoundCard(name, place, p){
-  const played = num(p, "played") || num(p, "games_played"), wins = num(p, "victories");
-  return '<div class="card lbfound"><button type="button" class="lbr" data-n="' + esc(name) + '"><span class="lbp">' +
-    (place ? nf(place) : "—") + '</span><span class="lbn">' + esc(name) + '</span><span class="lbv"><b>' + nf(wins) +
-    "</b><small>" + esc(T("lbSub", nf(played), played ? pct(wins, played) : "—")) + "</small></span></button>" +
+  return '<div class="card lbfound lbcard">' + lbHead() + '<button type="button" class="lbr" data-n="' + esc(name) + '">' +
+    lbCells(name, place, p) + "</button>" +
     (place ? "" : '<p class="sub" style="margin:6px 4px 2px">' + esc(T("lbNoPlace")) + "</p>") + "</div>";
 }
 async function lbFind(q){

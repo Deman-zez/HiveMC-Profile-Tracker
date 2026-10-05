@@ -79,7 +79,7 @@ function attachSearch(inp, box, onPick, skip){
 function openCompare(from){
   const mine = mySnaps(), last = mine[mine.length - 1];
   const m = document.createElement("div");
-  m.className = "modal mpick";
+  m.className = "modal mcmp";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("cmpTitle")) +
     '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
     '<p class="sub mhint">' + esc(T("cmpHint")) + "</p>" +
