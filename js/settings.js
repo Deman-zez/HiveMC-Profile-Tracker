@@ -22,7 +22,7 @@ function applyLang(){
   renderLb();
   $("#fetchBtn").textContent = T("snap");
   $("#trendHead").textContent = T("tab2"); $("#setHead").textContent = T("tab3");
-  $("#trendSub").textContent = T("trendSub"); $("#setSub").textContent = T("setSub");
+  $("#trendSub").textContent = T("trendSub"); $("#trendChartHead").textContent = T("chartHead"); $("#setSub").textContent = T("setSub");
   $("#lNick").textContent = T("lNick"); $("#nick").placeholder = T("nickPh");
   $("#lLang").textContent = T("lLang"); $("#lang").options[0].textContent = T("auto");
   $("#lGames").textContent = T("lGames");

@@ -51,7 +51,7 @@ function cmpHTML(aName, A, bName, B){
   });
   return out;
 }
-function attachSearch(inp, box, onPick){
+function attachSearch(inp, box, onPick, skip){
   let tmr = null, seq = 0;
   const hide = () => box.classList.add("hidden");
   const show = html => {
@@ -62,7 +62,7 @@ function attachSearch(inp, box, onPick){
   inp.oninput = () => {
     clearTimeout(tmr);
     const q = inp.value.trim();
-    if(!/^[a-zA-Z0-9 ]*$/.test(q) || !q){ hide(); return; }
+    if(!/^[a-zA-Z0-9 ]*$/.test(q) || !q || (skip && skip(q))){ hide(); return; }
     if(q.length < 4){ show('<div class="note2">' + esc(T("minChars")) + "</div>"); return; }
     const my = ++seq;
     tmr = setTimeout(async () => {

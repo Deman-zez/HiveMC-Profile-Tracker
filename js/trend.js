@@ -15,6 +15,8 @@ const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
 ];
 const ACT = {};
+const ACT_MAX = 300;
+let actShown = 20;
 function agoText(sec){
   const diff = Date.now() - sec * 1000;
   if(diff < 60000) return T("agoNow");
@@ -22,21 +24,58 @@ function agoText(sec){
   if(diff < 86400000) return T("agoH", Math.floor(diff / 3600000));
   return when(sec * 1000);
 }
-function actHTML(list){
-  const rows = (list || []).slice().sort((a, b) => (b.time || 0) - (a.time || 0)).map(e => {
-    const t = typeof e.time === "number" ? agoText(e.time) : "";
-    if(e.type === "ROUND_PLAYED"){
-      const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
-      return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
-        esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
-    }
-    let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";
-    if(what && typeof what === "object") what = pick(what, "name", "human_name", "id", "type") || "";
-    return '<div class="act"><span class="ag">' + esc(T("actLocker")) +
-      (what ? " · " + esc(pretty(String(what))) : "") + '</span><span class="at">' + esc(t) + "</span></div>";
-  }).join("");
-  return "<h2>" + esc(T("actTitle")) + '</h2><div class="card">' +
-    (rows || '<p class="sub" style="margin:0">' + esc(T("actEmpty")) + "</p>") +
+const actKey = e => [e.time, e.type, e.game || "", JSON.stringify(e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "")].join("|");
+function mergeAct(uuid, list){
+  if(!uuid || !Array.isArray(list)) return 0;
+  const store = state.actLog || (state.actLog = {});
+  const cur = store[uuid] || [], seen = new Set(cur.map(actKey));
+  let added = 0;
+  list.forEach(e => {
+    if(!e || typeof e !== "object" || typeof e.time !== "number") return;
+    const k = actKey(e);
+    if(!seen.has(k)){ seen.add(k); cur.push(e); added++; }
+  });
+  cur.sort((x, y) => y.time - x.time);
+  store[uuid] = cur.slice(0, ACT_MAX);
+  if(added) save();
+  return added;
+}
+async function fetchActivity(uuid){
+  const c = ACT[uuid];
+  if(c && (c.p || Date.now() - c.t < 2 * 60 * 1000)) return;
+  ACT[uuid] = { t: c ? c.t : 0, p: true };
+  try{
+    noteRequest();
+    const res = await hiveFetch(API + "/player/activity/" + encodeURIComponent(uuid), { cache:"no-store" });
+    if(!res.ok) throw new Error(httpMsg(res.status));
+    let d = await res.json();
+    if(!Array.isArray(d)) d = (d && Object.values(d).find(Array.isArray)) || [];
+    mergeAct(uuid, d);
+    ACT[uuid] = { t: Date.now() };
+  }catch(e){
+    ACT[uuid] = { t: Date.now(), err: e.message };
+  }
+}
+function actRow(e){
+  const t = typeof e.time === "number" ? agoText(e.time) : "";
+  if(e.type === "ROUND_PLAYED"){
+    const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
+    return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
+      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
+  }
+  let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";
+  if(what && typeof what === "object") what = pick(what, "name", "human_name", "id", "type") || "";
+  return '<div class="act"><span class="ag">' + esc(T("actLocker")) +
+    (what ? " · " + esc(pretty(String(what))) : "") + '</span><span class="at">' + esc(t) + "</span></div>";
+}
+function actHTML(list, err){
+  const all = list || [];
+  const rows = all.slice(0, actShown).map(actRow).join("");
+  const more = all.length > actShown
+    ? '<button type="button" class="mini actmore">' + esc(T("actMore", Math.min(20, all.length - actShown))) + "</button>" : "";
+  return "<h2>" + esc(T("actTitle")) + (all.length ? ' <span class="actn">' + nf(all.length) + "</span>" : "") +
+    '</h2><div class="card">' +
+    (rows || '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>") + more +
     '<p class="sub acth">' + esc(T("actHint")) + "</p></div>";
 }
 async function renderActivity(){
@@ -44,30 +83,27 @@ async function renderActivity(){
   const mine = mySnaps(), last = mine[mine.length - 1];
   const uuid = last && last.g.main && pick(last.g.main, "UUID", "uuid");
   if(!uuid){ box.innerHTML = ""; return; }
-  const c = ACT[uuid];
-  if(c && c.d) box.innerHTML = actHTML(c.d);
-  else if(!c || !c.p) box.innerHTML = "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
-    esc(T("tqLoading")) + "</p></div>";
-  if($("#vTrend").classList.contains("hidden")) return;
-  if(c && (c.p || Date.now() - c.t < 2 * 60 * 1000)) return;
-  ACT[uuid] = Object.assign({}, c, { p: true });
-  try{
-    noteRequest();
-    const res = await hiveFetch(API + "/player/activity/" + encodeURIComponent(uuid), { cache:"no-store" });
-    if(!res.ok) throw new Error(httpMsg(res.status));
-    let d = await res.json();
-    if(!Array.isArray(d)) d = (d && Object.values(d).find(Array.isArray)) || [];
-    ACT[uuid] = { t: Date.now(), d };
-  }catch(e){
-    ACT[uuid] = c && c.d ? { t: c.t, d: c.d } : { t: Date.now(), d: null, err: e.message };
-  }
+  const draw = () => {
+    const c = ACT[uuid] || {};
+    const list = (state.actLog || {})[uuid] || [];
+    box.innerHTML = list.length || !c.p ? actHTML(list, c.err)
+      : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>";
+    const mb = box.querySelector(".actmore");
+    if(mb) mb.onclick = () => { actShown += 20; draw(); };
+  };
+  if($("#vTrend").classList.contains("hidden")){ draw(); return; }
+  const pending = fetchActivity(uuid);
+  draw();
+  await pending;
   const cur = mySnaps().pop();
-  if(!cur || !cur.g.main || pick(cur.g.main, "UUID", "uuid") !== uuid) return;
-  const r = ACT[uuid];
-  box.innerHTML = r.d ? actHTML(r.d) : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' +
-    esc(r.err || "") + "</p></div>";
+  if(cur && cur.g.main && pick(cur.g.main, "UUID", "uuid") === uuid) draw();
+}
+function renderToday(){
+  const box = $("#trendToday");
+  if(box) box.innerHTML = todayHTML(mySnaps());
 }
 function renderTrend(){
+  renderToday();
   renderActivity();
   const gSel = $("#trendGame"), mSel = $("#trendMetric"), rSel = $("#trendRange"), body = $("#trendBody");
   const mine = mySnaps();

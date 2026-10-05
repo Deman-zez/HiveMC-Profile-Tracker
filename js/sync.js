@@ -47,7 +47,7 @@ async function gzipUnpack(buf){
 const touchSettings = () => { state.setAt = Date.now(); };
 function syncPayload(){
   return { v: 1, snaps: state.snaps, main: state.main || "", games: state.games, finals: state.finals,
-    avatars: state.avatars, setAt: state.setAt || 0 };
+    avatars: state.avatars, setAt: state.setAt || 0, actLog: state.actLog || {} };
 }
 function mergeRemote(r){
   if(!r || typeof r !== "object") return;
@@ -66,6 +66,8 @@ function mergeRemote(r){
     if(typeof r.finals === "boolean") state.finals = r.finals;
     state.setAt = r.setAt;
   }
+  if(r.actLog && typeof r.actLog === "object" && !Array.isArray(r.actLog))
+    for(const [u, list] of Object.entries(r.actLog)) mergeAct(u, list);
   if(r.avatars && typeof r.avatars === "object" && !Array.isArray(r.avatars))
     for(const [k, v] of Object.entries(r.avatars)) if(!state.avatars[k] && typeof v === "string") state.avatars[k] = v;
 }

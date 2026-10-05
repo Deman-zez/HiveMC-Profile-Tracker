@@ -72,6 +72,8 @@ async function snapshot(){
     if(data.parkour && typeof data.parkour === "object" && !Array.isArray(data.parkour) && data.parkour.parkours)
       snap.g.parkour = data.parkour;
     const md = snap.g.main;
+    const actUuid = md && pick(md, "UUID", "uuid");
+    if(actUuid) fetchActivity(actUuid).then(() => { if(!$("#vTrend").classList.contains("hidden")) renderActivity(); }).catch(() => {});
     if(md){
       const url = cosIcon(pick(md, "equipped_avatar", "avatar_equipped"));
       const who = (pick(md, "username", "username_cc") || state.nick).toLowerCase();

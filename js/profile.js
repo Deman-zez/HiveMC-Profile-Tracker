@@ -64,7 +64,6 @@ function renderSnap(){
   if(!last) return;
 
   if(main) renderStreak(main, body);
-  body.insertAdjacentHTML("beforeend", todayHTML(mine));
 
   let cols = null;
   const col = which => {
