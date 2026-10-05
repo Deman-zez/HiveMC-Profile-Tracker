@@ -28,6 +28,8 @@
 
   <section id="vTrend" class="hidden">
     <div class="phead"><h1 id="trendHead"></h1><p class="sub" id="trendSub"></p></div>
+    <div id="trendToday"></div>
+    <h2 id="trendChartHead"></h2>
     <div class="row2" style="margin-top:12px">
       <select id="trendGame"></select>
       <select id="trendRange"></select>
@@ -45,6 +47,12 @@
       <select id="lbGame"></select>
       <select id="lbPeriod"></select>
     </div>
+    <div class="syncrow lbfind">
+      <div class="nickbox"><input id="lbFind" type="text" autocapitalize="none" autocomplete="off" spellcheck="false">
+        <div class="sugg hidden" id="lbSugg"></div></div>
+      <button class="mini" id="lbFindBtn" type="button"></button>
+    </div>
+    <div id="lbFound"></div>
     <div id="lbBody"></div>
   </section>
 
@@ -123,8 +131,8 @@
 <script src="js/titles.js"></script>
 <script src="js/profile.js"></script>
 <script src="js/trend.js"></script>
-<script src="js/leaderboard.js"></script>
 <script src="js/compare.js"></script>
+<script src="js/leaderboard.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/sync.js"></script>
