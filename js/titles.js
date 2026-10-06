@@ -93,7 +93,7 @@ async function loadTitleMeta(){
     try{ localStorage.setItem(TMETA_KEY, JSON.stringify({ t:Date.now(), d:all, g:games })); }catch(e){}
     const first = !Object.keys(META_GAMES).length;
     META_GAMES = games;
-    if(first && Object.keys(games).length) setTimeout(renderSnap, 0);
+    if(first && Object.keys(games).length) setTimeout(() => { renderSnap(); if(!$("#vTop").classList.contains("hidden")) renderLb(); }, 0);
     return (TMETA = indexMeta(all));
   })();
   try{ return await tmetaP; } finally { tmetaP = null; }

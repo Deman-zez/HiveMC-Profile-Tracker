@@ -41,11 +41,11 @@ function syncTitleWave(){
 }
 addEventListener("resize", syncTitleWave);
 function fitText(root){
-  const all = (root || document).querySelectorAll(".tile b");
+  const all = [...(root || document).querySelectorAll(".tile b")].filter(el => !el.closest(".tile.wide, .tile.w2"));
+  all.forEach(el => { if(el.style.fontSize) el.style.fontSize = ""; });
   const jobs = [];
   all.forEach(el => {
-    if(el.closest(".tile.wide, .tile.w2")) return;
-    if(el.scrollWidth > el.clientWidth + 1)
+    if(el.clientWidth && el.scrollWidth > el.clientWidth + 1)
       jobs.push({ el, size: parseFloat(getComputedStyle(el).fontSize) || 24 });
   });
   jobs.forEach(j => {
@@ -143,23 +143,16 @@ function openGame(code, from){
   const last = mine[mine.length-1], prev = mine[mine.length-2];
   const cur = last && last.g[code]; if(!cur) return;
   const old = prev && prev.g[code];
-  let bar = "";
+  let bar = "", rank = "", lvArgs = null;
   const lvRaw = gameLevel(cur, code);
   if(lvRaw){
     const cap = maxLevelOf(code);
     const lv = Math.floor(cap ? Math.min(lvRaw, cap) : lvRaw);
     const note = T("level") + (num(cur,"prestige") ? " · " + T("prestige") + " " + cur.prestige : "");
     const mg = META_GAMES[code], xp = num(cur, "xp");
-    let next = "";
-    if(cap && lv >= cap) next = '<small class="lvmax">' + esc(T("lvMax")) + "</small>";
-    else if(mg && Array.isArray(mg.xp) && xp){
-      const a = mg.xp.find(([, l]) => l === lv), b = mg.xp.find(([, l]) => l === lv + 1);
-      if(a && b && b[0] > xp && b[0] > a[0]){
-        const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
-        next = '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
-          "<small>" + esc(T("lvNext", lv + 1, nf(b[0] - xp))) + "</small></div>";
-      }
-    }
+    rank = last.g.main ? pick(last.g.main, "rank", "player_rank") : "";
+    lvArgs = [code, cur, lv, cap, xp, rank];
+    const next = cap && lv >= cap ? '<small class="lvmax">' + esc(T("lvMax")) + "</small>" : levelNextHTML(...lvArgs);
     bar = '<div class="tile wide lvl"><b>' + (cap ? lv + " / " + cap : lv) + "</b>" +
       (cap ? '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div>' : "") +
       "<small>" + note + "</small>" + next + "</div>";
@@ -170,7 +163,7 @@ function openGame(code, from){
     '<div class="seg" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
     '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div>' +
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div><div class="mmaps"></div>' +
     (code === "main" ? "" : '<button type="button" class="mini lbgo">' + esc(T("lbOpen")) + "</button>") + "</div>";
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
@@ -188,6 +181,16 @@ function openGame(code, from){
   const go = m.querySelector(".lbgo");
   if(go) go.onclick = () => { closeModal(m); openLb(code); };
   requestAnimationFrame(fillAll);
+  if(MAP_GAMES.includes(code)) loadMaps(code).then(list => {
+    const box = m.querySelector(".mmaps");
+    if(box && list && list.length) box.innerHTML = mapsHTML(list);
+  }).catch(() => {});
+  if(lvArgs && xpRate(lvArgs[0], lvArgs[1]).src === "all" && !MONTHLY[nickKey()]){
+    loadMonthly().then(() => {
+      const el = m.querySelector(".lvnext");
+      if(el && m.isConnected) el.outerHTML = levelNextHTML(...lvArgs);
+    }).catch(() => {});
+  }
 }
 const MONTHLY = {};
 async function loadMonthly(){
@@ -263,4 +266,81 @@ function openKills(from){
     '</div><p class="sub">' + esc(T("killsHint")) + "</p></div>";
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
+}
+
+function gamesWord(n){ return L === "ru" ? pluralRU(n, ["игра", "игры", "игр"]) : (n === 1 ? "game" : "games"); }
+function rankBoost(rank){
+  const r = String(rank || "").toUpperCase();
+  return /ULTIMATE|ULTRA/.test(r) ? .75 : /PLUS|\+/.test(r) ? .5 : 0;
+}
+function xpRate(code, cur){
+  const playedOf = c => c && !Array.isArray(c) ? (num(c, "played") || num(c, "games_played")) : 0;
+  const pNow = playedOf(cur), xNow = num(cur, "xp");
+  const since = Date.now() - 30 * 86400000;
+  const snaps = mySnaps().filter(s => s.t >= since && s.g[code] && !(s.old || []).includes(code));
+  for(const s of snaps){
+    const dp = pNow - playedOf(s.g[code]), dx = xNow - num(s.g[code], "xp");
+    if(dp >= 5 && dx > 0) return { rate: dx / dp, src: "recent" };
+  }
+  const mo = MONTHLY[nickKey()], mm = mo && mo.d && mo.d[code];
+  if(playedOf(mm) >= 5 && num(mm, "xp") > 0) return { rate: num(mm, "xp") / playedOf(mm), src: "month" };
+  return pNow && xNow ? { rate: xNow / pNow, src: "all" } : { rate: 0, src: "" };
+}
+function levelNextHTML(code, cur, lv, cap, xp, rank){
+  const mg = META_GAMES[code];
+  if(!mg || !Array.isArray(mg.xp) || !xp) return "";
+  const a = mg.xp.find(([, l]) => l === lv), b = mg.xp.find(([, l]) => l === lv + 1);
+  if(!a || !b || b[0] <= xp || b[0] <= a[0]) return "";
+  const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
+  const r = xpRate(code, cur), boost = rankBoost(rank);
+  let line1 = T("lvNext", lv + 1, nf(b[0] - xp)), line2 = "";
+  if(r.rate){
+    const withBooster = r.rate / (1 + boost) * (1 + boost + .5);
+    const g1 = Math.max(1, Math.ceil((b[0] - xp) / r.rate)), g1b = Math.max(1, Math.ceil((b[0] - xp) / withBooster));
+    line1 += " · " + T("lvGames", nf(g1), gamesWord(g1)) + (g1b < g1 ? " " + T("lvBoost", nf(g1b)) : "");
+    const top = cap && cap > lv + 1 && mg.xp.find(([, l]) => l === cap);
+    const parts = [];
+    if(top && top[0] > xp){
+      const g2 = Math.max(1, Math.ceil((top[0] - xp) / r.rate));
+      parts.push(T("lvGamesMax", cap, nf(g2), gamesWord(g2)));
+    }
+    parts.push(T("lvRate", nf(Math.round(r.rate)), T("lvSrc_" + r.src)));
+    if(boost) parts.push(T("lvRank", boost === .75 ? "Ultimate" : "Hive+", Math.round(boost * 100)));
+    line2 = parts.join(" · ");
+  }
+  return '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
+    "<small>" + esc(line1) + "</small>" + (line2 ? '<small class="lveta">' + esc(line2) + "</small>" : "") + "</div>";
+}
+
+const MAP_GAMES = ["drop", "ctf", "dr", "grav", "ground", "hide", "murder", "sky", "sg", "wars", "bridge"];
+const MAPS = {};
+async function loadMaps(code){
+  const key = "hive.tracker.maps." + code;
+  if(MAPS[code]) return MAPS[code];
+  try{
+    const c = JSON.parse(localStorage.getItem(key) || "null");
+    if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d)) return (MAPS[code] = c.d);
+  }catch(e){}
+  noteRequest();
+  const res = await hiveFetch(API + "/game/map/" + code, { cache:"no-store" });
+  if(!res.ok) return [];
+  let d = await res.json();
+  if(!Array.isArray(d)) d = (d && typeof d === "object" && Object.values(d).find(Array.isArray)) || [];
+  d = d.filter(x => x && typeof x === "object" && x.name).map(x => ({ name: x.name, season: x.season, variant: x.variant, image: x.image }));
+  try{ localStorage.setItem(key, JSON.stringify({ t: Date.now(), d })); }catch(e){}
+  return (MAPS[code] = d);
+}
+const MAP_VARIANT = { REGULAR:["Обычная","Regular"], DUOS:["Дуо","Duos"], TRIOS:["Трио","Trios"], SQUADS:["Отряды","Squads"],
+  MEGA:["Мега","Mega"], ROYALE:["Royale","Royale"] };
+const MAP_SEASON = { WINTERFEST:["зимняя","Winterfest"], SPRING:["весенняя","Spring"], SUMMER:["летняя","Summer"],
+  HALLOWEEN:["хэллоуинская","Halloween"], AUTUMN:["осенняя","Autumn"] };
+function mapsHTML(list){
+  const i = L === "ru" ? 0 : 1;
+  return "<h3>" + esc(T("mapsTitle", list.length)) + '</h3><div class="maps">' + list.map(x => {
+    const tags = [MAP_VARIANT[x.variant] && x.variant !== "REGULAR" ? MAP_VARIANT[x.variant][i] : "",
+      MAP_SEASON[x.season] ? MAP_SEASON[x.season][i] : ""].filter(Boolean).join(" · ");
+    return '<div class="map">' + (x.image && /^https?:/.test(x.image)
+      ? '<img alt="" loading="lazy" decoding="async" src="' + esc(x.image) + '" onerror="this.style.visibility=\'hidden\'">'
+      : '<img alt="" style="visibility:hidden">') + "<b>" + esc(x.name) + "</b><small>" + esc(tags || T("mapsRegular")) + "</small></div>";
+  }).join("") + "</div>";
 }

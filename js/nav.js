@@ -19,6 +19,7 @@ document.querySelectorAll(".tabs button").forEach(b => {
     } else scrollTo(0, 0);
     const sec = $(views[v] || "#vSnap");
     reveal(sec);
+    fitText(sec);
     sec.classList.remove("swap");
     void sec.offsetWidth;
     sec.classList.add("swap");

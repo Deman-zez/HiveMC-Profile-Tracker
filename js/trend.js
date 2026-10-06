@@ -100,14 +100,18 @@ async function renderActivity(){
 }
 function renderToday(){
   const box = $("#trendToday");
-  if(box) box.innerHTML = todayHTML(mySnaps());
+  if(!box) return;
+  box.innerHTML = todayHTML(mySnaps());
+  fitText(box);
 }
 function renderTrend(){
   renderToday();
   renderActivity();
   const gSel = $("#trendGame"), mSel = $("#trendMetric"), rSel = $("#trendRange"), body = $("#trendBody");
   const mine = mySnaps();
-  const withData = state.games.filter(g => mine.some(s => s.g[g]));
+  const order = GAMES.map(g => g[0]);
+  const withData = state.games.filter(g => mine.some(s => s.g[g]))
+    .sort((a, b) => order.indexOf(a) - order.indexOf(b));
   if(mine.length < 2){
     body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendNeed")) + "</p>";
     gSel.innerHTML = mSel.innerHTML = ""; return;

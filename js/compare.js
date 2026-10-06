@@ -23,31 +23,38 @@ async function loadPlayerAll(nick){
 function cmpHTML(aName, A, bName, B){
   const playedOf = c => c && !Array.isArray(c) ? (num(c, "played") || num(c, "games_played")) : 0;
   const codes = GAMES.map(g => g[0]).filter(g => g !== "main" && (playedOf(A[g]) || playedOf(B[g])));
-  const row = (label, a, b, fmt) => {
-    const w = a > b ? 1 : b > a ? 2 : 0;
-    return '<div class="cr"><span>' + esc(label) + '</span><b class="' + (w === 1 ? "up" : "") + '">' + fmt(a) +
-      '</b><b class="' + (w === 2 ? "up" : "") + '">' + fmt(b) + "</b></div>";
-  };
   const wr = (w, p) => p ? w / p * 100 : 0, kd = (k, d) => d ? k / d : k;
-  const fWr = v => v.toFixed(2) + "%", fKd = v => v.toFixed(2);
-  const head = '<div class="cr ch"><span></span><b>' + esc(aName) + "</b><b>" + esc(bName) + "</b></div>";
+  const fWr = v => v.toFixed(1) + "%", fKd = v => v.toFixed(2);
+  let sa = 0, sb = 0;
+  const vrow = (label, a, b, fmt, score) => {
+    const share = a + b > 0 ? a / (a + b) : .5, w = a > b ? 1 : b > a ? 2 : 0;
+    if(score){ if(w === 1) sa++; if(w === 2) sb++; }
+    return '<div class="vrow"><div class="vtop"><b class="' + (w === 1 ? "win" : "") + '">' + fmt(a) + "</b><span>" +
+      esc(label) + '</span><b class="' + (w === 2 ? "win" : "") + '">' + fmt(b) + '</b></div><div class="vbar">' +
+      '<i class="vl" style="width:' + (share * 100).toFixed(1) + '%"></i><i class="vr" style="width:' +
+      ((1 - share) * 100).toFixed(1) + '%"></i></div></div>';
+  };
   const tot = X => { const t = { P:0, W:0, K:0, D:0 };
     codes.forEach(g => { const c = X[g]; if(!playedOf(c)) return;
       t.P += playedOf(c); t.W += num(c, "victories"); t.K += killsOf(c); t.D += num(c, "deaths"); });
     return t; };
   const a = tot(A), b = tot(B);
-  let out = '<div class="card cmpc"><h3>' + esc(T("cmpTotal")) + "</h3>" + head +
-    row(T("played"), a.P, b.P, nf) + row(T("wins"), a.W, b.W, nf) +
-    row(T("winrate"), wr(a.W, a.P), wr(b.W, b.P), fWr) + row(T("killsTotal"), a.K, b.K, nf) +
-    row(T("kd"), kd(a.K, a.D), kd(b.K, b.D), fKd) + "</div>";
+  const totals = vrow(T("played"), a.P, b.P, nf, true) + vrow(T("wins"), a.W, b.W, nf, true) +
+    vrow(T("winrate"), wr(a.W, a.P), wr(b.W, b.P), fWr, true) + vrow(T("killsTotal"), a.K, b.K, nf, true) +
+    vrow(T("kd"), kd(a.K, a.D), kd(b.K, b.D), fKd, true);
+  const side = (name, cls) => '<div class="vside ' + cls + '"><span class="vsav">' + pavHTML(name) + "</span><b>" +
+    esc(name) + "</b></div>";
+  let out = '<div class="card vshead">' + side(aName, "a") + '<div class="vsmid"><span>VS</span><small>' +
+    esc(T("cmpScore")) + "</small><b>" + sa + " : " + sb + "</b></div>" + side(bName, "b") + "</div>" +
+    '<div class="card cmpc cmptot"><h3>' + esc(T("cmpTotal")) + "</h3>" + totals + "</div>";
   codes.forEach(g => {
     const x = A[g] && !Array.isArray(A[g]) ? A[g] : {}, y = B[g] && !Array.isArray(B[g]) ? B[g] : {};
     const px = playedOf(x), py = playedOf(y);
-    let rows = row(T("wins"), num(x, "victories"), num(y, "victories"), nf) + row(T("played"), px, py, nf) +
-      row(T("winrate"), wr(num(x, "victories"), px), wr(num(y, "victories"), py), fWr);
+    let rows = vrow(T("wins"), num(x, "victories"), num(y, "victories"), nf) + vrow(T("played"), px, py, nf) +
+      vrow(T("winrate"), wr(num(x, "victories"), px), wr(num(y, "victories"), py), fWr);
     if(hasKillField(x) || hasKillField(y))
-      rows += row(T("kd"), kd(killsOf(x), num(x, "deaths")), kd(killsOf(y), num(y, "deaths")), fKd);
-    out += '<div class="card cmpc"><h3>' + esc(NAME(g)) + "</h3>" + head + rows + "</div>";
+      rows += vrow(T("kd"), kd(killsOf(x), num(x, "deaths")), kd(killsOf(y), num(y, "deaths")), fKd);
+    out += '<div class="card cmpc"><h3>' + esc(NAME(g)) + "</h3>" + rows + "</div>";
   });
   return out;
 }
