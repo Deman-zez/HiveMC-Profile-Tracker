@@ -115,7 +115,7 @@ js/                 the app, loaded in order as plain scripts:
   titles.js         "how to get" hints and item tooltips
   profile.js        profile screen
   trend.js          charts and recent games
-  leaderboard.js    leaderboards: all time, monthly, BedWars seasons
+  leaderboard.js    leaderboards: all modes combined, all time, monthly, BedWars seasons, sorting
   compare.js        side-by-side comparison with another player
   settings.js       settings screen
   nav.js            tabs, sticky header, scrolling
