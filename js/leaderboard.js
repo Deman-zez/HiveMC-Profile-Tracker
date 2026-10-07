@@ -298,14 +298,21 @@ function renderGlobalStats(game){
     if(!d || typeof d.global !== "number"){ box.innerHTML = ""; return; }
     const codes = GAMES.map(g => g[0]).filter(g => g !== "main").concat("parkour")
       .filter(g => typeof d[g] === "number").sort((a, b) => d[b] - d[a]);
-    const open = box.querySelector("details[open]") !== null;
-    box.innerHTML = '<details class="lbgd"' + (open ? " open" : "") + '><summary><span class="lbgs"><b>' + nf(d.global) +
+    const open = box.querySelector(".lbgd.open") !== null;
+    box.innerHTML = '<div class="lbgd still' + (open ? " open" : "") + '"><button type="button" class="lbgh" aria-expanded="' + open +
+      '"><span class="lbgs"><b>' + nf(d.global) +
       "</b><small>" + esc(T("gsAll")) + "</small></span>" +
       (game !== "overall" && typeof d[game] === "number"
         ? '<span class="lbgs"><b>' + nf(d[game]) + "</b><small>" + esc(T("gsGame", NAME(game))) + "</small></span>" : "") +
-      '<i aria-hidden="true">›</i></summary><div class="lbgl">' + codes.map(g =>
-        '<div class="lbgi' + (g === game ? " on" : "") + '"><span>' + esc(NAME(g)) + "</span><b>" + nf(d[g]) +
-        "</b><i style=\"width:" + (d[g] / d.global * 100).toFixed(1) + '%"></i></div>').join("") + "</div></details>";
+      '<i aria-hidden="true">›</i></button><div class="lbgb"><div><div class="lbgl">' + codes.map((g, i) =>
+        '<div class="lbgi' + (g === game ? " on" : "") + '" style="--i:' + i + '"><span>' + esc(NAME(g)) + "</span><b>" + nf(d[g]) +
+        "</b><i style=\"width:" + (d[g] / d.global * 100).toFixed(1) + '%"></i></div>').join("") + "</div></div></div></div>";
+    const wrap = box.querySelector(".lbgd"), head = box.querySelector(".lbgh");
+    requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.remove("still")));
+    head.onclick = () => {
+      const on = wrap.classList.toggle("open");
+      head.setAttribute("aria-expanded", on);
+    };
   };
   if(GSTAT) draw(GSTAT);
   else loadGlobalStats().then(draw).catch(() => { box.innerHTML = ""; });

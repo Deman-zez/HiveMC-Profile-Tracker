@@ -27,11 +27,24 @@ function maxLevelOf(code){
   try{ const g = HD && HD.Games && HD.Games[code]; if(g && g.max_level) return g.max_level; }catch(e){}
   return CAPS[code] || CAP_DEFAULT;
 }
-function levelFromXP(xp, code){
+const XP_TABLES = {};
+function xpTable(code){
   const mg = META_GAMES[code];
-  if(mg && Array.isArray(mg.xp) && mg.xp.length && xp >= 0){
+  if(!mg || !Array.isArray(mg.xp) || !mg.xp.length) return null;
+  const c = XP_TABLES[code];
+  if(c && c.src === mg.xp) return c.t;
+  const first = mg.xp.find(([x]) => x > 0);
+  const shift = first && first[1] === 1 ? 1 : 0;
+  const t = mg.xp.map(([x, l]) => [x, l + shift]);
+  if(shift && !t.some(([x]) => x === 0)) t.unshift([0, 1]);
+  XP_TABLES[code] = { src: mg.xp, t };
+  return t;
+}
+function levelFromXP(xp, code){
+  const tb = xpTable(code);
+  if(tb && xp >= 0){
     let lv = null;
-    for(const [need, l] of mg.xp){ if(xp >= need) lv = l; else break; }
+    for(const [need, l] of tb){ if(xp >= need) lv = l; else break; }
     if(lv !== null) return lv;
   }
   if(!HD || !xp) return null;

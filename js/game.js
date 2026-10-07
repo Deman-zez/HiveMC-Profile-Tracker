@@ -307,10 +307,6 @@ function openKills(from){
 }
 
 function gamesWord(n){ return L === "ru" ? pluralRU(n, ["игра", "игры", "игр"]) : (n === 1 ? "game" : "games"); }
-function rankBoost(rank){
-  const r = String(rank || "").toUpperCase();
-  return /ULTIMATE|ULTRA/.test(r) ? .75 : /PLUS|\+/.test(r) ? .5 : 0;
-}
 function xpRate(code, cur){
   const playedOf = c => c && !Array.isArray(c) ? (num(c, "played") || num(c, "games_played")) : 0;
   const pNow = playedOf(cur), xNow = num(cur, "xp");
@@ -325,19 +321,17 @@ function xpRate(code, cur){
   return pNow && xNow ? { rate: xNow / pNow, src: "all" } : { rate: 0, src: "" };
 }
 function levelNextHTML(code, cur, lv, cap, xp, rank){
-  const mg = META_GAMES[code];
-  if(!mg || !Array.isArray(mg.xp) || !xp) return "";
-  const a = mg.xp.find(([, l]) => l === lv), b = mg.xp.find(([, l]) => l === lv + 1);
+  const tb = xpTable(code);
+  if(!tb || !xp) return "";
+  const a = tb.find(([, l]) => l === lv), b = tb.find(([, l]) => l === lv + 1);
   if(!a || !b || b[0] <= xp || b[0] <= a[0]) return "";
   const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
-  const r = xpRate(code, cur), boost = rankBoost(rank), need = b[0] - xp;
+  const r = xpRate(code, cur), need = b[0] - xp;
   let eta = "", far = "";
   if(r.rate){
     const g1 = Math.max(1, Math.ceil(need / r.rate));
-    const g1b = Math.max(1, Math.ceil(need / (r.rate / (1 + boost) * (1 + boost + .5))));
-    eta = '<span class="lveg"><strong>≈ ' + nf(g1) + "</strong> " + esc(gamesWord(g1)) +
-      (g1b < g1 ? '<i title="' + esc(T("lvBoostTip")) + '">⚡ ' + nf(g1b) + "</i>" : "") + "</span>";
-    const top = cap && cap > lv + 1 && mg.xp.find(([, l]) => l === cap);
+    eta = '<span class="lveg"><strong>≈ ' + nf(g1) + "</strong> " + esc(gamesWord(g1)) + "</span>";
+    const top = cap && cap > lv + 1 && tb.find(([, l]) => l === cap);
     if(top && top[0] > xp){
       const g2 = Math.max(1, Math.ceil((top[0] - xp) / r.rate));
       far = '<div class="lvfar">' + esc(T("lvFar", cap, nf(g2), gamesWord(g2))) + "</div>";
