@@ -404,6 +404,16 @@ svg.line{width:100%;height:100%;display:block}
 .tmeta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;
   font-size:12px;color:var(--soft)}
 
+.toTop{position:fixed;right:16px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:6;
+  width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:15px;cursor:pointer;
+  background:rgba(19,10,30,.97);border:1px solid var(--edge);color:var(--gold);
+  box-shadow:0 8px 22px rgba(0,0,0,.45);
+  opacity:0;transform:translate3d(0,14px,0) scale(.9);pointer-events:none;
+  transition:opacity .2s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
+.toTop.on{opacity:1;transform:none;pointer-events:auto}
+.toTop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.toTop:active{transform:scale(.94)}
+.lite .toTop{transition:none}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;z-index:5;
   background:rgba(19,10,30,.97);border-top:1px solid var(--edge);
   padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
@@ -453,6 +463,8 @@ html.locked, html.locked body{overflow:hidden}
   .colSide .tiles{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
   .grid{grid-template-columns:repeat(auto-fill,minmax(86px,1fr))}
   .srow b{font-size:36px}
+  .toTop{right:28px;bottom:28px;width:52px;height:52px}
+  .toTop:hover{border-color:rgba(255,192,46,.4)}
   .tabs{left:50%;right:auto;transform:translateX(-50%);max-width:580px;width:100%;
     border:1px solid var(--edge);border-bottom:none;border-radius:16px 16px 0 0}
   .tabs button{font-size:15px}
