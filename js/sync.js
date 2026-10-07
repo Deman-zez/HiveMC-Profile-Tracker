@@ -50,7 +50,8 @@ function syncPayload(){
     avatars: state.avatars, setAt: state.setAt || 0, actLog: state.actLog || {} };
 }
 function mergeRemote(r){
-  if(!r || typeof r !== "object") return;
+  if(!r || typeof r !== "object") return false;
+  const before = state.snaps.length, setBefore = state.setAt || 0;
   const seen = new Set(state.snaps.map(x => (x.n || "") + "|" + x.t));
   (Array.isArray(r.snaps) ? r.snaps : []).forEach(x => {
     if(!x || typeof x.t !== "number" || !x.g || typeof x.g !== "object") return;
@@ -58,7 +59,7 @@ function mergeRemote(r){
     if(!seen.has(k)){ seen.add(k); state.snaps.push(x); }
   });
   state.snaps.sort((a, b) => a.t - b.t);
-  if(state.snaps.length > 300) state.snaps.splice(0, state.snaps.length - 300);
+  trimSnaps();
   if((r.setAt || 0) > (state.setAt || 0)){
     const codes = GAMES.map(x => x[0]);
     if(typeof r.main === "string") state.main = r.main.trim().slice(0, 32) || undefined;
@@ -70,6 +71,7 @@ function mergeRemote(r){
     for(const [u, list] of Object.entries(r.actLog)) mergeAct(u, list);
   if(r.avatars && typeof r.avatars === "object" && !Array.isArray(r.avatars))
     for(const [k, v] of Object.entries(r.avatars)) if(!state.avatars[k] && typeof v === "string") state.avatars[k] = v;
+  return state.snaps.length !== before || (state.setAt || 0) !== setBefore;
 }
 var syncBusy = false, syncAgain = false, syncTimer = null;
 const syncSoon = () => { if(!state.sync) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); };
@@ -80,13 +82,17 @@ async function syncNow(manual){
   try{
     const url = SYNC_URL + state.sync.id;
     const res = await fetch(url, { cache:"no-store" });
-    if(res.ok) mergeRemote(await gzipUnpack(await res.arrayBuffer()));
+    let changed = false;
+    if(res.ok) changed = mergeRemote(await gzipUnpack(await res.arrayBuffer()));
     else if(res.status !== 404) throw new Error(await errText(res));
     const up = await fetch(url, { method:"PUT", body: await gzipPack(syncPayload()),
       headers: { "Content-Type": "application/octet-stream" } });
     if(!up.ok) throw new Error(await errText(up));
     state.sync.at = Date.now(); state.sync.err = ""; save();
-    applyLang();
+    if(changed){
+      $("#finals").checked = !!state.finals;
+      renderChips(); renderSnap(); renderTrend();
+    }
     if(manual) toast(T("syncDone"));
   }catch(e){
     const msg = e && e.name === "TypeError" ? T("netErr") : (e && e.message) || String(e);

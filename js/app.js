@@ -10,6 +10,7 @@ applyLang();
   const last = mySnaps().pop();
   if(!last || Date.now() - last.t > 10 * 60 * 1000) snapshot();
 })();
+navSave();
 loadHiveData().then(() => { if(HD){ renderSnap(); } });
 if(state.sync && state.sync.id) syncNow(false);
 loadTitleMeta().catch(() => {});

@@ -6,6 +6,34 @@ const LB_MONTHS_BACK = 6;
 const LB_PAGE = 100;
 const LB_SKIP_KEYS = new Set(["index", "human_index", "username", "username_cc", "UUID", "uuid", "id", "xuid"]);
 let lbPick = null, lbSeq = 0, lbSearch = null, lbRestore = null;
+const LB_CHUNK = 40;
+let lbPending = null, lbMinRows = 0, lbShown = "";
+const lbSentIO = "IntersectionObserver" in window ? new IntersectionObserver(es => {
+  if(es.some(e => e.isIntersecting)) lbAppend(60);
+}, { rootMargin: "0px 0px 900px 0px" }) : null;
+function lbAppend(n){
+  const card = $("#lbBody .lbcard"), sent = card && card.querySelector(".lbsent");
+  if(!sent || !lbPending || !lbPending.rows.length) return false;
+  const p = lbPending, part = p.rows.splice(0, n);
+  sent.insertAdjacentHTML("beforebegin", part.map(x => lbRow(x, p.m, p.me, p.top, p.overall)).join(""));
+  const names = card.querySelectorAll(".lbn"), pairs = [];
+  for(let i = Math.max(0, names.length - part.length); i < names.length; i++) pairs.push([names[i], 11.5]);
+  shrinkFit(pairs);
+  if(!p.rows.length && lbSentIO) lbSentIO.unobserve(sent);
+  return true;
+}
+function lbPaint(entry, game, sort, keepRows){
+  lbMinRows = keepRows ? $("#lbBody").querySelectorAll(".lbcard .lbr").length : 0;
+  $("#lbBody").innerHTML = lbHTML(entry, game, sort);
+  lbMinRows = 0;
+  lbShown = game + "|" + $("#lbPeriod").value + "|" + sort + "|" + entry.t + "|" + entry.d.length;
+  const sent = $("#lbBody .lbsent");
+  if(sent && lbSentIO && lbPending && lbPending.rows.length) lbSentIO.observe(sent);
+}
+function lbFillTo(y){
+  let guard = 0;
+  while(document.documentElement.scrollHeight < y + innerHeight + 200 && lbAppend(120) && guard++ < 50){}
+}
 
 function lbMonthDate(back){
   const d = new Date();
@@ -146,8 +174,9 @@ function lbView(entry, game, sort){
   const minPlayed = sort === "winrate" || sort === "kd" ? 10 : 0;
   let list = entry.d.map((p, i) => ({ p, hive: lbPlaceOf(p, i) }));
   if(sort !== "hive"){
-    list = list.filter(x => !minPlayed || (num(x.p, "played") || num(x.p, "games_played")) >= minPlayed)
-      .sort((a, b) => m.v(b.p) - m.v(a.p));
+    list = list.filter(x => !minPlayed || (num(x.p, "played") || num(x.p, "games_played")) >= minPlayed);
+    list.forEach(x => { x.sv = m.v(x.p); });
+    list.sort((a, b) => b.sv - a.sv);
     list.forEach((x, i) => { x.place = i + 1; });
   }else list.forEach(x => { x.place = x.hive; });
   return { list, m };
@@ -193,10 +222,12 @@ function lbHTML(entry, game, sort){
   if(!entry.d.length) return '<p class="sub" style="margin-top:20px">' + esc(T("lbEmpty")) + "</p>";
   const overall = game === "overall";
   const { list, m } = lbView(entry, game, sort);
-  const me = lbMe(), top = Math.max(0, ...list.map(x => m.v(x.p)));
+  const me = lbMe(), top = list.reduce((mx, x) => Math.max(mx, x.sv !== undefined ? x.sv : m.v(x.p)), 0);
   const podium = lbPodium(list, m, me);
   const rest = podium ? list.slice(3) : list;
-  const rows = rest.map(x => lbRow(x, m, me, top, overall)).join("");
+  const first = Math.max(LB_CHUNK, lbMinRows);
+  lbPending = { rows: rest.slice(first), m, me, top, overall };
+  const rows = rest.slice(0, first).map(x => lbRow(x, m, me, top, overall)).join("");
   const mi = list.find(x => me && lbName(x.p).toLowerCase() === me);
   const who = state.main || state.nick || "";
   const banner = who ? '<div class="lbme"><span class="lbav">' + pavHTML(who) + '</span><span>' +
@@ -205,7 +236,8 @@ function lbHTML(entry, game, sort){
     : sort !== "hive" ? '<p class="sub lbnote">' + esc(T("lbSortNote", nf(entry.d.length))) + "</p>" : "";
   const foot = entry.more && sort === "hive" ? '<button type="button" class="mini lbmore">' + esc(T("lbMore")) + "</button>"
     : '<p class="sub lbend">' + esc(T(overall ? "lbOverallEnd" : "lbEnd", nf(list.length))) + "</p>";
-  return banner + note + podium + (rows ? '<div class="card lbcard">' + lbHead(m) + rows + "</div>" : "") + foot +
+  return banner + note + podium + (rows ? '<div class="card lbcard">' + lbHead(m) + rows +
+    '<i class="lbsent" aria-hidden="true"></i></div>' : "") + foot +
     '<p class="sub lbh">' + esc(T("lbHint")) + "</p>";
 }
 
@@ -225,7 +257,8 @@ async function lbPlayerPlace(game, period, nick){
 function lbCur(){ return { game: $("#lbGame").value, period: $("#lbPeriod").value, sort: $("#lbSort").value || "hive" }; }
 function lbFlash(place){
   $("#lbBody").querySelectorAll(".flash").forEach(r => r.classList.remove("flash"));
-  const row = $("#lbBody").querySelector('[data-p="' + place + '"]');
+  let row = $("#lbBody").querySelector('[data-p="' + place + '"]');
+  while(!row && lbAppend(200)) row = $("#lbBody").querySelector('[data-p="' + place + '"]');
   if(!row) return false;
   row.scrollIntoView({ block:"center", behavior: state.lite ? "auto" : "smooth" });
   void row.offsetWidth; row.classList.add("flash");
@@ -256,7 +289,7 @@ async function lbFind(q){
       while(sort === "hive" && entry.d.length < n && entry.more){ await lbMore(entry, game, period); if(seq !== lbSeq) return; }
     }catch(e){ out.innerHTML = '<p class="sub">' + esc(e.message) + "</p>"; return; }
     if(seq !== lbSeq) return;
-    $("#lbBody").innerHTML = lbHTML(entry, game, sort);
+    lbPaint(entry, game, sort);
     out.innerHTML = lbFlash(n) ? "" : '<p class="sub">' + esc(T("lbBeyond", nf(lbView(entry, game, sort).list.length))) + "</p>";
     return;
   }
@@ -347,15 +380,19 @@ async function renderLb(){
   if($("#vTop").classList.contains("hidden")) return;
   const period = pSel.value, seq = ++lbSeq;
   if(!rs) $("#lbFound").innerHTML = "";
-  const cached = rs && LB[(game === "overall" ? "overall|all" : game + "|" + period)];
-  if(!cached) body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T(game === "overall" ? "lbOverallLoading" : "tqLoading")) + "</p>";
+  const have = LB[game === "overall" ? "overall|all" : game + "|" + period];
+  const same = have && lbShown.startsWith(game + "|" + period + "|") && body.querySelector(".lbcard, .lbr");
+  if(!same){ lbShown = ""; body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T(game === "overall" ? "lbOverallLoading" : "tqLoading")) + "</p>"; }
   try{
     const entry = await loadLb(game, period, !!rs);
     if(seq !== lbSeq) return;
     fillSort(entry);
     const sort = sSel.value;
-    body.innerHTML = lbHTML(entry, game, sort);
-    reveal(body);
+    const key = game + "|" + period + "|" + sort + "|" + entry.t + "|" + entry.d.length;
+    if(!(lbShown === key && body.querySelector(".lbcard, .lbr"))){
+      lbPaint(entry, game, sort);
+      reveal(body);
+    }
     const me = lbMe();
     if(me && game !== "overall" && period !== "all" && sort === "hive" && !body.querySelector(".lbr.me, .pod.me")){
       lbPlayerPlace(game, period, state.main || state.nick).then(r => {
@@ -382,7 +419,7 @@ $("#lbGame").onchange = () => { $("#lbPeriod").value = "all"; $("#lbSort").value
 $("#lbPeriod").onchange = renderLb;
 $("#lbSort").onchange = () => {
   const { game, period, sort } = lbCur(), entry = LB[game + "|" + period];
-  if(entry){ $("#lbBody").innerHTML = lbHTML(entry, game, sort); $("#lbFound").innerHTML = ""; }
+  if(entry){ lbPaint(entry, game, sort); $("#lbFound").innerHTML = ""; }
   else renderLb();
 };
 $("#lbFindBtn").onclick = () => lbFind($("#lbFind").value);
@@ -397,6 +434,6 @@ document.addEventListener("click", async e => {
   m.disabled = true; m.textContent = T("tqLoading");
   try{ await lbMore(entry, game, period); }
   catch(err){ toast(err.message); }
-  if(seq === lbSeq) $("#lbBody").innerHTML = lbHTML(entry, game, sort);
+  if(seq === lbSeq) lbPaint(entry, game, sort, true);
 });
 lbSearch = attachSearch($("#lbFind"), $("#lbSugg"), () => {}, q => /^#?\d+$/.test(q));

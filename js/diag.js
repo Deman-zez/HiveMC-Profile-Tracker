@@ -12,7 +12,7 @@ function showRaw(text){
     try{ await navigator.clipboard.writeText(text); toast(T("copied")); }
     catch(e){ toast(T("clipFail")); }
   };
-  document.body.append(m);
+  mountModal(m);
 }
 let diagBusy = false;
 async function diag(){

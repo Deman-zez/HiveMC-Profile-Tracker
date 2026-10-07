@@ -320,6 +320,11 @@ function xpRate(code, cur){
   if(playedOf(mm) >= 5 && num(mm, "xp") > 0) return { rate: num(mm, "xp") / playedOf(mm), src: "month" };
   return pNow && xNow ? { rate: xNow / pNow, src: "all" } : { rate: 0, src: "" };
 }
+function rankBoost(rank){
+  const r = String(rank || "").toUpperCase();
+  return /ULTIMATE|ULTRA/.test(r) ? .75 : /PLUS|\+/.test(r) ? .5 : 0;
+}
+const BOOSTER = .5;
 function levelNextHTML(code, cur, lv, cap, xp, rank){
   const tb = xpTable(code);
   if(!tb || !xp) return "";
@@ -327,10 +332,14 @@ function levelNextHTML(code, cur, lv, cap, xp, rank){
   if(!a || !b || b[0] <= xp || b[0] <= a[0]) return "";
   const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
   const r = xpRate(code, cur), need = b[0] - xp;
-  let eta = "", far = "";
+  let eta = "", far = "", boosted = "";
   if(r.rate){
     const g1 = Math.max(1, Math.ceil(need / r.rate));
     eta = '<span class="lveg"><strong>≈ ' + nf(g1) + "</strong> " + esc(gamesWord(g1)) + "</span>";
+    const rb = rankBoost(rank);
+    const gb = Math.max(1, Math.ceil(need / (r.rate / (1 + rb) * (1 + rb + BOOSTER))));
+    if(gb < g1) boosted = '<div class="lvfar lvboost"><span>⚡</span>' +
+      esc(T("lvBoostLine", nf(gb), gamesWord(gb))) + "</div>";
     const top = cap && cap > lv + 1 && tb.find(([, l]) => l === cap);
     if(top && top[0] > xp){
       const g2 = Math.max(1, Math.ceil((top[0] - xp) / r.rate));
@@ -339,7 +348,7 @@ function levelNextHTML(code, cur, lv, cap, xp, rank){
   }
   return '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
     '<div class="lvrow"><span class="lvneed">' + esc(T("lvTo", lv + 1)) + " <strong>" + nf(need) + "</strong> " +
-    esc(T("lvXpWord")) + "</span>" + eta + "</div>" + far + "</div>";
+    esc(T("lvXpWord")) + "</span>" + eta + "</div>" + boosted + far + "</div>";
 }
 
 const MAP_GAMES = ["drop", "ctf", "dr", "grav", "ground", "hide", "murder", "sky", "sg", "wars", "bridge"];

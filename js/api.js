@@ -40,11 +40,18 @@ async function pullEach(){
   }));
   return Object.keys(out).length ? { data: out, missing } : null;
 }
+let snapQueued = false;
+function snapAfter(){
+  if(!snapQueued) return;
+  snapQueued = false;
+  const last = mySnaps().pop();
+  if(state.nick && (!last || Date.now() - last.t > 10 * 60 * 1000)) snapshot();
+}
 async function snapshot(){
   if(!state.nick){ toast(T("needNick")); return; }
   const n = nickKey();
   const btn = $("#fetchBtn");
-  if(btn.disabled) return;
+  if(btn.disabled){ snapQueued = true; return; }
   state.lastSnapAt = Date.now(); save();
   btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
   const now = Date.now(), snap = { t: now, n, g: {} };
@@ -84,24 +91,24 @@ async function snapshot(){
       }
       const cc = md.username_cc;
       if(cc && state.main && state.main.toLowerCase() === cc.toLowerCase()) state.main = cc;
-      if(cc && cc.toLowerCase() === n && cc !== state.nick){
+      if(cc && cc.toLowerCase() === n && nickKey() === n && cc !== state.nick){
         state.nick = cc;
         const inp = $("#nick"); if(inp) inp.value = cc;
       }
     }
   }catch(e){ failed = e.message; }
   if(Object.keys(snap.g).length){
-    const mine = mySnaps(), prev = mine[mine.length-1];
+    const mine = state.snaps.filter(x => (x.n || "") === n), prev = mine[mine.length-1];
     if(prev){
       snap.old = [];
       for(const g in prev.g) if(!(g in snap.g)){
-        snap.g[g] = prev.g[g];
+        snap.g[g] = JSON.parse(JSON.stringify(prev.g[g]));
         snap.old.push(g);
       }
       if(!snap.old.length) delete snap.old;
     }
     state.snaps.push(snap);
-    if(state.snaps.length > 300) state.snaps.shift();
+    trimSnaps();
     save();
     syncSoon();
   }
@@ -109,6 +116,6 @@ async function snapshot(){
   renderSnap(); renderTrend();
   if(failed) toast(failed);
   const wait = SNAP_GAP - (Date.now() - state.lastSnapAt);
-  if(wait > 0) setTimeout(() => { btn.disabled = false; }, wait);
-  else btn.disabled = false;
+  if(wait > 0) setTimeout(() => { btn.disabled = false; snapAfter(); }, wait);
+  else { btn.disabled = false; snapAfter(); }
 }

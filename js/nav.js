@@ -31,11 +31,11 @@ function showView(v, y){
   if(v === "snap") renderSnap();
   const to = () => { scrollTo(0, y); requestAnimationFrame(() => scrollTo(0, y)); };
   to();
-  if(done && y) done.then(() => { if(curView === v) to(); });
+  if(done && y) done.then(() => { if(curView === v){ if(v === "top") lbFillTo(y); to(); } });
   const sec = $(VIEWS[v]);
   reveal(sec);
   fitText(sec);
-  fitNames();
+  fitNames(sec);
   sec.classList.remove("swap");
   void sec.offsetWidth;
   sec.classList.add("swap");

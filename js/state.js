@@ -33,7 +33,7 @@ const HIVE_WINDOW = 60 * 60 * 1000, HIVE_PER_PLAYER = 3;
 function noteHit(n){
   const t0 = Date.now() - HIVE_WINDOW;
   state.hits = state.hits.filter(h => h.t > t0);
-  state.hits.push({ n, t: Date.now() }); save();
+  state.hits.push({ n, t: Date.now() }); saveSoon();
 }
 function limitMsg(n){
   const t0 = Date.now() - HIVE_WINDOW;
@@ -45,11 +45,43 @@ function limitMsg(n){
 }
 state.avatars = state.avatars || {};
 function load(){ try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
-function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(state)); saveWarned = false; }
-  catch(e){
-    if(!saveWarned){ saveWarned = true; try{ toast(T("saveFail")); }catch(_){} }
+const SNAP_MAX = 300, SNAP_MAX_OTHER = 30;
+function compactSnaps(){
+  const latest = new Map();
+  state.snaps.forEach((s, i) => latest.set(s.n || "", i));
+  state.snaps.forEach((s, i) => {
+    if(s.c || latest.get(s.n || "") === i) return;
+    const m = s.g && s.g.main;
+    if(m) for(const k of Object.keys(m)) if(m[k] && typeof m[k] === "object") delete m[k];
+    s.c = 1;
+  });
+}
+function trimSnaps(max){
+  max = max || SNAP_MAX;
+  const keep = new Set([String(state.main || "").toLowerCase(), nickKey()]);
+  const per = new Map();
+  for(let i = state.snaps.length - 1; i >= 0; i--){
+    const n = state.snaps[i].n || "";
+    if(keep.has(n)) continue;
+    per.set(n, (per.get(n) || 0) + 1);
+    if(per.get(n) > SNAP_MAX_OTHER) state.snaps.splice(i, 1);
   }
+  while(state.snaps.length > max){
+    const i = state.snaps.findIndex(s => !keep.has(s.n || ""));
+    state.snaps.splice(i < 0 ? 0 : i, 1);
+  }
+}
+function save(){
+  try{ compactSnaps(); }catch(e){}
+  for(let tries = 0; tries < 6; tries++){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); saveWarned = false; return; }
+    catch(e){
+      const quota = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+      if(!quota || state.snaps.length < 20) break;
+      trimSnaps(Math.floor(state.snaps.length * .8));
+    }
+  }
+  if(!saveWarned){ saveWarned = true; try{ toast(T("saveFail")); }catch(_){} }
 }
 function langCode(){
   if(state.lang === "ru" || state.lang === "en") return state.lang;
@@ -64,7 +96,10 @@ function pruneLogs(){
   state.reqLog = (state.reqLog || []).filter(x => x > t);
 }
 function budgetLeft(){ pruneLogs(); return REQ_LIMIT - state.reqLog.length; }
-function noteRequest(){ pruneLogs(); state.reqLog.push(Date.now()); save(); }
+let saveT = 0;
+function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 800); }
+addEventListener("pagehide", () => { if(saveT){ clearTimeout(saveT); save(); } });
+function noteRequest(){ pruneLogs(); state.reqLog.push(Date.now()); saveSoon(); }
 const nickKey = () => (state.nick || "").trim().toLowerCase();
 const lk = g => nickKey() + "|" + g;
 const mySnaps = () => state.snaps.filter(x => (x.n || "") === nickKey());
