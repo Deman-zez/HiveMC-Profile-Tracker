@@ -336,8 +336,7 @@ function levelUnlockHTML(code, lv, cap){
   const list = un[at], shown = list.slice(0, 3);
   const items = shown.map(x => {
     const kind = unlockKind(x.t);
-    const crop = /\/avatars\//.test(x.i);
-    const icon = x.i ? '<span class="ciw lvui' + (crop ? "" : " whole") + '"><span><img alt="" loading="lazy" src="' + esc(x.i) +
+    const icon = x.i ? '<span class="ciw lvui"><span><img alt="" loading="lazy" src="' + esc(x.i) +
       '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "";
     const name = hasMC(x.n) ? mcText(x.n) : esc(x.n);
     return '<span class="lvuit">' + icon + (kind ? '<em>' + esc(kind) + "</em>" : "") + '<span class="lvun">' + name + "</span></span>";

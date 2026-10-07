@@ -64,12 +64,15 @@ function cardData(){
     title: title ? String(cosName(title) || title) : "",
     avatar: cosIcon(ava) || (typeof cosName(ava) === "string"
       ? "https://cdn.playhive.com/avatars/" + encodeURIComponent(cosName(ava)) + ".png" : ""),
-    hubLevel: lvlKey ? main[lvlKey] : null,
+    hubLevel: lvlKey ? main[lvlKey] : LV || null,
     stats: [
       [T("played"), nf(P)], [T("wins"), nf(W)], [T("winrate"), pct(W, P)],
-      [T("killsTotal"), nf(K)], [T("kd"), ratio(K, D)], LV ? [T("levelSum"), nf(LV)] : null
+      [T("killsTotal"), nf(K)], [T("kd"), ratio(K, D)],
+      typeof main.daily_login_streak === "number" ? [T("streak"), nf(main.daily_login_streak)]
+        : LV ? [T("levelSum"), nf(LV)] : null
     ].filter(Boolean),
-    top: top ? { name: NAME(top), wins: num(last.g[top], "victories"), wr: pct(num(last.g[top], "victories"), playedOf(last.g[top])) } : null,
+    top: top ? { name: NAME(top), wins: num(last.g[top], "victories"), played: playedOf(last.g[top]),
+      wr: pct(num(last.g[top], "victories"), playedOf(last.g[top])) } : null,
     t: last.t
   };
 }
@@ -132,7 +135,11 @@ async function drawCard(d){
   if(d.tag){
     let x = tx + ctx.measureText(d.nick + " ").width;
     ctx.fillText("[", x, y); x += ctx.measureText("[").width;
-    ctx.fillStyle = d.tag.c2; ctx.fillText(d.tag.t, x, y); x += ctx.measureText(d.tag.t).width;
+    const lw = ctx.measureText(d.tag.t).width;
+    const tg = ctx.createLinearGradient(x, y - nickPx * .8, x + lw, y);
+    const mid = d.tag.t === "U" ? "#a05fd6" : "#4fd48a";
+    tg.addColorStop(0, mid); tg.addColorStop(.55, d.tag.c1); tg.addColorStop(1, d.tag.c1);
+    ctx.fillStyle = tg; ctx.fillText(d.tag.t, x, y); x += lw;
     ctx.fillStyle = "#f4eefb"; ctx.fillText("]", x, y);
   }
 
@@ -146,7 +153,7 @@ async function drawCard(d){
     segs.forEach(s => { ctx.fillStyle = s.c || "#ff7ab8"; ctx.fillText(s.t, x, y); x += ctx.measureText(s.t).width; });
   }
 
-  const n = d.stats.length, gap = 16, top = 300, th = 132;
+  const n = d.stats.length, gap = 16, top = 284, th = 124;
   const tw = (CARD_W - PAD * 2 - gap * (n - 1)) / n;
   d.stats.forEach(([k, v], i) => {
     const x = PAD + i * (tw + gap);
@@ -155,25 +162,43 @@ async function drawCard(d){
     ctx.textAlign = "center";
     const vp = cardFit(ctx, v, tw - 24, 44, 800, 22);
     ctx.font = cardFont(vp, 800); ctx.fillStyle = "#f4eefb";
-    ctx.fillText(v, x + tw / 2, top + 66);
+    ctx.fillText(v, x + tw / 2, top + 62);
     const kp = cardFit(ctx, k, tw - 20, 20, 500, 13);
     ctx.font = cardFont(kp, 500); ctx.fillStyle = "#a493be";
-    ctx.fillText(k, x + tw / 2, top + 104);
+    ctx.fillText(k, x + tw / 2, top + 98);
   });
 
   ctx.textAlign = "left";
   if(d.top){
-    const yy = top + th + 64;
-    ctx.font = cardFont(22, 700); ctx.fillStyle = "#ffc02e";
-    const lab = T("mostPlayed");
-    ctx.fillText(lab, PAD, yy);
-    const lw = ctx.measureText(lab + "   ").width;
-    ctx.font = cardFont(30, 800); ctx.fillStyle = "#f4eefb";
-    ctx.fillText(d.top.name, PAD + lw, yy + 1);
-    const nw = ctx.measureText(d.top.name + "   ").width;
-    ctx.font = cardFont(24, 500); ctx.fillStyle = "#a493be";
-    ctx.fillText(nf(d.top.wins) + " " + (L === "ru" ? pluralRU(d.top.wins, WINS_LOW_RU) : T("winsLow")) +
-      " · " + d.top.wr, PAD + lw + nw, yy);
+    const gx = PAD, gy = top + th + 20, gw = CARD_W - PAD * 2, gh = 112;
+    cardRound(ctx, gx, gy, gw, gh, 22);
+    ctx.fillStyle = "rgba(24,13,38,.72)"; ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.13)"; ctx.lineWidth = 2; ctx.stroke();
+    const line = ctx.createLinearGradient(gx + 30, 0, gx + gw - 30, 0);
+    line.addColorStop(0, "rgba(255,192,46,0)"); line.addColorStop(.5, "rgba(255,192,46,.9)"); line.addColorStop(1, "rgba(255,192,46,0)");
+    ctx.fillStyle = line; ctx.fillRect(gx + 30, gy + 1, gw - 60, 2);
+
+    const lx = gx + 30, cy = gy + gh / 2;
+    ctx.font = cardFont(34, 800); ctx.fillStyle = "#f4eefb"; ctx.textBaseline = "alphabetic";
+    ctx.fillText(d.top.name, lx, cy - 4);
+    const badge = T("mostPlayed");
+    ctx.font = cardFont(15, 800);
+    const bw = ctx.measureText(badge).width + 22, bh = 26, by = cy + 10;
+    cardRound(ctx, lx, by, bw, bh, 7); ctx.fillStyle = "#a05fd6"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.textBaseline = "middle"; ctx.fillText(badge, lx + 11, by + bh / 2 + 1);
+    ctx.textBaseline = "alphabetic";
+
+    const cells = [[nf(d.top.wins), T("winsLow")], [nf(d.top.played), T("playedLow")], [d.top.wr, T("winrateLow")]];
+    const cw = 190, cg = 12, ch = gh - 28, cx0 = gx + gw - 14 - cells.length * cw - (cells.length - 1) * cg;
+    cells.forEach(([v, k], i) => {
+      const x = cx0 + i * (cw + cg), yy = gy + 14;
+      cardRound(ctx, x, yy, cw, ch, 16); ctx.fillStyle = "rgba(255,255,255,.075)"; ctx.fill();
+      ctx.textAlign = "left";
+      const vp = cardFit(ctx, v, cw - 32, 34, 800, 20);
+      ctx.font = cardFont(vp, 800); ctx.fillStyle = "#f4eefb"; ctx.fillText(v, x + 16, yy + 44);
+      ctx.font = cardFont(17, 500); ctx.fillStyle = "#a493be"; ctx.fillText(k, x + 16, yy + 70);
+    });
+    ctx.textAlign = "left";
   }
 
   ctx.fillStyle = "rgba(255,255,255,.10)";
