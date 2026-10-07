@@ -111,8 +111,10 @@ $("#wipeBtn").onclick = () => {
 $("#fetchBtn").onclick = snapshot;
 function goMain(){
   if(!state.main) return;
+  const other = state.main.toLowerCase() !== nickKey();
+  if(other) navSave();
   wheelTo = null; scrollTo(0, 0);
-  if(state.main.toLowerCase() !== nickKey()) switchNick(state.main);
+  if(other){ switchNick(state.main); navPush("snap", 0); }
   snapshot();
 }
 $("#myBtn").onclick = goMain;

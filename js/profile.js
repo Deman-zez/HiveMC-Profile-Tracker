@@ -56,7 +56,9 @@ function renderSnap(){
     esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
   ["#myBtn", "#stickMy"].forEach(sel => {
     const b = $(sel); b.classList.toggle("hidden", !other); b.innerHTML = myHTML;
+    if(other) b.setAttribute("aria-label", T("myProfile") + " " + state.main); else b.removeAttribute("aria-label");
   });
+  fitStick();
 
   tickStatus();
 

@@ -33,10 +33,12 @@ function mountModal(m, from){
     }
   }
   requestAnimationFrame(() => m.classList.add("in"));
+  if(typeof navModal === "function") navModal(m);
 }
-function closeModal(m){
+function closeModal(m, how){
   if(m.dataset.closing) return;
   m.dataset.closing = "1";
+  if(m.__nav){ m.__nav = false; if(how !== true && how !== "nav" && typeof navBack === "function") navBack(); }
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(reduce){
     m.remove();

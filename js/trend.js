@@ -112,10 +112,14 @@ function renderTrend(){
   const order = GAMES.map(g => g[0]);
   const withData = state.games.filter(g => mine.some(s => s.g[g]))
     .sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const ctl = $(".trendctl");
   if(mine.length < 2){
-    body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T("trendNeed")) + "</p>";
-    gSel.innerHTML = mSel.innerHTML = ""; return;
+    body.innerHTML = '<p class="sub" style="margin-top:10px">' + esc(T("trendNeed")) + "</p>";
+    gSel.innerHTML = mSel.innerHTML = "";
+    if(ctl) ctl.classList.add("hidden");
+    return;
   }
+  if(ctl) ctl.classList.remove("hidden");
   const keepG = gSel.value;
   gSel.innerHTML = withData.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
   if(withData.includes(keepG)) gSel.value = keepG;

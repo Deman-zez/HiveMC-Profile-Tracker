@@ -15,6 +15,11 @@ if(!Array.isArray(state.games) || !state.games.length ||
    (state.games.length === 4 && ["main","bed","sky","dr"].every(g => state.games.includes(g)))){
   state.games = DEFAULT_GAMES.slice();
 }
+if(!state.gamesV2){
+  state.games = DEFAULT_GAMES.slice();
+  state.gamesV2 = 1;
+  state.setAt = Date.now();
+}
 if(!state.tagged){
   const n = (state.nick || "").trim().toLowerCase();
   state.snaps.forEach(x => { if(!x.n) x.n = n; });

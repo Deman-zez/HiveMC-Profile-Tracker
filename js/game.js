@@ -57,6 +57,44 @@ function fitText(root){
   });
 }
 addEventListener("resize", () => fitText());
+const NAME_FIT = [[".podn", 11], [".lbn", 11.5]];
+function shrinkFit(pairs){
+  pairs.forEach(([el]) => { if(el.style.fontSize) el.style.fontSize = ""; });
+  const jobs = [];
+  pairs.forEach(([el, min]) => {
+    if(el.clientWidth && el.scrollWidth > el.clientWidth + 1)
+      jobs.push({ el, min, size: parseFloat(getComputedStyle(el).fontSize) || 14 });
+  });
+  jobs.forEach(j => {
+    j.size = Math.max(j.min, Math.floor(j.size * j.el.clientWidth / j.el.scrollWidth * 2) / 2);
+    j.el.style.fontSize = j.size + "px";
+  });
+  jobs.forEach(j => {
+    if(j.size > j.min && j.el.scrollWidth > j.el.clientWidth + 1) j.el.style.fontSize = Math.max(j.min, j.size - 1) + "px";
+  });
+}
+function fitStick(){
+  const st = $("#stick"), nk = $("#stickNick"), my = $("#stickMy");
+  if(!st || !nk) return;
+  st.classList.remove("compact");
+  nk.style.fontSize = "";
+  if(!nk.clientWidth || nk.scrollWidth <= nk.clientWidth + 1) return;
+  if(my && !my.classList.contains("hidden")) st.classList.add("compact");
+  shrinkFit([[nk, 15]]);
+}
+function fitNames(root){
+  const pairs = [];
+  NAME_FIT.forEach(([sel, min]) => (root || document).querySelectorAll(sel).forEach(el => pairs.push([el, min])));
+  shrinkFit(pairs);
+  if(!root) fitStick();
+}
+let fitNamesRAF = 0;
+const fitNamesSoon = () => { if(!fitNamesRAF) fitNamesRAF = requestAnimationFrame(() => { fitNamesRAF = 0; fitNames(); }); };
+addEventListener("resize", fitNamesSoon);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitNamesSoon);
+if(typeof MutationObserver === "function") ["#lbBody", "#lbFound"].forEach(sel => {
+  const el = $(sel); if(el) new MutationObserver(fitNamesSoon).observe(el, { childList: true });
+});
 const KILL_KEY = /(^|_)kills$/;
 const KILL_EXTRA = /^(murders|murderer_eliminations|eliminations)$/;
 function killsParts(c){
@@ -179,7 +217,7 @@ function openGame(code, from){
     if(b.dataset.tf === "month") fillMonth(box, code, m); else fillAll();
   });
   const go = m.querySelector(".lbgo");
-  if(go) go.onclick = () => { closeModal(m); openLb(code); };
+  if(go) go.onclick = () => { closeModal(m, "nav"); openLb(code); };
   requestAnimationFrame(fillAll);
   if(MAP_GAMES.includes(code)) loadMaps(code).then(list => {
     const box = m.querySelector(".mmaps");
@@ -292,24 +330,22 @@ function levelNextHTML(code, cur, lv, cap, xp, rank){
   const a = mg.xp.find(([, l]) => l === lv), b = mg.xp.find(([, l]) => l === lv + 1);
   if(!a || !b || b[0] <= xp || b[0] <= a[0]) return "";
   const p = Math.max(0, Math.min(1, (xp - a[0]) / (b[0] - a[0])));
-  const r = xpRate(code, cur), boost = rankBoost(rank);
-  let line1 = T("lvNext", lv + 1, nf(b[0] - xp)), line2 = "";
+  const r = xpRate(code, cur), boost = rankBoost(rank), need = b[0] - xp;
+  let eta = "", far = "";
   if(r.rate){
-    const withBooster = r.rate / (1 + boost) * (1 + boost + .5);
-    const g1 = Math.max(1, Math.ceil((b[0] - xp) / r.rate)), g1b = Math.max(1, Math.ceil((b[0] - xp) / withBooster));
-    line1 += " · " + T("lvGames", nf(g1), gamesWord(g1)) + (g1b < g1 ? " " + T("lvBoost", nf(g1b)) : "");
+    const g1 = Math.max(1, Math.ceil(need / r.rate));
+    const g1b = Math.max(1, Math.ceil(need / (r.rate / (1 + boost) * (1 + boost + .5))));
+    eta = '<span class="lveg"><strong>≈ ' + nf(g1) + "</strong> " + esc(gamesWord(g1)) +
+      (g1b < g1 ? '<i title="' + esc(T("lvBoostTip")) + '">⚡ ' + nf(g1b) + "</i>" : "") + "</span>";
     const top = cap && cap > lv + 1 && mg.xp.find(([, l]) => l === cap);
-    const parts = [];
     if(top && top[0] > xp){
       const g2 = Math.max(1, Math.ceil((top[0] - xp) / r.rate));
-      parts.push(T("lvGamesMax", cap, nf(g2), gamesWord(g2)));
+      far = '<div class="lvfar">' + esc(T("lvFar", cap, nf(g2), gamesWord(g2))) + "</div>";
     }
-    parts.push(T("lvRate", nf(Math.round(r.rate)), T("lvSrc_" + r.src)));
-    if(boost) parts.push(T("lvRank", boost === .75 ? "Ultimate" : "Hive+", Math.round(boost * 100)));
-    line2 = parts.join(" · ");
   }
   return '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
-    "<small>" + esc(line1) + "</small>" + (line2 ? '<small class="lveta">' + esc(line2) + "</small>" : "") + "</div>";
+    '<div class="lvrow"><span class="lvneed">' + esc(T("lvTo", lv + 1)) + " <strong>" + nf(need) + "</strong> " +
+    esc(T("lvXpWord")) + "</span>" + eta + "</div>" + far + "</div>";
 }
 
 const MAP_GAMES = ["drop", "ctf", "dr", "grav", "ground", "hide", "murder", "sky", "sg", "wars", "bridge"];

@@ -1,30 +1,89 @@
 "use strict";
 
-let snapScroll = 0;
-document.querySelectorAll(".tabs button").forEach(b => {
-  b.onclick = () => {
-    const v = b.dataset.v;
-    if(!$("#vSnap").classList.contains("hidden")) snapScroll = scrollY;
-    const views = { snap:"#vSnap", trend:"#vTrend", top:"#vTop", set:"#vSet" };
-    for(const [k, sel] of Object.entries(views)) $(sel).classList.toggle("hidden", v !== k);
-    document.querySelectorAll(".tabs button").forEach(x => x.removeAttribute("aria-current"));
-    b.setAttribute("aria-current","page");
-    if(v === "trend") renderTrend();
-    if(v === "top") renderLb();
-    if(v === "snap") renderSnap();
-    wheelTo = null;
-    if(v === "snap"){
-      scrollTo(0, snapScroll);
-      requestAnimationFrame(() => scrollTo(0, snapScroll));
-    } else scrollTo(0, 0);
-    const sec = $(views[v] || "#vSnap");
-    reveal(sec);
-    fitText(sec);
-    sec.classList.remove("swap");
-    void sec.offsetWidth;
-    sec.classList.add("swap");
-  };
+const VIEWS = { snap:"#vSnap", trend:"#vTrend", top:"#vTop", set:"#vSet" };
+let curView = "snap", snapScroll = 0, navSkip = 0, navSkipT = 0;
+try{ history.scrollRestoration = "manual"; }catch(e){}
+function lbSel(){
+  const g = $("#lbGame"), p = $("#lbPeriod"), s = $("#lbSort");
+  return g && g.value ? { g: g.value, p: p.value, s: s.value } : null;
+}
+function navEntry(v, y, extra){
+  return Object.assign({ hv: 1, v, nick: state.nick || "", y: Math.max(0, Math.round(y || 0)), lb: lbSel() }, extra || {});
+}
+function navSave(){
+  const st = history.state && history.state.hv ? history.state : null;
+  try{ history.replaceState(navEntry(curView, scrollY, st && st.m ? { m: st.m } : null), ""); }catch(e){}
+}
+function navPush(v, y, extra){
+  try{ history.pushState(navEntry(v, y, extra), ""); }catch(e){}
+}
+function showView(v, y){
+  if(!VIEWS[v]) v = "snap";
+  curView = v;
+  for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
+  document.querySelectorAll(".tabs button").forEach(x => {
+    if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+  });
+  wheelTo = null;
+  let done = null;
+  if(v === "trend") renderTrend();
+  if(v === "top") done = renderLb();
+  if(v === "snap") renderSnap();
+  const to = () => { scrollTo(0, y); requestAnimationFrame(() => scrollTo(0, y)); };
+  to();
+  if(done && y) done.then(() => { if(curView === v) to(); });
+  const sec = $(VIEWS[v]);
+  reveal(sec);
+  fitText(sec);
+  fitNames();
+  sec.classList.remove("swap");
+  void sec.offsetWidth;
+  sec.classList.add("swap");
+  return done;
+}
+function go(v, opts){
+  opts = opts || {};
+  if(v === curView && !opts.force){
+    showView(v, v === "snap" ? scrollY : 0);
+    navSave();
+    return;
+  }
+  if(!opts.saved) navSave();
+  if(curView === "snap") snapScroll = scrollY;
+  const y = opts.y !== undefined ? opts.y : v === "snap" ? snapScroll : 0;
+  const onModal = history.state && history.state.m;
+  showView(v, y);
+  if(onModal){ try{ history.replaceState(navEntry(v, y), ""); }catch(e){} }
+  else navPush(v, y);
+}
+function navModal(m){
+  navSave();
+  navPush(curView, scrollY, { m: 1 });
+  m.__nav = true;
+}
+function navBack(){
+  if(!(history.state && history.state.m)) return;
+  navSkip++;
+  clearTimeout(navSkipT);
+  navSkipT = setTimeout(() => { navSkip = 0; }, 800);
+  history.back();
+}
+addEventListener("popstate", e => {
+  if(navSkip){ navSkip--; return; }
+  const open = [...document.querySelectorAll(".modal")].filter(m => !m.dataset.closing);
+  if(open.length){ closeModal(open[open.length - 1], true); return; }
+  if(typeof closeTq === "function") closeTq();
+  const st = e.state && e.state.hv ? e.state : { v: "snap", y: 0 };
+  if(st.nick && st.nick.toLowerCase() !== nickKey()){
+    switchNick(niceNick(st.nick));
+    if(!mySnaps().length) snapshot();
+  }
+  if(st.v === "top" && st.lb) lbRestore = Object.assign({ stale: true }, st.lb);
+  if(curView === "snap" && st.v !== "snap") snapScroll = scrollY;
+  showView(st.v, st.y || 0);
 });
+try{ history.replaceState(navEntry("snap", 0), ""); }catch(e){}
+document.querySelectorAll(".tabs button").forEach(b => { b.onclick = () => go(b.dataset.v); });
 let stickOn = false, stickTick = false, lastShade = -1;
 const shadeEl = $("#shade");
 function onScroll(){

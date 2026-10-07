@@ -5,7 +5,7 @@ const LB_SEASONS = [5, 4, 3, 2, 1];
 const LB_MONTHS_BACK = 6;
 const LB_PAGE = 100;
 const LB_SKIP_KEYS = new Set(["index", "human_index", "username", "username_cc", "UUID", "uuid", "id", "xuid"]);
-let lbPick = null, lbSeq = 0, lbSearch = null;
+let lbPick = null, lbSeq = 0, lbSearch = null, lbRestore = null;
 
 function lbMonthDate(back){
   const d = new Date();
@@ -54,10 +54,10 @@ const lbName = p => String(p.username_cc || p.username || "?");
 const lbPlaceOf = (p, i) => typeof p.human_index === "number" ? p.human_index
   : typeof p.index === "number" ? p.index + 1 : i + 1;
 const lbArr = d => Array.isArray(d) ? d : (d && typeof d === "object" && Object.values(d).find(Array.isArray)) || [];
-async function loadLb(game, period){
-  if(game === "overall") return loadOverall();
+async function loadLb(game, period, stale){
+  if(game === "overall") return loadOverall(stale);
   const key = game + "|" + period, c = LB[key];
-  if(c && Date.now() - c.t < 10 * 60 * 1000) return c;
+  if(c && (stale || Date.now() - c.t < 10 * 60 * 1000)) return c;
   try{
     const d = lbArr(await lbFetch(lbUrl(game, period)));
     LB[key] = { t: Date.now(), d, more: period !== "all" && d.length >= LB_PAGE };
@@ -79,9 +79,9 @@ async function lbMore(entry, game, period){
 }
 
 const lbGameLevel = (p, code) => Math.floor(levelFromXP(num(p, "xp"), code) || gameLevel(p, code) || 0);
-async function loadOverall(){
+async function loadOverall(stale){
   const c = LB["overall|all"];
-  if(c && Date.now() - c.t < 10 * 60 * 1000) return c;
+  if(c && (stale || Date.now() - c.t < 10 * 60 * 1000)) return c;
   const codes = GAMES.map(g => g[0]).filter(g => g !== "main");
   const res = await Promise.allSettled(codes.map(g => loadLb(g, "all")));
   const acc = new Map();
@@ -296,9 +296,16 @@ function renderGlobalStats(game){
   const box = $("#lbGlobal"); if(!box) return;
   const draw = d => {
     if(!d || typeof d.global !== "number"){ box.innerHTML = ""; return; }
-    const g = game !== "overall" && typeof d[game] === "number" ? d[game] : null;
-    box.innerHTML = '<div class="lbgs"><b>' + nf(d.global) + "</b><small>" + esc(T("gsAll")) + "</small></div>" +
-      (g !== null ? '<div class="lbgs"><b>' + nf(g) + "</b><small>" + esc(T("gsGame", NAME(game))) + "</small></div>" : "");
+    const codes = GAMES.map(g => g[0]).filter(g => g !== "main").concat("parkour")
+      .filter(g => typeof d[g] === "number").sort((a, b) => d[b] - d[a]);
+    const open = box.querySelector("details[open]") !== null;
+    box.innerHTML = '<details class="lbgd"' + (open ? " open" : "") + '><summary><span class="lbgs"><b>' + nf(d.global) +
+      "</b><small>" + esc(T("gsAll")) + "</small></span>" +
+      (game !== "overall" && typeof d[game] === "number"
+        ? '<span class="lbgs"><b>' + nf(d[game]) + "</b><small>" + esc(T("gsGame", NAME(game))) + "</small></span>" : "") +
+      '<i aria-hidden="true">›</i></summary><div class="lbgl">' + codes.map(g =>
+        '<div class="lbgi' + (g === game ? " on" : "") + '"><span>' + esc(NAME(g)) + "</span><b>" + nf(d[g]) +
+        "</b><i style=\"width:" + (d[g] / d.global * 100).toFixed(1) + '%"></i></div>').join("") + "</div></details>";
   };
   if(GSTAT) draw(GSTAT);
   else loadGlobalStats().then(draw).catch(() => { box.innerHTML = ""; });
@@ -307,20 +314,22 @@ function renderGlobalStats(game){
 async function renderLb(){
   const gSel = $("#lbGame"), pSel = $("#lbPeriod"), sSel = $("#lbSort"), body = $("#lbBody");
   if(!gSel) return;
+  const rs = $("#vTop").classList.contains("hidden") ? null : lbRestore;
+  if(rs) lbRestore = null;
   $("#topHead").textContent = T("tab4");
   $("#topSub").textContent = T("topSub");
   $("#lbFind").placeholder = T("lbFindPh");
   $("#lbFindBtn").textContent = T("lbFindBtn");
   const games = ["overall"].concat(GAMES.map(g => g[0]).filter(g => g !== "main"));
-  const want = lbPick || gSel.value || "overall";
+  const want = (rs && rs.g) || lbPick || gSel.value || "overall";
   lbPick = null;
   gSel.innerHTML = games.map(g => '<option value="' + g + '">' + esc(g === "overall" ? T("lbOverall") : NAME(g)) + "</option>").join("");
   gSel.value = games.includes(want) ? want : games[0];
-  const game = gSel.value, per = lbPeriods(game), keepP = pSel.value;
+  const game = gSel.value, per = lbPeriods(game), keepP = rs ? rs.p : pSel.value;
   pSel.innerHTML = per.map(([v, t]) => '<option value="' + v + '">' + esc(t) + "</option>").join("");
   pSel.value = per.some(p => p[0] === keepP) ? keepP : "all";
   pSel.disabled = per.length < 2;
-  const keepS = sSel.value;
+  const keepS = rs ? rs.s : sSel.value;
   const fillSort = entry => {
     const opts = lbSortOptions(game, entry);
     sSel.innerHTML = opts.map(([v, t]) => '<option value="' + v + '">' + esc(T("lbSortBy", t)) + "</option>").join("");
@@ -330,10 +339,11 @@ async function renderLb(){
   renderGlobalStats(game);
   if($("#vTop").classList.contains("hidden")) return;
   const period = pSel.value, seq = ++lbSeq;
-  $("#lbFound").innerHTML = "";
-  body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T(game === "overall" ? "lbOverallLoading" : "tqLoading")) + "</p>";
+  if(!rs) $("#lbFound").innerHTML = "";
+  const cached = rs && LB[(game === "overall" ? "overall|all" : game + "|" + period)];
+  if(!cached) body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(T(game === "overall" ? "lbOverallLoading" : "tqLoading")) + "</p>";
   try{
-    const entry = await loadLb(game, period);
+    const entry = await loadLb(game, period, !!rs);
     if(seq !== lbSeq) return;
     fillSort(entry);
     const sort = sSel.value;
@@ -351,16 +361,15 @@ async function renderLb(){
   }
 }
 function openProfileOf(n){
-  const tab = document.querySelector('.tabs button[data-v="snap"]');
+  navSave();
   if(n.toLowerCase() !== nickKey()) switchNick(niceNick(n));
-  if(tab) tab.click();
+  go("snap", { y: 0, saved: true, force: true });
   const last = mySnaps().pop();
   if(!last || Date.now() - last.t > 10 * 60 * 1000) snapshot();
 }
 function openLb(game){
   lbPick = game;
-  const tab = document.querySelector('.tabs button[data-v="top"]');
-  if(tab) tab.click();
+  go("top", { force: true });
 }
 $("#lbGame").onchange = () => { $("#lbPeriod").value = "all"; $("#lbSort").value = ""; renderLb(); };
 $("#lbPeriod").onchange = renderLb;
@@ -372,7 +381,7 @@ $("#lbSort").onchange = () => {
 $("#lbFindBtn").onclick = () => lbFind($("#lbFind").value);
 $("#lbFind").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); $("#lbFind").blur(); lbFind($("#lbFind").value); } };
 document.addEventListener("click", async e => {
-  const r = e.target.closest && e.target.closest("#vTop [data-n]");
+  const r = e.target.closest && !e.target.closest(".sugg") && e.target.closest("#vTop [data-n]");
   if(r){ openProfileOf(r.dataset.n); return; }
   const m = e.target.closest && e.target.closest("#vTop .lbmore");
   if(!m) return;
@@ -383,4 +392,4 @@ document.addEventListener("click", async e => {
   catch(err){ toast(err.message); }
   if(seq === lbSeq) $("#lbBody").innerHTML = lbHTML(entry, game, sort);
 });
-lbSearch = attachSearch($("#lbFind"), $("#lbSugg"), n => lbFind(n), q => /^#?\d+$/.test(q));
+lbSearch = attachSearch($("#lbFind"), $("#lbSugg"), () => {}, q => /^#?\d+$/.test(q));
