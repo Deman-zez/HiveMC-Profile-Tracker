@@ -727,11 +727,17 @@ html.locked, html.locked body{overflow:hidden}
   color:var(--gold);font-weight:700;font-size:11.5px}
 .lvfar{margin-top:4px;font-size:11.5px;color:var(--soft);opacity:.8;text-align:left}
 .lbgd{border-radius:16px;background:var(--panel);border:1px solid var(--edge)}
-.lbgd summary{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;list-style:none}
-.lbgd summary::-webkit-details-marker{display:none}
-.lbgd summary > i{margin-left:auto;font-style:normal;color:var(--soft);font-size:18px;transition:transform .2s ease}
-.lbgd[open] summary > i{transform:rotate(90deg)}
+.lbgh{display:flex;align-items:flex-start;gap:14px;width:100%;padding:12px 14px;border:none;background:none;
+  color:inherit;font:inherit;text-align:left;cursor:pointer}
+.lbgh > i{align-self:center;flex:none;margin-left:auto;font-style:normal;color:var(--soft);font-size:18px;line-height:1;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.lbgd.open .lbgh > i{transform:rotate(90deg)}
 .lbgd .lbgs{flex:1;min-width:0;padding:0;border:none;background:none}
+.lbgd .lbgs b{line-height:1.15}
+.lbgd .lbgs small{margin-top:3px;line-height:1.3}
+.lbgb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .36s cubic-bezier(.2,.8,.2,1)}
+.lbgd.open .lbgb{grid-template-rows:1fr}
+.lbgb > div{min-height:0;overflow:hidden}
 .lbgl{padding:2px 14px 12px}
 .lbgi{position:relative;display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:13.5px;
   border-top:1px solid rgba(255,255,255,.06)}
@@ -740,3 +746,14 @@ html.locked, html.locked body{overflow:hidden}
 .lbgi > i{position:absolute;left:0;bottom:-1px;height:2px;border-radius:2px;background:var(--violet);opacity:.7}
 .lbgi.on span,.lbgi.on b{color:var(--gold)}
 .lbgi.on > i{background:var(--gold)}
+.lbgi{opacity:0;transform:translate3d(0,-6px,0);transition:opacity .18s ease,transform .18s ease}
+.lbgi > i{transform:scaleX(0);transform-origin:0 50%;transition:transform .18s ease}
+.lbgd.open .lbgi{opacity:1;transform:none;transition:opacity .3s ease,transform .36s cubic-bezier(.2,.8,.2,1);
+  transition-delay:calc(var(--i,0) * 22ms)}
+.lbgd.open .lbgi > i{transform:none;transition:transform .6s cubic-bezier(.2,.8,.2,1);
+  transition-delay:calc(var(--i,0) * 22ms + 90ms)}
+.lbgd.still .lbgb,.lbgd.still .lbgi,.lbgd.still .lbgi > i,.lbgd.still .lbgh > i{transition:none !important}
+@media (prefers-reduced-motion: reduce){
+  .lbgb,.lbgi,.lbgi > i,.lbgh > i{transition:none !important}
+}
+.lite .lbgb,.lite .lbgi,.lite .lbgi > i,.lite .lbgh > i{transition:none !important}
