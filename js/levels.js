@@ -20,7 +20,7 @@ const CAPS = {
 };
 const CAP_DEFAULT = 75;
 let META_GAMES = {};
-try{ const c = JSON.parse(localStorage.getItem("hive.tracker.titlemeta.v2") || "null");
+try{ const c = JSON.parse(localStorage.getItem("hive.tracker.titlemeta.v3") || localStorage.getItem("hive.tracker.titlemeta.v2") || "null");
   if(c && c.g && typeof c.g === "object") META_GAMES = c.g; }catch(e){}
 function maxLevelOf(code){
   const mg = META_GAMES[code]; if(mg && mg.max) return mg.max;

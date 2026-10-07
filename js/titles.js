@@ -47,7 +47,7 @@ async function loadTitleCatalogue(){
   })();
   try{ return await tcatP; } finally { tcatP = null; }
 }
-const TMETA_KEY = "hive.tracker.titlemeta.v2";
+const TMETA_KEY = "hive.tracker.titlemeta.v3";
 let TMETA = null, tmetaP = null;
 function indexMeta(list){
   const byExact = new Map(), byLoose = new Map();
@@ -57,6 +57,23 @@ function indexMeta(list){
     if(b && !byLoose.has(b)) byLoose.set(b, e);
   });
   return { byExact, byLoose };
+}
+function parseUnlocks(lu){
+  const un = {};
+  if(!lu || typeof lu !== "object") return un;
+  for(const [lvl, arr] of Object.entries(lu)){
+    if(!isFinite(+lvl)) continue;
+    (Array.isArray(arr) ? arr : []).forEach(u => {
+      if(!u || typeof u !== "object") return;
+      const gc = u.globalCosmetic && typeof u.globalCosmetic === "object" ? u.globalCosmetic : null;
+      const src = gc || u;
+      const n = src.display || src.name || src.displayName || src.human_name;
+      if(!n || typeof n !== "string") return;
+      const i = [src.url, src.icon, src.icon_url, src.image].find(v => typeof v === "string" && /^https?:/.test(v)) || "";
+      (un[+lvl] = un[+lvl] || []).push({ t: String(src.type || u.type || ""), n, i });
+    });
+  }
+  return un;
 }
 async function loadTitleMeta(){
   if(TMETA) return TMETA;
@@ -79,6 +96,8 @@ async function loadTitleMeta(){
         if(+m.maxLevel > 0 || (xp.length && mono)) games[g] = { max: +m.maxLevel || 0, xp: mono ? xp : [] };
       }
       const lu = m && m.levelUnlocks;
+      const un = parseUnlocks(lu);
+      if(Object.keys(un).length) (games[g] = games[g] || { max: 0, xp: [] }).u = un;
       if(lu && typeof lu === "object") for(const [lvl, arr] of Object.entries(lu)){
         (Array.isArray(arr) ? arr : []).forEach(u => {
           const gc = u && u.globalCosmetic;

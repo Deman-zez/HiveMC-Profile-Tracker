@@ -193,7 +193,7 @@ function openGame(code, from){
     const next = cap && lv >= cap ? '<small class="lvmax">' + esc(T("lvMax")) + "</small>" : levelNextHTML(...lvArgs);
     bar = '<div class="tile wide lvl"><b>' + (cap ? lv + " / " + cap : lv) + "</b>" +
       (cap ? '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div>' : "") +
-      "<small>" + note + "</small>" + next + "</div>";
+      "<small>" + note + "</small>" + next + levelUnlockHTML(code, lv, cap) + "</div>";
   }
   const m = document.createElement("div");
   m.className = "modal";
@@ -319,6 +319,31 @@ function xpRate(code, cur){
   const mo = MONTHLY[nickKey()], mm = mo && mo.d && mo.d[code];
   if(playedOf(mm) >= 5 && num(mm, "xp") > 0) return { rate: num(mm, "xp") / playedOf(mm), src: "month" };
   return pNow && xNow ? { rate: xNow / pNow, src: "all" } : { rate: 0, src: "" };
+}
+function unlockKind(t){
+  const k = String(t || "").toLowerCase().replace(/^global_?/, "");
+  if(/title/.test(k)) return T("unlTitle");
+  if(/avatar/.test(k)) return T("unlAvatar");
+  if(/costume/.test(k)) return T("unlCostume");
+  const raw = String(t || "").replace(/_/g, " ").trim();
+  return (L === "ru" && UNLOCK_RU[raw.toLowerCase()]) || raw;
+}
+function levelUnlockHTML(code, lv, cap){
+  const mg = META_GAMES[code], un = mg && mg.u;
+  if(!un) return "";
+  const at = Object.keys(un).map(Number).filter(l => l > lv && (!cap || l <= cap)).sort((a, b) => a - b)[0];
+  if(!at) return "";
+  const list = un[at], shown = list.slice(0, 3);
+  const items = shown.map(x => {
+    const kind = unlockKind(x.t);
+    const crop = /\/avatars\//.test(x.i);
+    const icon = x.i ? '<span class="ciw lvui' + (crop ? "" : " whole") + '"><span><img alt="" loading="lazy" src="' + esc(x.i) +
+      '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "";
+    const name = hasMC(x.n) ? mcText(x.n) : esc(x.n);
+    return '<span class="lvuit">' + icon + (kind ? '<em>' + esc(kind) + "</em>" : "") + '<span class="lvun">' + name + "</span></span>";
+  }).join("");
+  const more = list.length > shown.length ? '<span class="lvumore">+' + (list.length - shown.length) + "</span>" : "";
+  return '<div class="lvunl"><span class="lvul">' + esc(T("unlAt", at)) + "</span>" + items + more + "</div>";
 }
 function rankBoost(rank){
   const r = String(rank || "").toUpperCase();

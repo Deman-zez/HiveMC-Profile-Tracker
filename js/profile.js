@@ -47,7 +47,7 @@ function renderSnap(){
       "</p>" : "") + "</div>";
   syncTitleWave();
   $("#mainBtn").onclick = e => openMainPicker(e.currentTarget);
-  const sb = $("#shareBtn"); if(sb) sb.onclick = shareProfile;
+  const sb = $("#shareBtn"); if(sb) sb.onclick = () => openShareCard(sb);
   if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; save(); } }
   if(state.nick){ const pn = niceNick(state.nick);
     if(pn !== state.nick){ state.nick = pn; $("#nick").value = pn; save(); renderSnap(); return; } }

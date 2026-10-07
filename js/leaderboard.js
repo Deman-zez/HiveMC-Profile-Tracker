@@ -29,6 +29,33 @@ function lbPaint(entry, game, sort, keepRows){
   lbShown = game + "|" + $("#lbPeriod").value + "|" + sort + "|" + entry.t + "|" + entry.d.length;
   const sent = $("#lbBody .lbsent");
   if(sent && lbSentIO && lbPending && lbPending.rows.length) lbSentIO.observe(sent);
+  lbPodiumAvatars();
+}
+const lbAvTried = new Set();
+function lbPodiumAvatars(){
+  document.querySelectorAll("#lbBody .pod[data-n]").forEach(async el => {
+    const name = el.dataset.n, k = name.toLowerCase();
+    if(state.avatars[k] || lbAvTried.has(k)) return;
+    lbAvTried.add(k);
+    try{
+      let d = await lbFetch(API + "/game/all/main/" + encodeURIComponent(name));
+      if(d && typeof d === "object" && !Array.isArray(d)){
+        const ks = Object.keys(d);
+        if(ks.length === 1 && d[ks[0]] && typeof d[ks[0]] === "object") d = d[ks[0]];
+      }
+      const url = d && cosIcon(pick(d, "equipped_avatar", "avatar_equipped"));
+      if(!url) return;
+      state.avatars[k] = url;
+      saveSoon();
+      document.querySelectorAll('#lbBody .pod[data-n] .podav').forEach(av => {
+        const pod = av.closest(".pod");
+        if(pod && pod.dataset.n.toLowerCase() === k){
+          const pav = av.querySelector(".pav");
+          if(pav) pav.outerHTML = pavHTML(name);
+        }
+      });
+    }catch(e){}
+  });
 }
 function lbFillTo(y){
   let guard = 0;
@@ -194,7 +221,7 @@ function lbSubline(p, overall){
 function lbCells(x, m, overall){
   const p = x.p, s = lbStats(p), v = m.f(m.v(p));
   return '<span class="lbp">' + (x.place ? nf(x.place) : "—") + "</span>" +
-    '<span class="lbu"><span class="lbav">' + pavHTML(lbName(p)) + '</span><span class="lbnn"><span class="lbn">' +
+    '<span class="lbu"><span class="lbnn"><span class="lbn">' +
     esc(lbName(p)) + '</span><small class="lbs">' + esc(lbSubline(p, overall)) + "</small></span></span>" +
     '<span class="lbv"><b>' + v + "</b><small>" + esc(m.unit()) + "</small></span>" +
     '<span class="lbc lbcw">' + v + '</span><span class="lbc">' + nf(s.played) + '</span><span class="lbc">' +
