@@ -25,6 +25,7 @@ function showView(v, y){
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
   wheelTo = null;
+  if(typeof toTopShow === "function") toTopShow(false);
   let done = null;
   if(v === "trend") renderTrend();
   if(v === "top") done = renderLb();
@@ -86,6 +87,21 @@ try{ history.replaceState(navEntry("snap", 0), ""); }catch(e){}
 document.querySelectorAll(".tabs button").forEach(b => { b.onclick = () => go(b.dataset.v); });
 let stickOn = false, stickTick = false, lastShade = -1;
 const shadeEl = $("#shade");
+const toTopEl = $("#toTop");
+let toTopOn = false;
+function toTopShow(on){
+  if(on === toTopOn || !toTopEl) return;
+  toTopOn = on;
+  toTopEl.classList.toggle("on", on);
+  toTopEl.tabIndex = on ? 0 : -1;
+  if(on){ toTopEl.removeAttribute("aria-hidden"); toTopEl.setAttribute("aria-label", T("toTop")); }
+  else toTopEl.setAttribute("aria-hidden", "true");
+}
+if(toTopEl) toTopEl.onclick = () => {
+  wheelTo = null;
+  const calm = state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+};
 function onScroll(){
   if(stickTick) return;
   stickTick = true;
@@ -93,6 +109,7 @@ function onScroll(){
     stickTick = false;
     const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
     if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
+    toTopShow(curView === "top" && scrollY > innerHeight * 1.5);
 
     const max = document.documentElement.scrollHeight - innerHeight;
     const p = max > 40 ? Math.min(1, scrollY / max) : 0;

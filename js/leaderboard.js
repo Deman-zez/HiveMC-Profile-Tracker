@@ -110,7 +110,6 @@ const lbPlaceOf = (p, i) => typeof p.human_index === "number" ? p.human_index
   : typeof p.index === "number" ? p.index + 1 : i + 1;
 const lbArr = d => Array.isArray(d) ? d : (d && typeof d === "object" && Object.values(d).find(Array.isArray)) || [];
 async function loadLb(game, period, stale){
-  if(game === "overall") return loadOverall(stale);
   const key = game + "|" + period, c = LB[key];
   if(c && (stale || Date.now() - c.t < 10 * 60 * 1000)) return c;
   try{
@@ -134,34 +133,6 @@ async function lbMore(entry, game, period){
 }
 
 const lbGameLevel = (p, code) => Math.floor(levelFromXP(num(p, "xp"), code) || gameLevel(p, code) || 0);
-async function loadOverall(stale){
-  const c = LB["overall|all"];
-  if(c && (stale || Date.now() - c.t < 10 * 60 * 1000)) return c;
-  const codes = GAMES.map(g => g[0]).filter(g => g !== "main");
-  const res = await Promise.allSettled(codes.map(g => loadLb(g, "all")));
-  const acc = new Map();
-  res.forEach((r, i) => {
-    if(r.status !== "fulfilled") return;
-    const code = codes[i];
-    r.value.d.forEach(p => {
-      const k = lbName(p).toLowerCase();
-      const a = acc.get(k) || { username: lbName(p), played: 0, victories: 0, kills: 0, deaths: 0, __xp: [], __games: 0 };
-      a.played += num(p, "played") || num(p, "games_played");
-      a.victories += num(p, "victories");
-      a.kills += killsOf(p);
-      a.deaths += num(p, "deaths");
-      a.__xp.push([code, p]);
-      a.__games++;
-      acc.set(k, a);
-    });
-  });
-  if(!acc.size){
-    const err = res.find(r => r.status === "rejected");
-    throw err ? err.reason : new Error(T("lbEmpty"));
-  }
-  LB["overall|all"] = { t: Date.now(), d: [...acc.values()], more: false, overall: true, games: res.filter(r => r.status === "fulfilled").length };
-  return LB["overall|all"];
-}
 
 function lbSortOptions(game, entry){
   const common = [["wins", T("lbSortWins")], ["played", T("lbSortPlayed")], ["winrate", T("lbSortWr")],
@@ -190,8 +161,7 @@ function lbMetric(sort, game){
     kills:   { v: p => game === "overall" ? num(p, "kills") : killsOf(p), f: nf, unit: () => T("lbKillsLow") },
     kd:      { v: p => { const k = game === "overall" ? num(p, "kills") : killsOf(p), d = num(p, "deaths"); return d ? k / d : k; },
                f: v => v.toFixed(2), unit: () => "K/D" },
-    level:   { v: p => game === "overall" ? p.__xp.reduce((s, [c, q]) => s + lbGameLevel(q, c), 0) : lbGameLevel(p, game),
-               f: nf, unit: () => T("lbLevelLow") }
+    level:   { v: p => lbGameLevel(p, game), f: nf, unit: () => T("lbLevelLow") }
   };
   if(sort.startsWith("f:")){ const k = sort.slice(2); return { v: p => num(p, k), f: nf, unit: () => label(k) }; }
   return M[sort] || M.hive;
@@ -378,6 +348,14 @@ function renderGlobalStats(game){
   else loadGlobalStats().then(draw).catch(() => { box.innerHTML = ""; });
 }
 
+function lbDefaultGame(){
+  const k = String(state.main || state.nick || "").toLowerCase();
+  const last = state.snaps.filter(s => (s.n || "") === k).pop();
+  const playedOf = c => num(c, "played") || num(c, "games_played");
+  const best = last && Object.keys(last.g).filter(g => g !== "main" && GAMES.some(x => x[0] === g))
+    .sort((a, b) => playedOf(last.g[b]) - playedOf(last.g[a]))[0];
+  return best || "bed";
+}
 async function renderLb(){
   const gSel = $("#lbGame"), pSel = $("#lbPeriod"), sSel = $("#lbSort"), body = $("#lbBody");
   if(!gSel) return;
@@ -387,11 +365,11 @@ async function renderLb(){
   $("#topSub").textContent = T("topSub");
   $("#lbFind").placeholder = T("lbFindPh");
   $("#lbFindBtn").textContent = T("lbFindBtn");
-  const games = ["overall"].concat(GAMES.map(g => g[0]).filter(g => g !== "main"));
-  const want = (rs && rs.g) || lbPick || gSel.value || "overall";
+  const games = GAMES.map(g => g[0]).filter(g => g !== "main");
+  const want = (rs && rs.g) || lbPick || gSel.value || lbDefaultGame();
   lbPick = null;
-  gSel.innerHTML = games.map(g => '<option value="' + g + '">' + esc(g === "overall" ? T("lbOverall") : NAME(g)) + "</option>").join("");
-  gSel.value = games.includes(want) ? want : games[0];
+  gSel.innerHTML = games.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
+  gSel.value = games.includes(want) ? want : lbDefaultGame();
   const game = gSel.value, per = lbPeriods(game), keepP = rs ? rs.p : pSel.value;
   pSel.innerHTML = per.map(([v, t]) => '<option value="' + v + '">' + esc(t) + "</option>").join("");
   pSel.value = per.some(p => p[0] === keepP) ? keepP : "all";
