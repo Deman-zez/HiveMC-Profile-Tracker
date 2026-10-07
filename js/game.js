@@ -338,17 +338,17 @@ function levelNextHTML(code, cur, lv, cap, xp, rank){
     eta = '<span class="lveg"><strong>≈ ' + nf(g1) + "</strong> " + esc(gamesWord(g1)) + "</span>";
     const rb = rankBoost(rank);
     const gb = Math.max(1, Math.ceil(need / (r.rate / (1 + rb) * (1 + rb + BOOSTER))));
-    if(gb < g1) boosted = '<div class="lvfar lvboost"><span>⚡</span>' +
-      esc(T("lvBoostLine", nf(gb), gamesWord(gb))) + "</div>";
+    if(gb < g1) boosted = '<span class="lvboost">' + esc(T("lvBoostLine")) + " <strong>≈ " + nf(gb) + "</strong></span>";
     const top = cap && cap > lv + 1 && tb.find(([, l]) => l === cap);
     if(top && top[0] > xp){
       const g2 = Math.max(1, Math.ceil((top[0] - xp) / r.rate));
-      far = '<div class="lvfar">' + esc(T("lvFar", cap, nf(g2), gamesWord(g2))) + "</div>";
+      far = '<span class="lvfar">' + esc(T("lvFar", cap, nf(g2), gamesWord(g2))) + "</span>";
     }
   }
   return '<div class="lvnext"><div class="bar thin"><i style="width:' + (p * 100).toFixed(1) + '%"></i></div>' +
     '<div class="lvrow"><span class="lvneed">' + esc(T("lvTo", lv + 1)) + " <strong>" + nf(need) + "</strong> " +
-    esc(T("lvXpWord")) + "</span>" + eta + "</div>" + boosted + far + "</div>";
+    esc(T("lvXpWord")) + "</span>" + eta + "</div>" +
+    (far || boosted ? '<div class="lvsub">' + far + boosted + "</div>" : "") + "</div>";
 }
 
 const MAP_GAMES = ["drop", "ctf", "dr", "grav", "ground", "hide", "murder", "sky", "sg", "wars", "bridge"];
