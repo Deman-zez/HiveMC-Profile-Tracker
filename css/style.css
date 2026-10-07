@@ -726,9 +726,10 @@ html.locked, html.locked body{overflow:hidden}
 .lveg strong{color:var(--gold)}
 .lveg i{font-style:normal;margin-left:8px;padding:2px 7px;border-radius:7px;background:rgba(255,192,46,.12);
   color:var(--gold);font-weight:700;font-size:11.5px}
-.lvfar{margin-top:4px;font-size:11.5px;color:var(--soft);opacity:.8;text-align:left}
-.lvboost{display:flex;align-items:center;gap:5px;opacity:1}
-.lvboost span{color:var(--gold);font-size:12px}
+.lvsub{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-top:5px;font-size:12px;color:var(--soft)}
+.lvfar{opacity:.8;text-align:left}
+.lvboost{margin-left:auto;white-space:nowrap;opacity:.85}
+.lvboost strong{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
 .lbgd{border-radius:16px;background:var(--panel);border:1px solid var(--edge)}
 .lbgh{display:flex;align-items:flex-start;gap:14px;width:100%;padding:12px 14px;border:none;background:none;
   color:inherit;font:inherit;text-align:left;cursor:pointer}
