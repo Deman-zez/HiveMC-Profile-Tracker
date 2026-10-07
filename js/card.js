@@ -33,7 +33,31 @@ function cardRound(ctx, x, y, w, h, r){
   ctx.closePath();
 }
 
-function cardFont(px, weight){ return (weight || 800) + " " + px + 'px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'; }
+const CARD_FAMILY = "Manrope";
+let cardFontReady = null;
+function loadCardFont(){
+  if(cardFontReady) return cardFontReady;
+  cardFontReady = (async () => {
+    if(!document.fonts || !document.fonts.load) return false;
+    if(!document.querySelector("link[data-cardfont]")){
+      const l = document.createElement("link");
+      l.rel = "stylesheet"; l.dataset.cardfont = "1";
+      l.href = "https://fonts.googleapis.com/css2?family=" + CARD_FAMILY + ":wght@500;600;700;800&display=swap";
+      document.head.append(l);
+      await new Promise(r => { l.onload = r; l.onerror = r; setTimeout(r, 4000); });
+    }
+    const sample = "DemanZeZ Сыграно Побед Уровень 0123456789%";
+    await Promise.race([
+      Promise.all(["500", "600", "700", "800"].map(w => document.fonts.load(w + " 40px " + CARD_FAMILY, sample))),
+      new Promise(r => setTimeout(r, 4000))
+    ]);
+    return document.fonts.check("800 40px " + CARD_FAMILY, sample);
+  })().catch(() => false);
+  return cardFontReady;
+}
+function cardFont(px, weight){
+  return (weight || 800) + " " + px + 'px "' + CARD_FAMILY + '", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+}
 
 function cardFit(ctx, text, max, px, weight, min){
   let size = px;
@@ -68,8 +92,8 @@ function cardData(){
     stats: [
       [T("played"), nf(P)], [T("wins"), nf(W)], [T("winrate"), pct(W, P)],
       [T("killsTotal"), nf(K)], [T("kd"), ratio(K, D)],
-      typeof main.daily_login_streak === "number" ? [T("streak"), nf(main.daily_login_streak)]
-        : LV ? [T("levelSum"), nf(LV)] : null
+      LV ? [T("levelSum"), nf(LV)]
+        : typeof main.daily_login_streak === "number" ? [T("streak"), nf(main.daily_login_streak)] : null
     ].filter(Boolean),
     top: top ? { name: NAME(top), wins: num(last.g[top], "victories"), played: playedOf(last.g[top]),
       wr: pct(num(last.g[top], "victories"), playedOf(last.g[top])) } : null,
@@ -230,6 +254,7 @@ async function openShareCard(from){
   };
   let blob = null;
   try{
+    await loadCardFont();
     if(document.fonts && document.fonts.ready) await document.fonts.ready;
     const cv = await drawCard(d);
     blob = await new Promise(r => cv.toBlob(r, "image/png"));

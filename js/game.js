@@ -333,16 +333,22 @@ function levelUnlockHTML(code, lv, cap){
   if(!un) return "";
   const at = Object.keys(un).map(Number).filter(l => l > lv && (!cap || l <= cap)).sort((a, b) => a - b)[0];
   if(!at) return "";
-  const list = un[at], shown = list.slice(0, 3);
-  const items = shown.map(x => {
+  const list = un[at], shown = list.length > 4 ? list.slice(0, 3) : list;
+  const rows = shown.map(x => {
     const kind = unlockKind(x.t);
-    const icon = x.i ? '<span class="ciw lvui"><span><img alt="" loading="lazy" src="' + esc(x.i) +
-      '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "";
+    const first = String(x.n).replace(/[§&][0-9a-z]/gi, "").trim().charAt(0).toUpperCase() || "?";
+    const icon = x.i
+      ? '<span class="ciw lvui"><span><img alt="" loading="lazy" src="' + esc(x.i) +
+        '" onerror="this.replaceWith(Object.assign(document.createElement(\'em\'),{textContent:' +
+        esc(JSON.stringify(first)) + '}))"></span></span>'
+      : '<span class="lvui lvph"><em>' + esc(first) + "</em></span>";
     const name = hasMC(x.n) ? mcText(x.n) : esc(x.n);
-    return '<span class="lvuit">' + icon + (kind ? '<em>' + esc(kind) + "</em>" : "") + '<span class="lvun">' + name + "</span></span>";
+    return '<div class="lvur">' + icon + '<span class="lvun">' + name + "</span>" +
+      (kind ? '<span class="lvut">' + esc(kind) + "</span>" : "") + "</div>";
   }).join("");
-  const more = list.length > shown.length ? '<span class="lvumore">+' + (list.length - shown.length) + "</span>" : "";
-  return '<div class="lvunl"><span class="lvul">' + esc(T("unlAt", at)) + "</span>" + items + more + "</div>";
+  const more = list.length > shown.length
+    ? '<div class="lvur lvumore">' + esc(T("unlMore", list.length - shown.length)) + "</div>" : "";
+  return '<div class="lvunl"><div class="lvuh">' + esc(T("unlAt", at)) + "</div>" + rows + more + "</div>";
 }
 function rankBoost(rank){
   const r = String(rank || "").toUpperCase();
