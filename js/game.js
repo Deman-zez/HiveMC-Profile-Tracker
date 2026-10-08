@@ -329,9 +329,8 @@ function unlockKind(t){
   return (L === "ru" && UNLOCK_RU[raw.toLowerCase()]) || raw;
 }
 function unlIconFail(img){
-  const box = img.closest(".lvunl"), w = img.closest(".ciw");
+  const w = img.closest(".ciw");
   if(w) w.remove();
-  if(box && !box.querySelector(".ciw")) box.classList.remove("icons");
 }
 function levelUnlockHTML(code, lv, cap){
   const mg = META_GAMES[code], un = mg && mg.u;
@@ -342,17 +341,15 @@ function levelUnlockHTML(code, lv, cap){
   const rows = shown.map(x => {
     const kind = unlockKind(x.t);
     const icon = x.i
-      ? '<span class="ciw lvui"><span><img alt="" loading="lazy" src="' + esc(x.i) +
-        '" onerror="unlIconFail(this)"></span></span>' : "";
+      ? '<span class="ciw lvui"><span><img alt="" src="' + esc(x.i) +
+        '" onload="this.closest(\'.ciw\').classList.add(\'ok\')" onerror="unlIconFail(this)"></span></span>' : "";
     const name = hasMC(x.n) ? mcText(x.n) : esc(x.n);
     return '<div class="lvur">' + icon + '<span class="lvun">' + name + "</span>" +
       (kind ? '<span class="lvut">' + esc(kind) + "</span>" : "") + "</div>";
   }).join("");
   const more = list.length > shown.length
     ? '<div class="lvur lvumore">' + esc(T("unlMore", list.length - shown.length)) + "</div>" : "";
-  const icons = shown.some(x => x.i);
-  return '<div class="lvunl' + (icons ? " icons" : "") + '"><div class="lvuh">' + esc(T("unlAt", at)) + "</div>" +
-    rows + more + "</div>";
+  return '<div class="lvunl"><div class="lvuh">' + esc(T("unlAt", at)) + "</div>" + rows + more + "</div>";
 }
 function rankBoost(rank){
   const r = String(rank || "").toUpperCase();
