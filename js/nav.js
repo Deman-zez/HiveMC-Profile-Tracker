@@ -114,7 +114,8 @@ function toTopUpdate(){
   toTopTarget = t;
   toTopEl.classList.toggle("inmodal", !!m);
   const y = t ? t.scrollTop : scrollY, h = t ? t.clientHeight : innerHeight;
-  toTopShow(y > h * (toTopWide.matches ? 3 : 1.5));
+  const need = toTopWide.matches ? 7.5 : 5.5;
+  toTopShow((m || curView === "top" || curView === "trend") && y > h * need);
 }
 const toTopSoon = () => { if(!toTopRAF) toTopRAF = requestAnimationFrame(() => { toTopRAF = 0; toTopUpdate(); }); };
 addEventListener("scroll", e => { if(e.target !== document && e.target.closest && e.target.closest(".modal")) toTopSoon(); },
@@ -147,6 +148,35 @@ function onScroll(){
     }
   });
 }
+/* Press animations shrink a button under the finger. If the finger is near its edge, the release lands
+   outside the shrunken button and the browser sends the click to a parent instead, so nothing happens.
+   Remember the button on press and deliver the click to it when that happens. */
+const TAP_SEL = "button, a[href], [data-act], [data-n], [data-g], .tile.tap, .lbr, .pod";
+let tapEl = null, tapRect = null, tapT = 0;
+addEventListener("pointerdown", e => {
+  if(e.button > 0){ tapEl = null; return; }
+  const el = e.target.closest && e.target.closest(TAP_SEL);
+  tapEl = el && !el.disabled ? el : null;
+  if(tapEl){ tapRect = tapEl.getBoundingClientRect(); tapT = Date.now(); }
+}, { capture: true, passive: true });
+addEventListener("pointercancel", () => { tapEl = null; }, true);
+addEventListener("pointerup", e => {
+  const el = tapEl; tapEl = null;
+  if(!el || !el.isConnected || el.disabled || Date.now() - tapT > 900) return;
+  if(el.contains(e.target)) return;
+  const r = tapRect, pad = 16;
+  if(e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - pad || e.clientY > r.bottom + pad) return;
+  let done = false;
+  const fire = () => {
+    if(done) return;
+    done = true;
+    removeEventListener("click", stray, true);
+    if(el.isConnected && !el.disabled) el.click();
+  };
+  const stray = ev => { if(ev.isTrusted && !el.contains(ev.target)){ ev.stopPropagation(); ev.preventDefault(); } fire(); };
+  addEventListener("click", stray, true);
+  setTimeout(fire, 350);
+}, true);
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
