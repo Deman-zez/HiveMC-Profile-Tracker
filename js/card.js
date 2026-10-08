@@ -66,6 +66,7 @@ function cardData(){
   return {
     nick: state.nick, tag: rankTag(pick(main, "rank", "player_rank")),
     title: title ? String(cosName(title) || title) : "",
+    titleIcon: title ? cosIcon(title) || "" : "",
     avatar: cosIcon(ava) || (typeof cosName(ava) === "string"
       ? "https://cdn.playhive.com/avatars/" + encodeURIComponent(cosName(ava)) + ".png" : ""),
     hubLevel: lvlKey ? main[lvlKey] : LV || null,
@@ -148,13 +149,39 @@ async function drawCard(d){
   }
 
   if(d.title){
-    const segs = mcSegments(d.title).filter(s => s.t);
-    const plain = segs.map(s => s.t).join("");
-    const px = cardFit(ctx, plain, tmax, 32, 600, 18);
+    const segs = mcSegments(d.title).filter(s => s.t || s.g);
+    for(const s of segs) if(s.g){
+      const id = s.g - GLYPH_BASE;
+      s.img = id >= 0 ? await cardImage(GLYPHS + id + ".png") : null;
+    }
+    const glyphs = segs.filter(s => s.img).length;
+    const plain = segs.map(s => s.t || "").join("");
+    const ico = d.titleIcon ? await cardImage(d.titleIcon) : null;
+    const px = cardFit(ctx, plain, tmax - (ico ? 46 : 0) - glyphs * 46, 32, 600, 18);
     ctx.font = cardFont(px, 600);
     let x = tx;
     y += 54;
-    segs.forEach(s => { ctx.fillStyle = s.c || "#ff7ab8"; ctx.fillText(s.t, x, y); x += ctx.measureText(s.t).width; });
+    if(ico){
+      const h = Math.round(px * 1.1), w = Math.round(h * (ico.width / ico.height || 1));
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(ico, x, Math.round(y - px * .36 - h / 2), w, h);
+      ctx.imageSmoothingEnabled = true;
+      x += w + Math.round(px * .35);
+    }
+    segs.forEach(s => {
+      if(s.g){
+        if(!s.img) return;
+        const h = Math.round(px * 1.1), w = Math.round(h * (s.img.width / s.img.height || 1));
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(s.img, x, Math.round(y - px * .36 - h / 2), w, h);
+        ctx.imageSmoothingEnabled = true;
+        x += w + Math.round(px * .25);
+        return;
+      }
+      const i = segs.indexOf(s), prev = segs[i - 1];
+      const t = x === tx || (prev && prev.g) ? s.t.replace(/^\s+/, "") : s.t;
+      ctx.fillStyle = s.c || "#ff7ab8"; ctx.fillText(t, x, y); x += ctx.measureText(t).width;
+    });
   }
 
   const n = d.stats.length, gap = 16, top = 284, th = 124;

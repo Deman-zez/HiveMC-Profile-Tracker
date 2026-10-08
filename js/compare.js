@@ -1,12 +1,17 @@
 "use strict";
 
 const CMP = {};
+function rememberAvatar(k, d){
+  const url = d && d.main && cosIcon(pick(d.main, "equipped_avatar", "avatar_equipped"));
+  if(url && state.avatars[k] !== url){ state.avatars[k] = url; saveSoon(); }
+  return d;
+}
 async function loadPlayerAll(nick){
   const k = nick.toLowerCase();
   const own = state.snaps.filter(x => x.n === k).pop();
-  if(own && Date.now() - own.t < 10 * 60 * 1000) return own.g;
+  if(own && Date.now() - own.t < 10 * 60 * 1000) return rememberAvatar(k, own.g);
   const c = CMP[k];
-  if(c && Date.now() - c.t < 10 * 60 * 1000) return c.d;
+  if(c && Date.now() - c.t < 10 * 60 * 1000) return rememberAvatar(k, c.d);
   noteRequest();
   let res;
   try{ res = await hiveFetch(API + "/game/all/all/" + encodeURIComponent(nick), { cache:"no-store", headers: HIVE_HEADERS }); }
@@ -18,7 +23,7 @@ async function loadPlayerAll(nick){
   if(!d || typeof d !== "object" || Array.isArray(d) || !Object.keys(d).length) throw new Error(T("cmpNotFound"));
   noteHit(k);
   CMP[k] = { t: Date.now(), d };
-  return d;
+  return rememberAvatar(k, d);
 }
 function cmpHTML(aName, A, bName, B){
   const playedOf = c => c && !Array.isArray(c) ? (num(c, "played") || num(c, "games_played")) : 0;

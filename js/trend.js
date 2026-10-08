@@ -63,10 +63,63 @@ function actRow(e){
     return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
       esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
   }
-  let what = e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "";
-  if(what && typeof what === "object") what = pick(what, "name", "human_name", "id", "type") || "";
-  return '<div class="act"><span class="ag">' + esc(T("actLocker")) +
-    (what ? " · " + esc(pretty(String(what))) : "") + '</span><span class="at">' + esc(t) + "</span></div>";
+  return '<div class="act"><span class="ag"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' +
+    esc(e.unlock_type || "") + '"' : "") + ">" + lockerHTML(e.unlock_type, e.unlock_id) +
+    '</span><span class="at">' + esc(t) + "</span></div>";
+}
+const CAT_KEY = "hive.tracker.catalogue.v1";
+let CAT = (() => { try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(e){ return {}; } })();
+const catPath = type => /title/i.test(type) ? "titles" : /costume/i.test(type) ? "costumes" : null;
+function lockerHTML(type, id){
+  const c = (id && CAT[id]) || null;
+  const name = (c && c.d) || lockerName(id);
+  let html = esc(lockerKind(type)) + (name ? ": " + (hasMC(name) ? mcText(name) : esc(name)) : "");
+  if(c && c.g && c.l) html += ' <small class="aunl">' + esc(NAME(c.g)) + ", " + esc(T("unlLvl", c.l)) + "</small>";
+  return html;
+}
+let catBusy = false;
+async function fillCatalogue(box){
+  if(catBusy) return;
+  const spans = [...box.querySelectorAll("[data-unl]")].filter(el => !CAT[el.dataset.unl] && catPath(el.dataset.ut));
+  const ids = [...new Set(spans.map(el => el.dataset.unl))].slice(0, 10);
+  if(!ids.length) return;
+  catBusy = true;
+  let changed = false;
+  for(const id of ids){
+    const type = spans.find(el => el.dataset.unl === id).dataset.ut;
+    try{
+      const r = await hiveFetch(API + "/catalogue/" + catPath(type) + "/" + encodeURIComponent(id), { headers: HIVE_HEADERS });
+      if(!r.ok){ CAT[id] = { d: "", t: Date.now() }; changed = true; continue; }
+      const j = await r.json(), md = j && j.unlock_data && j.unlock_data.metadata;
+      CAT[id] = { d: typeof j.display === "string" ? j.display : (j.name || ""), g: md && md.game || "", l: md && md.level || 0 };
+      changed = true;
+    }catch(e){ break; }
+  }
+  catBusy = false;
+  if(!changed) return;
+  try{ localStorage.setItem(CAT_KEY, JSON.stringify(CAT)); }catch(e){}
+  box.querySelectorAll("[data-unl]").forEach(el => { el.innerHTML = lockerHTML(el.dataset.ut, el.dataset.unl); });
+}
+function lockerKind(type){
+  const k = String(type || "").toLowerCase();
+  return T(/title/.test(k) ? "actNewTitle" : /avatar/.test(k) ? "actNewAvatar" : /costume/.test(k) ? "actNewCostume"
+    : /hat/.test(k) ? "actNewHat" : /back/.test(k) ? "actNewBack" : /pet/.test(k) ? "actNewPet"
+    : /mount/.test(k) ? "actNewMount" : "actLocker");
+}
+function lockerName(id){
+  if(!id) return "";
+  const main = (mySnaps().filter(s => s.g.main).pop() || { g: {} }).g.main;
+  let found = "";
+  const walk = (v, depth) => {
+    if(found || !v || typeof v !== "object" || depth > 4) return;
+    if(!Array.isArray(v) && Object.values(v).includes(id)){
+      const n = pick(v, "display", "name", "human_name");
+      if(typeof n === "string"){ found = n; return; }
+    }
+    for(const x of Object.values(v)) walk(x, depth + 1);
+  };
+  walk(main, 0);
+  return found;
 }
 function actHTML(list, err){
   const all = list || [];
@@ -89,6 +142,7 @@ async function renderActivity(){
       : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>";
     const mb = box.querySelector(".actmore");
     if(mb) mb.onclick = () => { actShown += 20; draw(); };
+    fillCatalogue(box);
   };
   if($("#vTrend").classList.contains("hidden")){ draw(); return; }
   const pending = fetchActivity(uuid);
@@ -101,6 +155,7 @@ function renderToday(){
   const box = $("#trendToday");
   if(!box) return;
   box.innerHTML = todayHTML(mySnaps());
+  fitNames(box);
   fitText(box);
 }
 function renderTrend(){

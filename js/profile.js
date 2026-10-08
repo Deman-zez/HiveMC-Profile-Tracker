@@ -228,10 +228,10 @@ function todayHTML(mine){
     X += Math.max(0, num(a,"xp") - num(b,"xp"));
   }
   const at = new Date(day0).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US", { hour:"2-digit", minute:"2-digit" });
+  const cell = (v, k) => '<div class="tdc' + (v ? "" : " zero") + '"><b>+' + nf(v) + "</b><small>" + esc(k) + "</small></div>";
   const inner = P || W || K || X
-    ? tilesHTML([{ k:T("tdPlayed"), v:"+" + nf(P), d:"" }, { k:T("tdWins"), v:"+" + nf(W), d:"" },
-                 { k:T("tdKills"), v:"+" + nf(K), d:"" }, { k:T("tdXp"), v:"+" + nf(X), d:"" }])
-    : '<p class="sub" style="margin:0">' + esc(T("todayNone")) + "</p>";
-  return "<h2>" + esc(T("today")) + '</h2><div class="card">' + inner +
-    '<p class="sub tdh">' + esc(T("todaySince", at)) + "</p></div>";
+    ? '<div class="tdrow">' + cell(P, T("tdPlayed")) + cell(W, T("tdWins")) + cell(K, T("tdKills")) + cell(X, T("tdXp")) + "</div>"
+    : '<p class="sub" style="margin:0;text-align:center">' + esc(T("todayNone")) + "</p>";
+  return '<h2 class="tdhead">' + esc(T("today")) + ' <span class="tdsince">' + esc(T("todaySince", at)) + "</span></h2>" +
+    '<div class="card tdcard">' + inner + "</div>";
 }

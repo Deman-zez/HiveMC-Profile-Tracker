@@ -57,7 +57,7 @@ function fitText(root){
   });
 }
 addEventListener("resize", () => fitText());
-const NAME_FIT = [[".podn", 11], [".lbn", 11.5]];
+const NAME_FIT = [[".podn", 11], [".lbn", 11.5], [".tdc b", 13]];
 function shrinkFit(pairs){
   pairs.forEach(([el]) => { if(el.style.fontSize) el.style.fontSize = ""; });
   const jobs = [];
