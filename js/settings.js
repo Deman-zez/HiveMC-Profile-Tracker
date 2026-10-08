@@ -44,16 +44,22 @@ $("#lite").onchange = e => {
 };
 $("#lang").value = state.lang;
 $("#lang").onchange = e => { state.lang = e.target.value; save(); applyLang(); };
-$("#nick").value = state.nick;
+$("#nick").value = state.main || state.nick;
 let nickTimer = null;
-$("#nick").oninput = e => {
-  const was = nickKey();
-  state.nick = e.target.value.trim();
-  if(nickKey() !== was){
-    state.dead = [];
-    state.lastDiag = 0;
+function setMainNick(v){
+  v = String(v || "").trim().slice(0, 32);
+  const wasMain = String(state.main || "").toLowerCase();
+  const viewingOwn = !state.nick || nickKey() === wasMain;
+  if(v) state.main = v; else delete state.main;
+  if(viewingOwn && v.toLowerCase() !== nickKey()){
+    state.nick = v;
+    state.dead = []; state.lastDiag = 0;
     tickDiag();
   }
+  touchSettings(); syncSoon();
+}
+$("#nick").oninput = e => {
+  setMainNick(e.target.value);
   save();
   clearTimeout(nickTimer);
   nickTimer = setTimeout(() => { renderSnap(); renderTrend(); }, 250);
@@ -95,7 +101,7 @@ $("#importFile").onchange = e => {
       state = Object.assign(state, clean);
       state.reqLog = []; state.lastSnapAt = 0;
       save();
-      $("#nick").value = state.nick; $("#lang").value = state.lang || "auto";
+      $("#nick").value = state.main || state.nick; $("#lang").value = state.lang || "auto";
       applyLang(); toast(T("imported"));
     }catch(err){ toast(T("unreadable", err.message)); }
   };

@@ -65,9 +65,8 @@ function showSugg(html){
   box.style.animation = "";
   box.querySelectorAll("button[data-n]").forEach(b => b.onclick = () => {
     $("#nick").value = b.dataset.n;
-    state.nick = b.dataset.n;
-    state.dead = []; state.lastDiag = 0;
-    save(); hideSugg(); tickDiag(); renderSnap(); renderTrend();
+    setMainNick(b.dataset.n);
+    save(); hideSugg(); renderSnap(); renderTrend();
   });
 }
 function askSearch(q){

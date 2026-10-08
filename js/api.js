@@ -93,7 +93,7 @@ async function snapshot(){
       if(cc && state.main && state.main.toLowerCase() === cc.toLowerCase()) state.main = cc;
       if(cc && cc.toLowerCase() === n && nickKey() === n && cc !== state.nick){
         state.nick = cc;
-        const inp = $("#nick"); if(inp) inp.value = cc;
+        if(state.main && state.main.toLowerCase() === n){ state.main = cc; const inp = $("#nick"); if(inp) inp.value = cc; }
       }
     }
   }catch(e){ failed = e.message; }

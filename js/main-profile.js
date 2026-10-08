@@ -49,7 +49,7 @@ async function shareProfile(){
   catch(e){ prompt(T("linkCopy"), url); }
 }
 function switchNick(n){
-  state.nick = n; $("#nick").value = n;
+  state.nick = n;
   state.dead = []; state.lastDiag = 0;
   save(); tickDiag(); renderSnap(); renderTrend();
 }
@@ -102,11 +102,12 @@ function openMainPicker(from){
     const v = inp.value.trim();
     if(!v){ toast(T("needNick")); return; }
     state.main = niceNick(v.slice(0, 32));
-    if(!state.nick){ state.nick = state.main; $("#nick").value = state.main; state.dead = []; }
+    $("#nick").value = state.main;
+    if(!state.nick){ state.nick = state.main; state.dead = []; }
     touchSettings(); save(); syncSoon(); closeModal(m); toast(T("mainSaved")); renderSnap(); renderTrend();
   };
   const op = m.querySelector("#mainOpen");
   if(op) op.onclick = () => { closeModal(m); switchNick(state.main); };
   const cl = m.querySelector("#mainClear");
-  if(cl) cl.onclick = () => { delete state.main; touchSettings(); save(); syncSoon(); closeModal(m); renderSnap(); };
+  if(cl) cl.onclick = () => { delete state.main; $("#nick").value = ""; touchSettings(); save(); syncSoon(); closeModal(m); renderSnap(); };
 }

@@ -31,7 +31,19 @@ function renderSnap(){
     : '<button class="mainBtn" id="mainBtn" aria-label="' + esc(T("mainAdd")) + '">' + PLUS_SVG + "</button>";
   const shareBtn = state.nick ? '<button class="shareBtn" id="shareBtn" type="button" aria-label="' +
     esc(T("share")) + '" title="' + esc(T("share")) + '">' + SHARE_SVG + "</button>" : "";
-  hero.innerHTML = '<div class="corner">' + shareBtn + mainBtn + "</div>" + '<h1 class="idline">' +
+  const searchBtn = '<button class="shareBtn" id="searchBtn" type="button" aria-label="' + esc(T("qsOpen")) +
+    '" title="' + esc(T("qsOpen")) + '">' + SEARCH_SVG + "</button>";
+  if(!state.nick){
+    hero.innerHTML = "";
+    $("#fetchBtn").classList.add("hidden");
+    $("#subtitle").textContent = "";
+    $("#myBtn").classList.add("hidden");
+    body.innerHTML = onboardHTML();
+    onboardBind();
+    return;
+  }
+  $("#fetchBtn").classList.remove("hidden");
+  hero.innerHTML = '<div class="corner">' + searchBtn + shareBtn + mainBtn + "</div>" + '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
       idHTML + "</h1>" +
     '<div class="hero"><div class="ava"><span>' +
@@ -48,9 +60,10 @@ function renderSnap(){
   syncTitleWave();
   $("#mainBtn").onclick = e => openMainPicker(e.currentTarget);
   const sb = $("#shareBtn"); if(sb) sb.onclick = () => openShareCard(sb);
-  if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; save(); } }
+  $("#searchBtn").onclick = openSearch;
+  if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; $("#nick").value = pn; save(); } }
   if(state.nick){ const pn = niceNick(state.nick);
-    if(pn !== state.nick){ state.nick = pn; $("#nick").value = pn; save(); renderSnap(); return; } }
+    if(pn !== state.nick){ state.nick = pn; save(); renderSnap(); return; } }
   const other = !!state.main && state.main.toLowerCase() !== nickKey();
   const myHTML = other ? '<span class="myAv">' + pavHTML(state.main) + '</span><span class="myT">' +
     esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
@@ -195,7 +208,7 @@ function tickStatus(){
     btn.disabled = false;
     btn.textContent = T("snap");
   }
-  $("#subtitle").textContent = !last ? T("noSnaps") : T("lastSnap", when(last.t));
+  $("#subtitle").textContent = !state.nick ? "" : !last ? T("noSnaps") : T("lastSnap", when(last.t));
 }
 
 function todayHTML(mine){
