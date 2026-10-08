@@ -39,9 +39,9 @@ function renderSnap(){
     return;
   }
   $("#fetchBtn").classList.remove("hidden");
-  hero.innerHTML = '<div class="corner">' + searchBtn + shareBtn + "</div>" + '<h1 class="idline">' +
+  hero.innerHTML = '<div class="herotop"><h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
-      idHTML + "</h1>" +
+      idHTML + "</h1>" + '<div class="corner">' + searchBtn + shareBtn + "</div></div>" +
     '<div class="hero"><div class="ava"><span>' +
       (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
           JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
