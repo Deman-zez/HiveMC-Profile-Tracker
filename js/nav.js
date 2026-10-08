@@ -97,15 +97,29 @@ function toTopShow(on){
   if(on){ toTopEl.removeAttribute("aria-hidden"); toTopEl.setAttribute("aria-label", T("toTop")); }
   else toTopEl.setAttribute("aria-hidden", "true");
 }
-const toTopRing = toTopEl && toTopEl.querySelector(".ttProg");
-const TT_LEN = 2 * Math.PI * 25;
-function toTopProgress(){
-  if(!toTopRing) return;
-  const max = document.documentElement.scrollHeight - innerHeight;
-  const p = max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
-  toTopRing.style.strokeDashoffset = (TT_LEN * (1 - p)).toFixed(1);
+let toTopTarget = null, toTopRAF = 0;
+const toTopWide = matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
+function topModal(){
+  const ms = [...document.querySelectorAll(".modal")].filter(m => !m.dataset.closing && !m.classList.contains("msearch"));
+  return ms[ms.length - 1] || null;
 }
-if(toTopRing) toTopRing.style.strokeDasharray = TT_LEN.toFixed(1);
+function modalScroller(m){
+  const inner = m.querySelector(".inner");
+  if(inner && inner.scrollHeight > inner.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(inner).overflowY)) return inner;
+  return m;
+}
+function toTopUpdate(){
+  if(!toTopEl) return;
+  const m = topModal(), t = m ? modalScroller(m) : null;
+  toTopTarget = t;
+  toTopEl.classList.toggle("inmodal", !!m);
+  const y = t ? t.scrollTop : scrollY, h = t ? t.clientHeight : innerHeight;
+  toTopShow(y > h * (toTopWide.matches ? 3 : 1.5));
+}
+const toTopSoon = () => { if(!toTopRAF) toTopRAF = requestAnimationFrame(() => { toTopRAF = 0; toTopUpdate(); }); };
+addEventListener("scroll", e => { if(e.target !== document && e.target.closest && e.target.closest(".modal")) toTopSoon(); },
+  { capture: true, passive: true });
+if(typeof MutationObserver === "function") new MutationObserver(toTopSoon).observe(document.body, { childList: true });
 if(toTopEl) toTopEl.onclick = () => {
   wheelTo = null;
   toTopEl.classList.remove("go");
@@ -113,7 +127,7 @@ if(toTopEl) toTopEl.onclick = () => {
   toTopEl.classList.add("go");
   setTimeout(() => toTopEl.classList.remove("go"), 600);
   const calm = state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches;
-  scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+  (toTopTarget || window).scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
 };
 function onScroll(){
   if(stickTick) return;
@@ -122,8 +136,7 @@ function onScroll(){
     stickTick = false;
     const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
     if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
-    toTopShow(scrollY > innerHeight * 1.5);
-    if(toTopOn) toTopProgress();
+    toTopUpdate();
 
     const max = document.documentElement.scrollHeight - innerHeight;
     const p = max > 40 ? Math.min(1, scrollY / max) : 0;
