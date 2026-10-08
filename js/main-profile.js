@@ -1,7 +1,5 @@
 "use strict";
 
-const PLUS_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
-  '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>';
 function pavHTML(name){
   const url = state.avatars[String(name).toLowerCase()];
   const letter = String(name).trim().charAt(0).toUpperCase() || "?";
@@ -52,62 +50,4 @@ function switchNick(n){
   state.nick = n;
   state.dead = []; state.lastDiag = 0;
   save(); tickDiag(); renderSnap(); renderTrend();
-}
-function openMainPicker(from){
-  const cur = state.main || "";
-  const viewing = cur && cur.toLowerCase() === nickKey();
-  const m = document.createElement("div");
-  m.className = "modal mpick";
-  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("mainTitle")) +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" +
-    '<p class="sub mhint">' + esc(T("mainHint")) + "</p>" +
-    '<div class="nickbox"><input id="mainNick" type="text" autocapitalize="none" autocomplete="off" ' +
-      'spellcheck="false" placeholder="' + esc(T("nickPh")) + '" value="' + esc(cur) + '">' +
-      '<div class="sugg hidden" id="mainSugg"></div></div>' +
-    '<button class="primary" id="mainSave">' + esc(T("mainSave")) + "</button>" +
-    (cur ? '<div class="chips btns mextra">' +
-      (viewing ? "" : '<button class="mini" id="mainOpen">' + esc(T("mainOpen")) + "</button>") +
-      '<button class="mini" id="mainClear">' + esc(T("mainClear")) + "</button></div>" : "") +
-    "</div>";
-  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
-  mountModal(m, from);
-
-  const inp = m.querySelector("#mainNick"), box = m.querySelector("#mainSugg");
-  let tmr = null, seq = 0;
-  const hide = () => box.classList.add("hidden");
-  const show = html => {
-    box.innerHTML = html; box.classList.remove("hidden");
-    box.querySelectorAll("button,.note2").forEach((el, i) => el.style.setProperty("--i", i));
-    box.querySelectorAll("button[data-n]").forEach(b => b.onclick = () => { inp.value = b.dataset.n; hide(); });
-  };
-  inp.oninput = () => {
-    clearTimeout(tmr);
-    const q = inp.value.trim();
-    if(!/^[a-zA-Z0-9 ]*$/.test(q) || !q){ hide(); return; }
-    if(q.length < 4){ show('<div class="note2">' + esc(T("minChars")) + "</div>"); return; }
-    const my = ++seq;
-    tmr = setTimeout(async () => {
-      try{
-        const list = await searchPlayers(q);
-        if(my !== seq) return;
-        show(list.length ? list.map(x => suggRow(x, q)).join("")
-                         : '<div class="note2">' + esc(T("noPlayers")) + "</div>");
-      }catch(e){ if(my === seq) show('<div class="note2">' + esc(e.message) + "</div>"); }
-    }, 450);
-  };
-  inp.onblur = () => setTimeout(hide, 180);
-  inp.onkeydown = e => { if(e.key === "Enter") m.querySelector("#mainSave").click(); };
-
-  m.querySelector("#mainSave").onclick = () => {
-    const v = inp.value.trim();
-    if(!v){ toast(T("needNick")); return; }
-    state.main = niceNick(v.slice(0, 32));
-    $("#nick").value = state.main;
-    if(!state.nick){ state.nick = state.main; state.dead = []; }
-    touchSettings(); save(); syncSoon(); closeModal(m); toast(T("mainSaved")); renderSnap(); renderTrend();
-  };
-  const op = m.querySelector("#mainOpen");
-  if(op) op.onclick = () => { closeModal(m); switchNick(state.main); };
-  const cl = m.querySelector("#mainClear");
-  if(cl) cl.onclick = () => { delete state.main; $("#nick").value = ""; touchSettings(); save(); syncSoon(); closeModal(m); renderSnap(); };
 }

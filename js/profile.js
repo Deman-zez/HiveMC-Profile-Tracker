@@ -25,13 +25,9 @@ function renderSnap(){
   $("#stickNick").innerHTML = idHTML;
   $("#stickTag").innerHTML = "";
 
-  const mainBtn = state.main
-    ? '<button class="mainBtn set" id="mainBtn" title="' + esc(state.main) + '" aria-label="' +
-        esc(T("mainTitle")) + '">' + pavHTML(state.main) + "</button>"
-    : '<button class="mainBtn" id="mainBtn" aria-label="' + esc(T("mainAdd")) + '">' + PLUS_SVG + "</button>";
-  const shareBtn = state.nick ? '<button class="shareBtn" id="shareBtn" type="button" aria-label="' +
+  const shareBtn = state.nick ? '<button class="hbtn" id="shareBtn" type="button" aria-label="' +
     esc(T("share")) + '" title="' + esc(T("share")) + '">' + SHARE_SVG + "</button>" : "";
-  const searchBtn = '<button class="shareBtn" id="searchBtn" type="button" aria-label="' + esc(T("qsOpen")) +
+  const searchBtn = '<button class="hbtn" id="searchBtn" type="button" aria-label="' + esc(T("qsOpen")) +
     '" title="' + esc(T("qsOpen")) + '">' + SEARCH_SVG + "</button>";
   if(!state.nick){
     hero.innerHTML = "";
@@ -43,7 +39,7 @@ function renderSnap(){
     return;
   }
   $("#fetchBtn").classList.remove("hidden");
-  hero.innerHTML = '<div class="corner">' + searchBtn + shareBtn + mainBtn + "</div>" + '<h1 class="idline">' +
+  hero.innerHTML = '<div class="corner">' + searchBtn + shareBtn + "</div>" + '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
       idHTML + "</h1>" +
     '<div class="hero"><div class="ava"><span>' +
@@ -58,7 +54,6 @@ function renderSnap(){
     (title ? '<p class="title">' + mcText(cosName(title) || title, true) + titleIcon(title) +
       "</p>" : "") + "</div>";
   syncTitleWave();
-  $("#mainBtn").onclick = e => openMainPicker(e.currentTarget);
   const sb = $("#shareBtn"); if(sb) sb.onclick = () => openShareCard(sb);
   $("#searchBtn").onclick = openSearch;
   if(state.main){ const pn = niceNick(state.main); if(pn !== state.main){ state.main = pn; $("#nick").value = pn; save(); } }

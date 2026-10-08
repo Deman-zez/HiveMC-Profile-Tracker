@@ -123,7 +123,7 @@ function onScroll(){
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.mainBtn,.myBtn,.shareBtn");
+    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.myBtn");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
