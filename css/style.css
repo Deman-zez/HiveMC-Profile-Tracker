@@ -762,10 +762,9 @@ html.locked, html.locked body{overflow:hidden}
 .lvut{flex:none;max-width:45%;text-align:right;font-size:12px;color:var(--soft)}
 .lvur .ciw.lvui{width:28px;height:28px;flex:0 0 28px;border-radius:8px;padding:2px}
 .lvur .ciw.lvui span{display:grid;place-items:center;border-radius:6px}
-.lvur .ciw.lvui em,.lvph em{font-style:normal;font-size:12px;font-weight:800;color:var(--soft)}
-.lvph{width:28px;height:28px;flex:0 0 28px;border-radius:8px;display:grid;place-items:center;
-  background:var(--tile);border:1px solid var(--edge)}
-.lvumore{color:var(--soft);font-size:12px;padding-left:38px}
+.lvunl.icons .lvur:not(:has(.ciw)):not(.lvumore){padding-left:38px}
+.lvumore{color:var(--soft);font-size:12px}
+.lvunl.icons .lvumore{padding-left:38px}
 .lbgd{border-radius:16px;background:var(--panel);border:1px solid var(--edge)}
 .lbgh{display:flex;align-items:flex-start;gap:14px;width:100%;padding:12px 14px;border:none;background:none;
   color:inherit;font:inherit;text-align:left;cursor:pointer}
