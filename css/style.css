@@ -56,16 +56,24 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .phead::after{content:"";display:block;height:2px;margin-top:12px;border-radius:2px;
   background:linear-gradient(90deg,var(--gold),rgba(255,192,46,0) 70%)}
 #hero{position:relative}
-#hero .idline{padding-right:104px}
-.corner{position:absolute;top:-6px;right:0;z-index:2;display:flex;align-items:center;padding:3px;
+.herotop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:-8px}
+.herotop .idline{flex:1 1 auto;min-width:0}
+.corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;padding:2px;
   border-radius:15px;background:rgba(24,13,38,.72);border:1px solid var(--edge);
   box-shadow:0 6px 18px rgba(0,0,0,.28)}
-.hbtn{position:relative;width:42px;height:38px;flex:none;padding:0;border:none;border-radius:11px;cursor:pointer;
+.hbtn{position:relative;width:42px;height:36px;flex:none;padding:0;border:none;border-radius:11px;cursor:pointer;
   background:none;color:var(--text);display:grid;place-items:center;
   transition:transform .12s ease,color .2s ease,background .2s ease}
 .hbtn svg{width:19px;height:19px}
 .hbtn + .hbtn::before{content:"";position:absolute;left:-1px;top:10px;bottom:10px;width:1px;background:var(--edge)}
-.hbtn:active{transform:scale(.92);color:var(--gold);background:rgba(255,192,46,.14)}
+.hbtn:active{color:var(--gold);background:rgba(255,192,46,.16)}
+@keyframes hbtnFlash{
+  0%{background:rgba(255,192,46,.34);color:var(--gold)}
+  60%{background:rgba(255,192,46,.14);color:var(--gold)}
+  100%{background:transparent}
+}
+.hbtn.press{animation:press .33s cubic-bezier(.2,.8,.3,1), hbtnFlash .5s ease-out}
+.lite .hbtn.press{animation:none}
 .hbtn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .myBtn{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;
   padding:6px 12px;border-radius:11px;border:1.5px solid rgba(255,192,46,.5);background:transparent;
