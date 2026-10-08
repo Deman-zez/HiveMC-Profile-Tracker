@@ -75,8 +75,7 @@ function actHTML(list, err){
     ? '<button type="button" class="mini actmore">' + esc(T("actMore", Math.min(20, all.length - actShown))) + "</button>" : "";
   return "<h2>" + esc(T("actTitle")) + (all.length ? ' <span class="actn">' + nf(all.length) + "</span>" : "") +
     '</h2><div class="card">' +
-    (rows || '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>") + more +
-    '<p class="sub acth">' + esc(T("actHint")) + "</p></div>";
+    (rows || '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>") + more + "</div>";
 }
 async function renderActivity(){
   const box = $("#trendAct"); if(!box) return;
