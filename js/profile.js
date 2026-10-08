@@ -62,7 +62,9 @@ function renderSnap(){
   const other = !!state.main && state.main.toLowerCase() !== nickKey();
   const myHTML = other ? '<span class="myAv">' + pavHTML(state.main) + '</span><span class="myT">' +
     esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
-  ["#myBtn", "#stickMy"].forEach(sel => {
+  const ss = $("#stickSearch");
+  if(ss){ ss.innerHTML = SEARCH_SVG; ss.onclick = openSearch; ss.setAttribute("aria-label", T("qsOpen")); }
+  ["#myBtn"].forEach(sel => {
     const b = $(sel); b.classList.toggle("hidden", !other); b.innerHTML = myHTML;
     if(other) b.setAttribute("aria-label", T("myProfile") + " " + state.main); else b.removeAttribute("aria-label");
   });

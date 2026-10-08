@@ -97,8 +97,21 @@ function toTopShow(on){
   if(on){ toTopEl.removeAttribute("aria-hidden"); toTopEl.setAttribute("aria-label", T("toTop")); }
   else toTopEl.setAttribute("aria-hidden", "true");
 }
+const toTopRing = toTopEl && toTopEl.querySelector(".ttProg");
+const TT_LEN = 2 * Math.PI * 25;
+function toTopProgress(){
+  if(!toTopRing) return;
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const p = max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+  toTopRing.style.strokeDashoffset = (TT_LEN * (1 - p)).toFixed(1);
+}
+if(toTopRing) toTopRing.style.strokeDasharray = TT_LEN.toFixed(1);
 if(toTopEl) toTopEl.onclick = () => {
   wheelTo = null;
+  toTopEl.classList.remove("go");
+  void toTopEl.offsetWidth;
+  toTopEl.classList.add("go");
+  setTimeout(() => toTopEl.classList.remove("go"), 600);
   const calm = state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches;
   scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
 };
@@ -109,7 +122,8 @@ function onScroll(){
     stickTick = false;
     const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
     if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
-    toTopShow(curView === "top" && scrollY > innerHeight * 1.5);
+    toTopShow(scrollY > innerHeight * 1.5);
+    if(toTopOn) toTopProgress();
 
     const max = document.documentElement.scrollHeight - innerHeight;
     const p = max > 40 ? Math.min(1, scrollY / max) : 0;
@@ -123,7 +137,7 @@ function onScroll(){
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.myBtn,.hbtn");
+    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.myBtn,.hbtn,.toTop");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;

@@ -141,7 +141,7 @@ async function drawCard(d){
     ctx.fillText("[", x, y); x += ctx.measureText("[").width;
     const lw = ctx.measureText(d.tag.t).width;
     const tg = ctx.createLinearGradient(x, y - nickPx * .8, x + lw, y);
-    const mid = d.tag.t === "U" ? "#a05fd6" : "#4fd48a";
+    const mid = d.tag.m;
     tg.addColorStop(0, mid); tg.addColorStop(.55, d.tag.c1); tg.addColorStop(1, d.tag.c1);
     ctx.fillStyle = tg; ctx.fillText(d.tag.t, x, y); x += lw;
     ctx.fillStyle = "#f4eefb"; ctx.fillText("]", x, y);

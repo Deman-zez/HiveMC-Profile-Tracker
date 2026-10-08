@@ -124,7 +124,7 @@ function goMain(){
   snapshot();
 }
 $("#myBtn").onclick = goMain;
-$("#stickMy").onclick = goMain;
+
 $("#diagBtn").onclick = diag;
 function tickDiag(){
   const b = $("#diagBtn");

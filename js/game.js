@@ -74,12 +74,10 @@ function shrinkFit(pairs){
   });
 }
 function fitStick(){
-  const st = $("#stick"), nk = $("#stickNick"), my = $("#stickMy");
-  if(!st || !nk) return;
-  st.classList.remove("compact");
+  const nk = $("#stickNick");
+  if(!nk) return;
   nk.style.fontSize = "";
   if(!nk.clientWidth || nk.scrollWidth <= nk.clientWidth + 1) return;
-  if(my && !my.classList.contains("hidden")) st.classList.add("compact");
   shrinkFit([[nk, 15]]);
 }
 function fitNames(root){
@@ -160,6 +158,12 @@ function metrics(cur, old){
     if(typeof v === "boolean"){ out.push({ k:label(k), v: v ? "✓" : "—", d:"" }); continue; }
     if(hasMC(v)){ out.push({ k:label(k), v:String(v).replace(/[§&][0-9a-z]/gi,""),
       vhtml:mcText(v), d:"" }); continue; }
+    if(/^(player_)?rank$/.test(k) && typeof v === "string"){
+      const tag = rankTag(v), name = rankName(v);
+      out.push({ k:label(k), v:name, vhtml: tag ? '<span style="color:' + tag.c + '">' + esc(name) + "</span>" : esc(name), d:"" });
+      continue;
+    }
+    if(typeof v === "string" && /^[A-Z0-9]+(_[A-Z0-9]+)+$/.test(v)){ out.push({ k:label(k), v:pretty(v.toLowerCase()), d:"" }); continue; }
     if(isDateKey(k) && typeof v === "number" && v > 1e8){
       firstTile = { k:T("firstPlayed"), v:dateOf(v), d:"", wide:true }; continue;
     }

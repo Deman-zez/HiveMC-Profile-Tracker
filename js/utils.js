@@ -86,11 +86,48 @@ function dateOf(v){
 }
 function scanStr(o, re){ if(!o) return;
   for(const k of Object.keys(o)) if(re.test(k) && typeof o[k] === "string" && o[k]) return o[k]; }
+const RANKS = {
+  ULTIMATE:          { t:"U",        m:"#a05fd6", c1:"#6a25ad", c2:"#dcaaff" },
+  PLUS:              { t:"+",        m:"#4fd48a", c1:"#1c8a4d", c2:"#8bffbd" },
+  YOUTUBER:          { t:"YT",       m:"#ff5555" },
+  STREAMER:          { t:"STREAMER", m:"#b14bff" },
+  TIKTOK:            { t:"TIKTOK",   m:"#ff5ec4" },
+  VIP:               { t:"VIP",      m:"#c77dff" },
+  HELPER:            { t:"HELPER",   m:"#55c8ff" },
+  MODERATOR:         { t:"MOD",      m:"#ffaa00" },
+  HIVE_TEAM:         { t:"HIVE",     m:"#ffd84a" },
+  STAFF_MANAGER:     { t:"HIVE",     m:"#ffd84a" },
+  COMMUNITY_MANAGER: { t:"HIVE",     m:"#ffd84a" },
+  OWNER:             { t:"HIVE",     m:"#ffd84a" }
+};
+const RANK_NAMES = {
+  REGULAR: ["Обычный", "Regular"], PLUS: ["Hive+", "Hive+"], ULTIMATE: ["Hive Ultimate", "Hive Ultimate"],
+  YOUTUBER: ["YouTube", "YouTube"], STREAMER: ["Стример", "Streamer"], TIKTOK: ["TikTok", "TikTok"],
+  VIP: ["VIP", "VIP"], HELPER: ["Хелпер", "Helper"], MODERATOR: ["Модератор", "Moderator"],
+  HIVE_TEAM: ["Команда Hive", "Hive Team"], STAFF_MANAGER: ["Менеджер персонала", "Staff Manager"],
+  COMMUNITY_MANAGER: ["Комьюнити-менеджер", "Community Manager"], OWNER: ["Владелец", "Owner"]
+};
+function rankName(rank){
+  const r = String(rank || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+  const n = RANK_NAMES[r];
+  return n ? n[L === "ru" ? 0 : 1] : pretty(String(rank || "").toLowerCase());
+}
+function mixHex(a, b, k){
+  const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const x = p(a), y = p(b);
+  return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * k).toString(16).padStart(2, "0")).join("");
+}
 function rankTag(rank){
-  const r = String(rank || "").toUpperCase();
-  if(/ULTIMATE|ULTRA/.test(r)) return { t:"U", c:"var(--violet)", c1:"#6a25ad", c2:"#dcaaff" };
-  if(/PLUS|\+/.test(r)) return { t:"+", c:"var(--green)", c1:"#1c8a4d", c2:"#8bffbd" };
-  return null;
+  let r = String(rank || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+  if(!RANKS[r]){
+    if(/ULTIMATE|ULTRA/.test(r)) r = "ULTIMATE";
+    else if(/^PLUS$|\+/.test(r)) r = "PLUS";
+    else if(/YOU_?TUBE/.test(r)) r = "YOUTUBER";
+    else if(/MOD/.test(r)) r = "MODERATOR";
+  }
+  const k = RANKS[r];
+  if(!k) return null;
+  return { t: k.t, c: k.m, m: k.m, c1: k.c1 || mixHex(k.m, "#000000", .42), c2: k.c2 || mixHex(k.m, "#ffffff", .55) };
 }
 const MCCOL = {"0":"#000000","1":"#0000AA","2":"#00AA00","3":"#00AAAA","4":"#AA0000","5":"#AA00AA",
   "6":"#FFAA00","7":"#AAAAAA","8":"#555555","9":"#5555FF",a:"#55FF55",b:"#55FFFF",c:"#FF5555",
