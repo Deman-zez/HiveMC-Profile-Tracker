@@ -34,9 +34,9 @@ On screens 900px and wider the page switches to a two-column desktop layout: gam
 
 ## Getting started
 
-1. Open the site and go to **Settings**.
-2. Type your Hive username and pick it from the suggestions.
-3. Go back to **Profile** and press **Take snapshot**.
+Open the site, type your Hive username and pick it from the suggestions. That's it — your profile opens and the first snapshot is taken right away.
+
+To look up someone else, tap the search button in the profile header (or press `/` on a computer). Players you have opened recently are listed there for one-tap switching, and the **My profile** button always brings you back.
 
 The first snapshot shows your current stats. From the second one on, the **Trend** tab starts drawing your progress, so come back after a few games.
 
