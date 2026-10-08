@@ -56,7 +56,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .phead::after{content:"";display:block;height:2px;margin-top:12px;border-radius:2px;
   background:linear-gradient(90deg,var(--gold),rgba(255,192,46,0) 70%)}
 #hero{position:relative}
-.herotop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:-8px}
+.herotop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:2px}
 .herotop .idline{flex:1 1 auto;min-width:0}
 .corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;padding:2px;
   border-radius:15px;background:rgba(24,13,38,.72);border:1px solid var(--edge);
@@ -404,7 +404,6 @@ svg.line{width:100%;height:100%;display:block}
 .act .ar.w{background:rgba(79,212,138,.14);color:var(--green)}
 .act .ar.l{background:rgba(255,107,90,.14);color:#ff8a7a}
 .act .at{flex:none;min-width:84px;text-align:right;color:var(--soft);font-size:12.5px}
-.acth{margin:12px 0 0;font-size:12px;opacity:.8}
 .tsum{display:flex;align-items:flex-end;gap:12px;margin-top:14px;padding-top:12px;
   border-top:1px solid rgba(255,255,255,.07)}
 .tsv small{display:block;color:var(--soft);font-size:11.5px;margin-bottom:2px}
