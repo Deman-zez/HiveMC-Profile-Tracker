@@ -25,6 +25,53 @@ if(!state.tagged){
   state.snaps.forEach(x => { if(!x.n) x.n = n; });
   state.tagged = 1; save();
 }
+/* The set of games follows what Hive returns in /game/all/all: a new code shows up everywhere on its own,
+   a code Hive stops returning disappears everywhere (old snapshots keep their data). */
+const GAME_OWN_CARD = new Set(["parkour"]);
+const GAME_GRACE_MS = 3 * 24 * 60 * 60 * 1000, GAME_GRACE_MISSES = 3;
+function applyGameList(codes, fresh){
+  if(!Array.isArray(codes) || codes.length < 5) return false;
+  if(fresh){
+    // a game Hive stops returning is kept for a while: it may be a hiccup on Hive's side
+    const now = Date.now(), seen = state.gameSeenAt || {}, miss = state.gameMiss || {};
+    const prev = Array.isArray(state.apiGames) ? state.apiGames : [];
+    codes.forEach(c => { seen[c] = now; delete miss[c]; });
+    const kept = prev.filter(c => !codes.includes(c) && c !== "main").filter(c => {
+      miss[c] = (miss[c] || 0) + 1;
+      if(!seen[c]) seen[c] = now;
+      const keep = miss[c] < GAME_GRACE_MISSES || now - (seen[c] || now) < GAME_GRACE_MS;
+      if(!keep){ delete miss[c]; delete seen[c]; }
+      return keep;
+    });
+    state.gameSeenAt = seen; state.gameMiss = miss;
+    codes = codes.concat(kept);
+  }
+  const have = new Set(codes);
+  const next = GAMES_BASE.filter(g => g[0] === "main" || have.has(g[0]));
+  codes.forEach(c => {
+    if(c === "main" || GAME_OWN_CARD.has(c) || !/^[a-z0-9-]{1,24}$/.test(c) || next.some(g => g[0] === c)) return;
+    const g = [c, "", ""]; g.dyn = true; next.push(g);
+  });
+  const before = GAMES.map(g => g[0]).join(), after = next.map(g => g[0]).join();
+  GAMES.splice(0, GAMES.length, ...next);
+  if(fresh){
+    const seen = new Set(state.gamesSeen || GAMES_BASE.map(g => g[0]));
+    const live = new Set(next.map(g => g[0]));
+    const parked = new Set(state.gamesParked || []);
+    next.forEach(g => {
+      if(parked.has(g[0])){ parked.delete(g[0]); if(!state.games.includes(g[0])) state.games.push(g[0]); }
+      else if(!seen.has(g[0]) && !state.games.includes(g[0])) state.games.push(g[0]);
+    });
+    state.games.filter(g => !live.has(g) && g !== "main").forEach(g => parked.add(g));
+    state.gamesParked = [...parked];
+    state.games = state.games.filter(g => live.has(g));
+    state.gamesSeen = [...new Set([...seen, ...live])];
+    state.apiGames = codes.slice();
+  }
+  return before !== after;
+}
+applyGameList(state.apiGames, false);
+state.games = state.games.filter(g => GAMES.some(x => x[0] === g));
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];
 state.lastSnapAt = state.lastSnapAt || 0;

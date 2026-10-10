@@ -62,8 +62,8 @@ function actGroups(list){
     if(e.type === "ROUND_PLAYED") return;
     const c = e.unlock_id && CAT[e.unlock_id];
     let best = null, bd = 601;
-    out.forEach(g => {
-      if(!g.e.time || !e.time || (c && c.g && c.g !== g.e.game)) return;
+    if(catKind(c) === "GAME_LEVEL") out.forEach(g => {
+      if(!g.e.time || !e.time || c.g !== g.e.game) return;
       const d = Math.abs(g.e.time - e.time);
       if(d < bd){ bd = d; best = g; }
     });
@@ -72,7 +72,7 @@ function actGroups(list){
   return out.sort((a, b) => (b.e.time || 0) - (a.e.time || 0));
 }
 function unlSpan(e, grp){
-  return '<span class="ag"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' + esc(e.unlock_type || "") + '"' +
+  return '<span class="ag unl"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' + esc(e.unlock_type || "") + '"' +
     (grp ? ' data-grp="1"' : "") : "") + ">" + lockerHTML(e.unlock_type, e.unlock_id, grp) + "</span>";
 }
 function actRow(e, ex){
@@ -85,18 +85,21 @@ function actRow(e, ex){
   }
   return '<div class="act">' + unlSpan(e, false) + '<span class="at">' + esc(t) + "</span></div>";
 }
-const CAT_KEY = "hive.tracker.catalogue.v1";
+const CAT_KEY = "hive.tracker.catalogue.v2";
 let CAT = (() => { try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(e){ return {}; } })();
 const catPath = type => /title/i.test(type) ? "titles" : /costume/i.test(type) ? "costumes" : null;
+const catKind = c => !c ? "" : c.x && c.x.type ? c.x.type : c.g && c.l ? "GAME_LEVEL" : "";
 function lockerHTML(type, id, grp){
   const c = (id && CAT[id]) || null;
   const name = (c && c.d) || lockerName(id);
   let html = esc(lockerKind(type)) + (name ? ": " + (hasMC(name) ? mcText(name) : esc(name)) : "");
-  if(c && c.l) html += ' <small class="aunl">' + (c.g && !grp ? esc(NAME(c.g)) + ", " : "") + esc(T("unlLvl", c.l)) + "</small>";
+  if(catKind(c) === "GAME_LEVEL" && c.l)
+    html += ' <small class="aunl">' + (c.g && !grp ? esc(NAME(c.g)) + ", " : "") + esc(T("unlLvl", c.l)) + "</small>";
+  else if(c && c.x && c.x.type) html += ' <small class="aunl">' + esc(titleHow({ x: c.x })) + "</small>";
   return html;
 }
 let catBusy = false;
-async function fillCatalogue(box){
+async function fillCatalogue(box, redraw){
   if(catBusy) return;
   const stale = id => !CAT[id] || (!CAT[id].d && Date.now() - (CAT[id].t || 0) > 3 * 60 * 60 * 1000);
   const spans = [...box.querySelectorAll("[data-unl]")].filter(el => stale(el.dataset.unl) && catPath(el.dataset.ut));
@@ -111,15 +114,17 @@ async function fillCatalogue(box){
       if(r.status === 404){ CAT[id] = { d: "", t: Date.now() }; changed = true; continue; }
       if(!r.ok) break;
       const j = await r.json(), md = j && j.unlock_data && j.unlock_data.metadata;
+      const ud = j && j.unlock_data && typeof j.unlock_data === "object" ? j.unlock_data : null;
       CAT[id] = { d: typeof j.display === "string" ? j.display : (j.name || ""), g: md && md.game || "", l: md && md.level || 0,
-        t: Date.now() };
+        x: ud ? { type: ud.type, offer: ud.offer, metadata: ud.metadata } : null, t: Date.now() };
       changed = true;
     }catch(e){ break; }
   }
   catBusy = false;
   if(!changed) return;
   try{ localStorage.setItem(CAT_KEY, JSON.stringify(CAT)); }catch(e){}
-  box.querySelectorAll("[data-unl]").forEach(el => { el.innerHTML = lockerHTML(el.dataset.ut, el.dataset.unl, !!el.dataset.grp); });
+  if(redraw && box.isConnected) redraw();
+  else box.querySelectorAll("[data-unl]").forEach(el => { el.innerHTML = lockerHTML(el.dataset.ut, el.dataset.unl, !!el.dataset.grp); });
 }
 function lockerKind(type){
   const k = String(type || "").toLowerCase();
@@ -164,7 +169,7 @@ async function renderActivity(){
       : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>";
     const mb = box.querySelector(".actmore");
     if(mb) mb.onclick = () => { actShown += 20; draw(); };
-    fillCatalogue(box);
+    fillCatalogue(box, draw);
   };
   if($("#vTrend").classList.contains("hidden")){ draw(); return; }
   const pending = fetchActivity(uuid);

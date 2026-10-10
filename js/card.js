@@ -51,7 +51,7 @@ function cardData(){
   if(!last) return null;
   const main = last.g.main || {};
   const playedOf = c => num(c, "played") || num(c, "games_played");
-  const codes = state.games.filter(g => g !== "main" && last.g[g] && playedOf(last.g[g]))
+  const codes = state.games.filter(g => g !== "main" && hasStats(last.g[g]))
     .sort((a, b) => playedOf(last.g[b]) - playedOf(last.g[a]));
   let P = 0, W = 0, K = 0, D = 0, LV = 0;
   codes.forEach(g => {

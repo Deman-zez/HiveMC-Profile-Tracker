@@ -89,7 +89,7 @@ function renderSnap(){
   };
 
   const playedOf = c => num(c,"played") || num(c,"games_played");
-  const codes = state.games.filter(g => g !== "main" && last.g[g] && playedOf(last.g[g]))
+  const codes = state.games.filter(g => g !== "main" && hasStats(last.g[g]))
     .sort((a,b) => playedOf(last.g[b]) - playedOf(last.g[a]));
 
   if(codes.length){

@@ -66,6 +66,7 @@ async function snapshot(){
       data = r.data; missing = r.missing;
     }
     state.last[lk("_all")] = Date.now();
+    if(missing === null && applyGameList(Object.keys(data), true)){ save(); renderChips(); }
     for(const [g] of GAMES){
       const gd = data[g];
       const hasData = gd && typeof gd === "object" && Object.keys(gd).length > 0;

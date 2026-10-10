@@ -47,7 +47,11 @@ async function loadTitleCatalogue(){
   })();
   try{ return await tcatP; } finally { tcatP = null; }
 }
-const TMETA_KEY = "hive.tracker.titlemeta.v3";
+function ltmName(name){
+  const n = String(name || "");
+  return /\bLTM\b/.test(n) ? n.replace(/\s*\bLTM\b\s*/, " ").trim() + " " + T("tqLtm") : n;
+}
+const TMETA_KEY = "hive.tracker.titlemeta.v4";
 let TMETA = null, tmetaP = null;
 function indexMeta(list){
   const byExact = new Map(), byLoose = new Map();
@@ -94,6 +98,7 @@ async function loadTitleMeta(){
           .map(([x, l]) => [+x, +l]).filter(([x, l]) => isFinite(x) && isFinite(l)).sort((a, b) => a[0] - b[0]);
         const mono = xp.every((p, i) => !i || p[1] >= xp[i - 1][1]);
         if(+m.maxLevel > 0 || (xp.length && mono)) games[g] = { max: +m.maxLevel || 0, xp: mono ? xp : [] };
+        if(games[g] && typeof m.name === "string") games[g].n = m.name;
       }
       const lu = m && m.levelUnlocks;
       const un = parseUnlocks(lu);
@@ -197,7 +202,7 @@ function buyText(raw){
   return T("tqBuy", itemRu(item)) + extra;
 }
 const INFO_RU = [
-  [/^Awarded for reaching level (\d+) in (.+?)(?: during (.+))?$/i, m => T("tqLevel", m[1], m[2]) + (m[3] ? " · " + m[3] : "")],
+  [/^Awarded for reaching level (\d+) in (.+?)(?: during (.+))?$/i, m => T("tqLevel", m[1], ltmName(m[2])) + (m[3] ? " · " + m[3] : "")],
   [/^Could be obtained by purchasing (?:the )?(.+?) before (?:the )?(.+)$/i, m => buyText(m[1]) + " · " + T("tqBefore", m[2])],
   [/^(?:Obtained|Could be obtained) by purchasing (?:the |a |an )?(.+)$/i, m => buyText(m[1])],
   [/^Could be purchased from the Challenge Merchant during (.+)$/i, m => T("tqMerchant") + " · " + m[1]],
@@ -247,7 +252,7 @@ function infoText(e){
   const d = e.d.replace(/\s+/g, " ").replace(/\s*\.$/, "").trim();
   const gone = e.o ? GONE : "";
   let m;
-  if((m = /^Awarded for reaching level (\d+)$/i.exec(d)) && e.g) return T("tqLevel", m[1], e.g) + gone;
+  if((m = /^Awarded for reaching level (\d+)$/i.exec(d)) && e.g) return T("tqLevel", m[1], ltmName(e.g)) + gone;
   if((m = /^Awarded for reaching Prestige ([IVX]+)(?: in (.+))?$/i.exec(d))) return T("tqPrestige", m[1], m[2] || e.g) + gone;
   if(L === "ru") for(const [re, f] of INFO_RU){ const mm = re.exec(d); if(mm) return ruDates(f(mm)) + gone; }
   return d + gone;

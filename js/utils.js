@@ -12,8 +12,10 @@ const hasMC = v => typeof v === "string" &&
 const pretty = s => String(s).replace(/[_-]+/g," ").replace(/\b\w/g, c => c.toUpperCase()).trim();
 const EXTRA_GAMES = { gi:"Ghost Invasion", mob:"Mob Game", parkour:"Parkour Worlds",
   "sky-kits":"SkyWars Kits", "sky-classic":"SkyWars Classic" };
-const NAME = c => { const g = GAMES.find(x => x[0] === c);
-  return g ? (L === "ru" ? g[1] : g[2]) : (EXTRA_GAMES[c] || c); };
+const NAME = c => { const g = GAMES.find(x => x[0] === c) || GAMES_BASE.find(x => x[0] === c);
+  if(g && !g.dyn) return L === "ru" ? g[1] : g[2];
+  const m = typeof META_GAMES === "object" && META_GAMES[c] && META_GAMES[c].n;
+  return EXTRA_GAMES[c] || (m ? String(m).replace(/([a-z])([A-Z])/g, "$1 $2") : pretty(c)); };
 const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
 const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
 function mountModal(m, from){
@@ -201,5 +203,7 @@ function iconUrl(base, id){
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
+const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Object.entries(c).some(([k, v]) =>
+  typeof v === "number" && v > 0 && !SKIP.has(k) && !isDateKey(k) && !/^(level|prestige)$/.test(k));
 
 function httpMsg(st){ return st >= 500 ? T("hiveDown", st) : T("httpErr", st); }

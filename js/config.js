@@ -23,7 +23,7 @@ const DIAG_CD = 5 * 1000;
 const REQ_LIMIT = 80;
 const REQ_WINDOW = 60 * 60 * 1000;
 const SNAP_GAP = 5 * 1000;
-const GAMES = [
+const GAMES_BASE = [
   ["main","Профиль","Profile"],["bed","BedWars","BedWars"],["sky","SkyWars","SkyWars"],
   ["murder","Murder Mystery","Murder Mystery"],["hide","Hide and Seek","Hide and Seek"],
   ["dr","DeathRun","DeathRun"],["sg","Survival Games","Survival Games"],
@@ -32,3 +32,5 @@ const GAMES = [
   ["ground","Ground Wars","Ground Wars"],["grav","Gravity","Gravity"],
   ["build","Build Battle","Build Battle"],["wars","Treasure Wars","Treasure Wars"]
 ];
+const GAMES = GAMES_BASE.slice();
+
