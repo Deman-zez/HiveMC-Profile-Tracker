@@ -56,31 +56,50 @@ async function fetchActivity(uuid){
     ACT[uuid] = { t: Date.now(), err: e.message };
   }
 }
-function actRow(e){
+function actGroups(list){
+  const out = list.filter(e => e.type === "ROUND_PLAYED").map(e => ({ e, ex: [] }));
+  list.forEach(e => {
+    if(e.type === "ROUND_PLAYED") return;
+    const c = e.unlock_id && CAT[e.unlock_id];
+    let best = null, bd = 601;
+    out.forEach(g => {
+      if(!g.e.time || !e.time || (c && c.g && c.g !== g.e.game)) return;
+      const d = Math.abs(g.e.time - e.time);
+      if(d < bd){ bd = d; best = g; }
+    });
+    if(best) best.ex.push(e); else out.push({ e, ex: [] });
+  });
+  return out.sort((a, b) => (b.e.time || 0) - (a.e.time || 0));
+}
+function unlSpan(e, grp){
+  return '<span class="ag"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' + esc(e.unlock_type || "") + '"' +
+    (grp ? ' data-grp="1"' : "") : "") + ">" + lockerHTML(e.unlock_type, e.unlock_id, grp) + "</span>";
+}
+function actRow(e, ex){
   const t = typeof e.time === "number" ? agoText(e.time) : "";
   if(e.type === "ROUND_PLAYED"){
     const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
     return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
-      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span></div>";
+      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span>" +
+      (ex && ex.length ? ex.map(x => '<div class="actx">' + unlSpan(x, true) + "</div>").join("") : "") + "</div>";
   }
-  return '<div class="act"><span class="ag"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' +
-    esc(e.unlock_type || "") + '"' : "") + ">" + lockerHTML(e.unlock_type, e.unlock_id) +
-    '</span><span class="at">' + esc(t) + "</span></div>";
+  return '<div class="act">' + unlSpan(e, false) + '<span class="at">' + esc(t) + "</span></div>";
 }
 const CAT_KEY = "hive.tracker.catalogue.v1";
 let CAT = (() => { try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(e){ return {}; } })();
 const catPath = type => /title/i.test(type) ? "titles" : /costume/i.test(type) ? "costumes" : null;
-function lockerHTML(type, id){
+function lockerHTML(type, id, grp){
   const c = (id && CAT[id]) || null;
   const name = (c && c.d) || lockerName(id);
   let html = esc(lockerKind(type)) + (name ? ": " + (hasMC(name) ? mcText(name) : esc(name)) : "");
-  if(c && c.g && c.l) html += ' <small class="aunl">' + esc(NAME(c.g)) + ", " + esc(T("unlLvl", c.l)) + "</small>";
+  if(c && c.l) html += ' <small class="aunl">' + (c.g && !grp ? esc(NAME(c.g)) + ", " : "") + esc(T("unlLvl", c.l)) + "</small>";
   return html;
 }
 let catBusy = false;
 async function fillCatalogue(box){
   if(catBusy) return;
-  const spans = [...box.querySelectorAll("[data-unl]")].filter(el => !CAT[el.dataset.unl] && catPath(el.dataset.ut));
+  const stale = id => !CAT[id] || (!CAT[id].d && Date.now() - (CAT[id].t || 0) > 3 * 60 * 60 * 1000);
+  const spans = [...box.querySelectorAll("[data-unl]")].filter(el => stale(el.dataset.unl) && catPath(el.dataset.ut));
   const ids = [...new Set(spans.map(el => el.dataset.unl))].slice(0, 10);
   if(!ids.length) return;
   catBusy = true;
@@ -89,16 +108,18 @@ async function fillCatalogue(box){
     const type = spans.find(el => el.dataset.unl === id).dataset.ut;
     try{
       const r = await hiveFetch(API + "/catalogue/" + catPath(type) + "/" + encodeURIComponent(id), { headers: HIVE_HEADERS });
-      if(!r.ok){ CAT[id] = { d: "", t: Date.now() }; changed = true; continue; }
+      if(r.status === 404){ CAT[id] = { d: "", t: Date.now() }; changed = true; continue; }
+      if(!r.ok) break;
       const j = await r.json(), md = j && j.unlock_data && j.unlock_data.metadata;
-      CAT[id] = { d: typeof j.display === "string" ? j.display : (j.name || ""), g: md && md.game || "", l: md && md.level || 0 };
+      CAT[id] = { d: typeof j.display === "string" ? j.display : (j.name || ""), g: md && md.game || "", l: md && md.level || 0,
+        t: Date.now() };
       changed = true;
     }catch(e){ break; }
   }
   catBusy = false;
   if(!changed) return;
   try{ localStorage.setItem(CAT_KEY, JSON.stringify(CAT)); }catch(e){}
-  box.querySelectorAll("[data-unl]").forEach(el => { el.innerHTML = lockerHTML(el.dataset.ut, el.dataset.unl); });
+  box.querySelectorAll("[data-unl]").forEach(el => { el.innerHTML = lockerHTML(el.dataset.ut, el.dataset.unl, !!el.dataset.grp); });
 }
 function lockerKind(type){
   const k = String(type || "").toLowerCase();
@@ -123,10 +144,11 @@ function lockerName(id){
 }
 function actHTML(list, err){
   const all = list || [];
-  const rows = all.slice(0, actShown).map(actRow).join("");
-  const more = all.length > actShown
-    ? '<button type="button" class="mini actmore">' + esc(T("actMore", Math.min(20, all.length - actShown))) + "</button>" : "";
-  return "<h2>" + esc(T("actTitle")) + (all.length ? ' <span class="actn">' + nf(all.length) + "</span>" : "") +
+  const groups = actGroups(all);
+  const rows = groups.slice(0, actShown).map(g => actRow(g.e, g.ex)).join("");
+  const more = groups.length > actShown
+    ? '<button type="button" class="mini actmore">' + esc(T("actMore", Math.min(20, groups.length - actShown))) + "</button>" : "";
+  return "<h2>" + esc(T("actTitle")) + (groups.length ? ' <span class="actn">' + nf(groups.length) + "</span>" : "") +
     '</h2><div class="card">' +
     (rows || '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>") + more + "</div>";
 }
