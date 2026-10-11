@@ -21,6 +21,7 @@ function showView(v, y){
   if(!VIEWS[v]) v = "snap";
   curView = v;
   for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
+  requestAnimationFrame(() => placeTabInd(true));
   document.querySelectorAll(".tabs button").forEach(x => {
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
@@ -85,6 +86,25 @@ addEventListener("popstate", e => {
 });
 try{ history.replaceState(navEntry("snap", 0), ""); }catch(e){}
 document.querySelectorAll(".tabs button").forEach(b => { b.onclick = () => go(b.dataset.v); });
+const tabInd = $(".tabInd");
+let tabIndX = null;
+function placeTabInd(anim){
+  const nav = $(".tabs"), cur = nav && nav.querySelector('button[aria-current="page"] > span');
+  if(!tabInd || !cur) return;
+  const n = nav.getBoundingClientRect(), r = cur.getBoundingClientRect();
+  const x = r.left - n.left, moved = tabIndX !== null && Math.abs(x - tabIndX) > 1;
+  tabInd.classList.toggle("still", !anim || tabIndX === null);
+  if(moved && anim){
+    tabInd.classList.remove("stretch"); void tabInd.offsetWidth; tabInd.classList.add("stretch");
+  }
+  tabInd.style.width = r.width + "px";
+  tabInd.style.height = r.height + "px";
+  tabInd.style.transform = "translate3d(" + x.toFixed(1) + "px," + (r.top - n.top).toFixed(1) + "px,0)";
+  tabIndX = x;
+}
+addEventListener("resize", () => placeTabInd(false));
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => placeTabInd(false));
+requestAnimationFrame(() => placeTabInd(false));
 let stickOn = false, stickTick = false, lastShade = -1;
 const shadeEl = $("#shade");
 const toTopEl = $("#toTop");
@@ -180,7 +200,7 @@ addEventListener("pointerup", e => {
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.tabs button,.sugg button,.myBtn,.hbtn,.toTop");
+    e.target.closest(".primary,.mini,.chip,.close,.sugg button,.myBtn,.hbtn,.toTop");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
