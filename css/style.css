@@ -76,9 +76,9 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 #heroTop:not(.stuck)::after{transition:opacity .18s ease,transform 0s .2s}
 #heroTop.stuck::after{transform:none;opacity:1}
 /* two separate glass drops; on stick the share drop rolls into the search drop and is absorbed */
-#heroTop .corner .hbtn{transition:opacity .26s ease,transform .42s cubic-bezier(.3,.9,.35,1)}
-#heroTop.stuck #shareBtn{opacity:0;transform:translateX(48px) scale(.45);pointer-events:none;
-  transition:opacity .3s ease .06s,transform .42s cubic-bezier(.5,0,.4,1)}
+#heroTop .corner .hbtn{transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1),color .2s ease}
+#heroTop.stuck #shareBtn{opacity:0;transform:translateX(50px) scale(.32);pointer-events:none;
+  transition:opacity .28s ease .14s,transform .46s cubic-bezier(.55,0,.35,1)}
 .lite #heroTop::before,.lite #heroTop::after,.lite #heroTop #shareBtn{transition:none}
 @media (prefers-reduced-motion: reduce){ #heroTop::before,#heroTop::after,#heroTop #shareBtn{transition:none} }
 @media (min-width:900px){ #heroTop{margin:-20px -24px 2px;padding:20px 24px 14px} }
@@ -940,8 +940,7 @@ html.locked, html.locked body{overflow:hidden}
       inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.04),
       inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -14px 22px -14px rgba(0,0,0,.6)}
   /* refracting pieces: clearer tint so the bent backdrop shows, bright rim like thick glass */
-  .refract{-webkit-backdrop-filter:var(--lgf) blur(4px) saturate(165%);backdrop-filter:var(--lgf) blur(4px) saturate(165%)}
-  .tabs.glass.refract{-webkit-backdrop-filter:var(--lgf) blur(9px) saturate(170%);backdrop-filter:var(--lgf) blur(9px) saturate(170%)}
+  .refract{-webkit-backdrop-filter:var(--lgf) blur(2.5px) saturate(165%);backdrop-filter:var(--lgf) blur(2.5px) saturate(165%)}
   .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,.34),rgba(12,6,22,.46));
     box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.09),inset 0 0 28px rgba(255,255,255,.035)}
   .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 60%,rgba(255,192,46,.06));
@@ -991,7 +990,7 @@ html.locked, html.locked body{overflow:hidden}
 
 @keyframes lgMerge{0%{transform:none}35%{transform:scale(.9,1.1)}65%{transform:scale(1.05,.95)}85%{transform:scale(.99,1.01)}100%{transform:none}}
 @keyframes lgSplit{0%{transform:none}30%{transform:scale(1.08,.9)}60%{transform:scale(.97,1.04)}100%{transform:none}}
-#heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .12s}
+#heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
 #heroTop.splitting #searchBtn{animation:lgSplit .6s cubic-bezier(.3,.9,.4,1)}
 .lite #heroTop .hbtn{animation:none}
 @media (prefers-reduced-motion: reduce){ #heroTop .hbtn{animation:none} .lgGlow{display:none} }
@@ -1006,9 +1005,7 @@ html.locked, html.locked body{overflow:hidden}
 }
 
 /* ---------- glass, round 3 ---------- */
-.lgSpec{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
-  background-size:100% 100%;background-repeat:no-repeat;opacity:.62;mix-blend-mode:screen}
-.lite .lgSpec{display:none}
+.lgSpec{display:none}
 @keyframes lgJelly{0%{scale:1 1}16%{scale:1.075 .925}40%{scale:.955 1.045}64%{scale:1.02 .985}84%{scale:.995 1.005}100%{scale:1 1}}
 @keyframes lgJellyWide{0%{scale:1 1}16%{scale:1.012 .94}40%{scale:.994 1.03}66%{scale:1.003 .992}100%{scale:1 1}}
 .lgl.jelly{animation:lgJelly .62s cubic-bezier(.3,.7,.4,1);transform-origin:var(--tx,50%) var(--ty,50%)}
@@ -1016,8 +1013,7 @@ html.locked, html.locked body{overflow:hidden}
 .lite .lgl.jelly{animation:none}
 @media (prefers-reduced-motion: reduce){ .lgl.jelly{animation:none} }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
-  .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 60%,rgba(255,192,46,.05))}
-  .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.2),rgba(16,8,28,.36) 70%)}
+
   #heroTop:not(.stuck)::before{-webkit-backdrop-filter:blur(0) saturate(100%);backdrop-filter:blur(0) saturate(100%)}
   .apidown{background:linear-gradient(180deg,rgba(34,16,46,.62),rgba(18,8,26,.74));
     -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}
@@ -1035,13 +1031,11 @@ html.locked, html.locked body{overflow:hidden}
   70%{transform:translateX(36px) scale(.6,.7);opacity:.8}100%{transform:translateX(48px) scale(.3);opacity:0}}
 @keyframes shSplit{0%{transform:translateX(48px) scale(.3);opacity:0}40%{transform:translateX(26px) scale(.7,.8);opacity:.9}
   75%{transform:translateX(-3px) scale(1.06,.94);opacity:1}100%{transform:none;opacity:1}}
-#heroTop.merging .hbridge{animation:hbMerge .55s cubic-bezier(.4,0,.3,1) both}
-#heroTop.splitting .hbridge{transform-origin:0 50%;animation:hbSplit .55s cubic-bezier(.4,0,.3,1) both}
-#heroTop.merging #shareBtn{animation:shMerge .5s cubic-bezier(.45,0,.35,1) both}
-#heroTop.splitting #shareBtn{animation:shSplit .6s cubic-bezier(.3,.8,.35,1) both}
-#heroTop.merging #shareBtn svg{transition:opacity .15s ease;opacity:0}
-.lite #heroTop .hbridge,.lite #heroTop #shareBtn{animation:none !important}
-@media (prefers-reduced-motion: reduce){ #heroTop .hbridge,#heroTop #shareBtn{animation:none !important} }
+#heroTop.merging .hbridge{animation:hbMerge .5s cubic-bezier(.4,0,.3,1)}
+#heroTop.splitting .hbridge{transform-origin:0 50%;animation:hbSplit .5s cubic-bezier(.4,0,.3,1)}
+#heroTop.stuck #shareBtn svg{opacity:0;transition:opacity .12s ease}
+.lite #heroTop .hbridge{animation:none !important}
+@media (prefers-reduced-motion: reduce){ #heroTop .hbridge{animation:none !important} }
 /* entrance for freshly shown rows and items */
 @keyframes enterUp{from{opacity:0;transform:translate3d(0,10px,0) scale(.985)}to{opacity:1;transform:none}}
 .enter{animation:enterUp .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--ei,0) * 28ms)}
