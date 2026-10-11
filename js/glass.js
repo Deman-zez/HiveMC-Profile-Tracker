@@ -14,49 +14,27 @@ function lgSdf(x, y, hw, hh, r){
   const qx = Math.abs(x) - (hw - r), qy = Math.abs(y) - (hh - r);
   return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
 }
-// convex squircle bezel (Apple's profile) + Snell's law: how far a ray is bent at each distance from the rim
-const LG_N = 1.5;
-function lgProfile(band, thick){
-  const f = x => Math.pow(1 - Math.pow(1 - x, 4), .25);
-  const out = new Float32Array(128);
-  let max = 0;
-  for(let i = 0; i < 128; i++){
-    const x = Math.min(.999, Math.max(.001, i / 127)), e = .002;
-    const slope = (f(Math.min(1, x + e)) - f(Math.max(0, x - e))) / (2 * e) * thick / band;
-    const t1 = Math.atan(slope), t2 = Math.asin(Math.sin(t1) / LG_N);
-    const d = f(x) * thick * Math.tan(t1 - t2);
-    out[i] = d; if(d > max) max = d;
-  }
-  if(max > 0) for(let i = 0; i < 128; i++) out[i] /= max;
-  return out;
-}
 function lgMap(w, h, r, band){
-  const cv = document.createElement("canvas"), sp = document.createElement("canvas");
-  cv.width = sp.width = w; cv.height = sp.height = h;
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
   const ctx = cv.getContext("2d"), data = ctx.createImageData(w, h), px = data.data;
-  const sx = sp.getContext("2d"), sdata = sx.createImageData(w, h), spx = sdata.data;
   const hw = w / 2, hh = h / 2;
   band = Math.min(band, hh, hw);
-  const prof = lgProfile(band, band * .9);
-  const LX = -.55, LY = -.84;                                 // light from the top left
   for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
     const cx = x + .5 - hw, cy = y + .5 - hh, d = -lgSdf(cx, cy, hw, hh, r);
-    let dx = 0, dy = 0, spec = 0;
+    let dx = 0, dy = 0;
     if(d >= 0 && d < band){
+      const t = 1 - d / band, k = Math.sin(t * Math.PI / 2) ** 2.2;
       const gx = lgSdf(cx + 1, cy, hw, hh, r) - lgSdf(cx - 1, cy, hw, hh, r);
       const gy = lgSdf(cx, cy + 1, hw, hh, r) - lgSdf(cx, cy - 1, hw, hh, r);
-      const gl = Math.hypot(gx, gy) || 1, nx = gx / gl, ny = gy / gl;
-      const k = prof[Math.min(127, Math.round(d / band * 127))];
-      dx = -nx * k; dy = -ny * k;                             // convex glass pulls the image inward: the rim magnifies
-      const lit = nx * LX + ny * LY, rim = Math.pow(Math.max(0, 1 - d / Math.min(7, band)), 2);
-      spec = (Math.pow(Math.max(0, lit), 3) + Math.pow(Math.max(0, -lit), 3) * .4) * rim;
+      const gl = Math.hypot(gx, gy) || 1;
+      dx = (gx / gl) * k; dy = (gy / gl) * k;
     }
     const i = (y * w + x) * 4;
     px[i] = 128 + dx * 127; px[i + 1] = 128 + dy * 127; px[i + 2] = 128; px[i + 3] = 255;
-    spx[i] = spx[i + 1] = spx[i + 2] = 255; spx[i + 3] = Math.round(Math.min(1, spec) * 235);
   }
-  ctx.putImageData(data, 0, 0); sx.putImageData(sdata, 0, 0);
-  return { map: cv.toDataURL(), spec: sp.toDataURL() };
+  ctx.putImageData(data, 0, 0);
+  return { map: cv.toDataURL() };
 }
 function lgBuild(el){
   const o = el.__lg; if(!o || !el.isConnected) return;
@@ -70,9 +48,6 @@ function lgBuild(el){
   o.img.setAttribute("width", w); o.img.setAttribute("height", h);
   const m = lgMap(w, h, r, o.band);
   o.img.setAttribute("href", m.map);
-  let sp = el.querySelector(":scope > .lgSpec");
-  if(!sp){ sp = document.createElement("span"); sp.className = "lgSpec"; sp.setAttribute("aria-hidden", "true"); el.append(sp); }
-  sp.style.backgroundImage = "url(" + m.spec + ")";
   el.classList.add("refract");
 }
 function lgSoon(el){
@@ -211,7 +186,7 @@ function lgAdapt(){
     if(!el.isConnected){ LG_ADAPT.delete(el); return; }
     const L = lgSampleUnder(el);
     if(L === null) return;
-    el.style.setProperty("--lgt", Math.min(.74, Math.max(.36, .36 + L * .6)).toFixed(2));
+    el.style.setProperty("--lgt", Math.min(.72, Math.max(.26, .26 + L * .7)).toFixed(2));
   });
 }
 addEventListener("resize", lgAdaptSoon);
