@@ -71,6 +71,8 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.22) 30%,rgba(255,192,46,.35) 50%,rgba(255,255,255,.22) 70%,transparent);
   transform:scaleX(0);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1) .05s,opacity .3s}
 #heroTop.stuck::before{opacity:1;transform:none}
+#heroTop:not(.stuck)::before{transition:opacity .22s ease,transform .22s ease;transform:translate3d(0,-6px,0)}
+#heroTop:not(.stuck)::after{transition:opacity .18s ease,transform 0s .2s}
 #heroTop.stuck::after{transform:none;opacity:1}
 #heroTop #shareBtn{transition:width .34s cubic-bezier(.2,.9,.25,1),opacity .2s ease,transform .34s cubic-bezier(.2,.9,.25,1)}
 #heroTop.stuck #shareBtn{width:0;opacity:0;transform:scale(.6);pointer-events:none}
@@ -461,11 +463,13 @@ svg.line{width:100%;height:100%;display:block}
 .tabs button{flex:1;background:none;border:none;font-size:14px;padding:0;color:var(--soft);
   cursor:pointer}
 .tabs button{font-weight:500;letter-spacing:.01em}
-.tabs button > span{transition:color .25s ease,transform .12s ease,opacity .25s ease;opacity:.82}
+.tabs button > span{transition:color .25s ease,transform .12s ease,opacity .25s ease;opacity:.86;
+  text-shadow:0 0 12px rgba(255,255,255,.2),0 1px 2px rgba(0,0,0,.65)}
 .tabs button[aria-current="page"]{color:var(--gold);font-weight:700}
 .tabs button[aria-current="page"] > span{opacity:1;color:transparent;
   background-image:linear-gradient(180deg,#ffe7a3 0%,#ffc02e 55%,#e8970f 100%);-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 8px rgba(255,192,46,.32));animation:tabPop .45s cubic-bezier(.3,1.4,.5,1)}
+  text-shadow:none;filter:drop-shadow(0 0 5px rgba(255,192,46,.6)) drop-shadow(0 0 14px rgba(255,192,46,.32));
+  animation:tabPop .45s cubic-bezier(.3,1.4,.5,1)}
 @keyframes tabPop{0%{transform:scale(.92)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
 .lite .tabs button[aria-current="page"] > span{animation:none}
 @media (prefers-reduced-motion: reduce){ .tabs button[aria-current="page"] > span{animation:none} }
@@ -933,7 +937,20 @@ html.locked, html.locked body{overflow:hidden}
     box-shadow:0 16px 40px rgba(0,0,0,.55),
       inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.04),
       inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -14px 22px -14px rgba(0,0,0,.6)}
-  .tabs.glass.refract{-webkit-backdrop-filter:url(#lgRefract) blur(5px) saturate(150%);backdrop-filter:url(#lgRefract) blur(5px) saturate(150%)}
+  /* refracting pieces: clearer tint so the bent backdrop shows, bright rim like thick glass */
+  .refract{-webkit-backdrop-filter:var(--lgf) blur(2.5px) saturate(165%);backdrop-filter:var(--lgf) blur(2.5px) saturate(165%)}
+  .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,.34),rgba(12,6,22,.46));
+    box-shadow:0 16px 40px rgba(0,0,0,.5),
+      inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.42),inset -1px -1px 1px -.5px rgba(255,255,255,.16),
+      inset 0 0 0 1px rgba(255,255,255,.07),inset 0 0 24px rgba(255,255,255,.05)}
+  .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 60%,rgba(255,192,46,.06));
+    box-shadow:inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.55),inset -1px -1px 1px -.5px rgba(255,255,255,.2),
+      inset 0 0 0 1px rgba(255,255,255,.1),inset 0 0 16px rgba(255,255,255,.08),0 6px 18px rgba(0,0,0,.3)}
+  #heroTop .corner.refract{background:rgba(22,11,38,.3);border-color:transparent;
+    box-shadow:0 8px 22px rgba(0,0,0,.35),inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.4),
+      inset -1px -1px 1px -.5px rgba(255,255,255,.15),inset 0 0 0 1px rgba(255,255,255,.07)}
+  .lite .refract{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .lite .tabs.glass.refract,.lite #heroTop .corner.refract{background:rgba(16,8,28,.96)}
   .tabs.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
     background:radial-gradient(60% 120% at 12% -30%,rgba(255,255,255,.14),transparent 60%),
       radial-gradient(50% 120% at 92% 130%,rgba(255,192,46,.07),transparent 60%)}
@@ -942,10 +959,47 @@ html.locked, html.locked body{overflow:hidden}
   .lite #heroTop::before{background:rgba(16,8,28,.96);-webkit-backdrop-filter:none;backdrop-filter:none}
   .modal.msearch .inner{background:linear-gradient(180deg,rgba(26,14,42,.8),rgba(12,6,22,.88));
     -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%)}
-  .lite .glass,.lite .tabs.glass.refract,.lite .modal.msearch .inner{background:rgba(16,8,28,.96);
+  .lite .glass,.lite .modal.msearch .inner{background:rgba(16,8,28,.96);
     -webkit-backdrop-filter:none;backdrop-filter:none}
 }
 @media (min-width:900px){
   .tabs.glass{left:50%;right:auto;bottom:16px;width:min(580px,calc(100% - 32px));transform:translateX(-50%);border-radius:24px}
 }
 .stick:not(.on){visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s,visibility 0s .28s}
+
+/* ---- liquid glass layers ---- */
+@property --lgt{syntax:"<number>";inherits:true;initial-value:.36}
+.lgl{isolation:isolate}
+.lgRim{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;padding:1.3px;
+  background:radial-gradient(150% 170% at var(--lgx,18%) var(--lgy,0%),rgba(255,255,255,.9),rgba(255,255,255,.18) 34%,
+    rgba(255,255,255,.05) 58%,rgba(255,255,255,.3) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:.8}
+.lgGlow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;opacity:0;
+  background:radial-gradient(circle at var(--tx,50%) var(--ty,50%),rgba(255,240,205,.42),rgba(255,192,46,.14) 32%,transparent 62%);
+  transition:opacity .6s ease}
+.lgl.lit > .lgGlow{opacity:1;transition:opacity .07s ease}
+.lgl.hov > .lgGlow{opacity:.4;transition:opacity .25s ease}
+.tabs.glass,#heroTop{transition:--lgt .45s ease}
+.toTop .lgRim{border-radius:50%}
+.lite .lgRim{background:linear-gradient(160deg,rgba(255,255,255,.4),rgba(255,255,255,.06) 50%,rgba(255,255,255,.18))}
+.lite .lgGlow{display:none}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,calc(var(--lgt) - .02)),rgba(12,6,22,calc(var(--lgt) + .1)))}
+  #heroTop::before{background:linear-gradient(180deg,rgba(26,14,42,calc(var(--lgt) + .22)),rgba(12,6,22,calc(var(--lgt) + .34)))}
+  .toTop.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(46,24,72,.5) 0%,rgba(23,12,37,.62) 70%)}
+  .lite .toTop.refract{background:radial-gradient(120% 120% at 30% 20%,#2e1848 0%,#170c25 70%)}
+}
+/* the share button flows into the search button like two drops merging, and splits back out */
+#heroTop .corner{transform-origin:100% 50%}
+#heroTop.stuck #shareBtn{transform:translateX(-30px) scale(.35)}
+@keyframes lgMerge{0%{transform:none}35%{transform:scale(.9,1.1)}65%{transform:scale(1.05,.95)}85%{transform:scale(.99,1.01)}100%{transform:none}}
+@keyframes lgSplit{0%{transform:none}30%{transform:scale(1.08,.9)}60%{transform:scale(.97,1.04)}100%{transform:none}}
+#heroTop.merging .corner{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1)}
+#heroTop.splitting .corner{animation:lgSplit .6s cubic-bezier(.3,.9,.4,1)}
+.lite #heroTop .corner{animation:none}
+@media (prefers-reduced-motion: reduce){ #heroTop .corner{animation:none} .lgGlow{display:none} }
+@media (min-width:900px){
+  .tabs button:hover > span{opacity:1;color:var(--text);text-shadow:0 0 14px rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.6)}
+  .tabs button[aria-current="page"]:hover > span{color:transparent}
+}
