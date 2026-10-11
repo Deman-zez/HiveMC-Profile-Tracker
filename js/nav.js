@@ -155,8 +155,15 @@ function onScroll(){
   stickTick = true;
   requestAnimationFrame(() => {
     stickTick = false;
-    const on = scrollY > 6 && !$("#vSnap").classList.contains("hidden");
-    if(on !== stickOn){ stickOn = on; $("#heroTop").classList.toggle("stuck", on); }
+    const on = !$("#vSnap").classList.contains("hidden") && (stickOn ? scrollY > 2 : scrollY > 18);
+    if(on !== stickOn){
+      stickOn = on;
+      const ht = $("#heroTop");
+      ht.classList.toggle("stuck", on);
+      ht.classList.remove("merging", "splitting"); void ht.offsetWidth;
+      ht.classList.add(on ? "merging" : "splitting");
+      clearTimeout(ht.__mt); ht.__mt = setTimeout(() => ht.classList.remove("merging", "splitting"), 700);
+    }
     toTopUpdate();
 
     const max = document.documentElement.scrollHeight - innerHeight;
