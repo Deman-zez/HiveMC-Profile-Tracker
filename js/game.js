@@ -74,7 +74,7 @@ function shrinkFit(pairs){
   });
 }
 function fitStick(){
-  const nk = $("#stickNick");
+  const nk = document.querySelector("#heroTop .idline");
   if(!nk) return;
   nk.style.fontSize = "";
   if(!nk.clientWidth || nk.scrollWidth <= nk.clientWidth + 1) return;

@@ -22,8 +22,6 @@ function renderSnap(){
   document.documentElement.style.setProperty("--rankc2", tag ? tag.c2 : "#ffe6a6");
   const tagHTML = tag ? ' <span class="tag">[<span class="rl">' + tag.t + "</span>]</span>" : "";
   const idHTML = '<span class="nk">' + esc(state.nick || T("noNick")) + tagHTML + "</span>";
-  $("#stickNick").innerHTML = idHTML;
-  $("#stickTag").innerHTML = "";
 
   const shareBtn = state.nick ? '<button class="hbtn" id="shareBtn" type="button" aria-label="' +
     esc(T("share")) + '" title="' + esc(T("share")) + '">' + SHARE_SVG + "</button>" : "";
@@ -31,6 +29,7 @@ function renderSnap(){
     '" title="' + esc(T("qsOpen")) + '">' + SEARCH_SVG + "</button>";
   if(!state.nick){
     hero.innerHTML = "";
+    $("#heroTop").innerHTML = "";
     $("#fetchBtn").classList.add("hidden");
     $("#subtitle").textContent = "";
     $("#myBtn").classList.add("hidden");
@@ -39,10 +38,10 @@ function renderSnap(){
     return;
   }
   $("#fetchBtn").classList.remove("hidden");
-  hero.innerHTML = '<div class="herotop"><h1 class="idline">' +
+  $("#heroTop").innerHTML = '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
-      idHTML + "</h1>" + '<div class="corner">' + searchBtn + shareBtn + "</div></div>" +
-    '<div class="hero"><div class="ava"><span>' +
+      idHTML + "</h1>" + '<div class="corner">' + searchBtn + shareBtn + "</div>";
+  hero.innerHTML = '<div class="hero"><div class="ava"><span>' +
       (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
           JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
        : typeof avaName === "string"
@@ -62,8 +61,6 @@ function renderSnap(){
   const other = !!state.main && state.main.toLowerCase() !== nickKey();
   const myHTML = other ? '<span class="myAv">' + pavHTML(state.main) + '</span><span class="myT">' +
     esc(T("myProfile")) + '</span><span class="myN"' + mainRankStyle() + ">" + esc(state.main) + "</span>" : "";
-  const ss = $("#stickSearch");
-  if(ss){ ss.innerHTML = SEARCH_SVG; ss.onclick = openSearch; ss.setAttribute("aria-label", T("qsOpen")); }
   ["#myBtn"].forEach(sel => {
     const b = $(sel); b.classList.toggle("hidden", !other); b.innerHTML = myHTML;
     if(other) b.setAttribute("aria-label", T("myProfile") + " " + state.main); else b.removeAttribute("aria-label");

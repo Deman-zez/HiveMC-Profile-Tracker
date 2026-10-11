@@ -155,8 +155,8 @@ function onScroll(){
   stickTick = true;
   requestAnimationFrame(() => {
     stickTick = false;
-    const on = scrollY > 130 && !$("#vSnap").classList.contains("hidden");
-    if(on !== stickOn){ stickOn = on; $("#stick").classList.toggle("on", on); }
+    const on = scrollY > 6 && !$("#vSnap").classList.contains("hidden");
+    if(on !== stickOn){ stickOn = on; $("#heroTop").classList.toggle("stuck", on); }
     toTopUpdate();
 
     const max = document.documentElement.scrollHeight - innerHeight;
