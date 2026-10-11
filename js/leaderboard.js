@@ -15,7 +15,9 @@ function lbAppend(n){
   const card = $("#lbBody .lbcard"), sent = card && card.querySelector(".lbsent");
   if(!sent || !lbPending || !lbPending.rows.length) return false;
   const p = lbPending, part = p.rows.splice(0, n);
+  const before = card.querySelectorAll(".lbr").length;
   sent.insertAdjacentHTML("beforebegin", part.map(x => lbRow(x, p.m, p.me, p.top, p.overall)).join(""));
+  staggerIn([...card.querySelectorAll(".lbr")].slice(before), 12);
   const names = card.querySelectorAll(".lbn"), pairs = [];
   for(let i = Math.max(0, names.length - part.length); i < names.length; i++) pairs.push([names[i], 11.5]);
   shrinkFit(pairs);

@@ -202,6 +202,14 @@ function iconUrl(base, id){
   if(!slug) return null;
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
+function staggerIn(els, cap){
+  if((typeof state === "object" && state.lite) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  [...els].slice(0, cap || 40).forEach((el, i) => {
+    el.style.setProperty("--ei", i);
+    el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
+    setTimeout(() => el.classList.remove("enter"), 700 + i * 30);
+  });
+}
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
 const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Object.entries(c).some(([k, v]) =>
   typeof v === "number" && v > 0 && !SKIP.has(k) && !isDateKey(k) && !/^(level|prestige)$/.test(k));

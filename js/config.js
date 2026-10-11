@@ -9,14 +9,18 @@ const PROXY = "https://misty-sky-2dcb.zhoski-demon.workers.dev/?url=";
 async function hiveFetch(url, opts){
   const ctl = typeof AbortController === "function" ? new AbortController() : null;
   const timer = ctl && setTimeout(() => ctl.abort(), 7000);
+  let proxyStatus = 0;
   try{
     const r = await fetch(PROXY + encodeURIComponent(url), Object.assign({}, opts, ctl ? { signal: ctl.signal } : {}));
+    proxyStatus = r.status;
     if(r.ok){ r.__via = "proxy"; apiStatus(true); return r; }
+    // 404 and friends are real answers from Hive; retrying direct would only hit CORS
+    if(r.status < 500 && r.status !== 403){ r.__via = "proxy"; if(r.status !== 429) apiStatus(true); return r; }
   }catch(e){}
   finally{ if(timer) clearTimeout(timer); }
   let r;
   try{ r = await fetch(url, opts); }
-  catch(e){ apiStatus(false); throw e; }
+  catch(e){ if(!proxyStatus || proxyStatus >= 500) apiStatus(false); throw e; }
   r.__via = "direct";
   if(r.status >= 500) apiStatus(false);
   else if(r.status !== 429) apiStatus(true);

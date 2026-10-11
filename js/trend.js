@@ -168,7 +168,11 @@ async function renderActivity(){
     box.innerHTML = list.length || !c.p ? actHTML(list, c.err)
       : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>";
     const mb = box.querySelector(".actmore");
-    if(mb) mb.onclick = () => { actShown += 20; draw(); };
+    if(mb) mb.onclick = () => {
+      const from = box.querySelectorAll(".card > .act").length;
+      actShown += 20; draw();
+      staggerIn([...box.querySelectorAll(".card > .act")].slice(from), 20);
+    };
     fillCatalogue(box, draw);
   };
   if($("#vTrend").classList.contains("hidden")){ draw(); return; }

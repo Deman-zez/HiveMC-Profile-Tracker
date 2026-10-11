@@ -92,7 +92,23 @@ addEventListener("popstate", e => {
   showView(st.v, st.y || 0);
 });
 try{ history.replaceState(navEntry("snap", 0), ""); }catch(e){}
-document.querySelectorAll(".tabs button").forEach(b => { b.onclick = () => go(b.dataset.v); });
+/* tabs switch on finger release, not on the synthesized click: the press animation and the sliding
+   glass plate under the finger must never swallow a tap */
+let tabDown = null, tabUpAt = 0;
+const tabsNav = $(".tabs");
+tabsNav.addEventListener("pointerdown", e => { tabDown = e.button > 0 ? null : e.target.closest("button[data-v]"); }, { passive: true });
+tabsNav.addEventListener("pointercancel", () => { tabDown = null; });
+addEventListener("pointerup", e => {
+  const b = tabDown; tabDown = null;
+  if(!b) return;
+  const r = b.getBoundingClientRect(), pad = 14;
+  if(e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - 24 || e.clientY > r.bottom + 24) return;
+  tabUpAt = Date.now();
+  go(b.dataset.v);
+}, true);
+document.querySelectorAll(".tabs button").forEach(b => {
+  b.onclick = () => { if(Date.now() - tabUpAt > 600) go(b.dataset.v); };
+});
 const tabInd = $(".tabInd");
 let tabIndX = null;
 function placeTabInd(anim){
@@ -108,7 +124,7 @@ function placeTabInd(anim){
     tabInd.classList.remove("stretch"); void tabInd.offsetWidth; tabInd.classList.add("stretch");
   }
   // far jumps glide without overshoot (a springy overshoot over a long distance flies past the edge)
-  tabInd.style.transitionTimingFunction = Math.abs(x - (tabIndX ?? x)) > 120 ? "cubic-bezier(.22,1,.36,1)" : "";
+
   tabInd.style.width = r.width + "px";
   tabInd.style.height = r.height + "px";
   tabInd.style.transform = "translate3d(" + x.toFixed(1) + "px," + top.toFixed(1) + "px,0)";
@@ -167,6 +183,7 @@ function onScroll(){
   stickTick = true;
   requestAnimationFrame(() => {
     stickTick = false;
+    if(document.documentElement.classList.contains("locked")) return;
     const on = !$("#vSnap").classList.contains("hidden") && (stickOn ? scrollY > 2 : scrollY > 18);
     if(on !== stickOn){
       stickOn = on;

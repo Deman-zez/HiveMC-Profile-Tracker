@@ -86,6 +86,7 @@ function openCos(base, arr, from){
     if(!box) return;
     box.innerHTML = '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
       : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div>";
+    staggerIn(box.querySelectorAll(".grid > .it, .tlist > div"), 36);
     markTq(box);
   });
 }

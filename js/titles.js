@@ -357,7 +357,9 @@ const RARITY = { common:["Обычный","Common","#c3bcd0"], uncommon:["Нео
 const HOVER = matchMedia("(hover: hover) and (pointer: fine)").matches;
 function openItemTip(el){
   closeTq();
-  const name = el.dataset.tn; if(!name) return;
+  const name = String(el.dataset.tn || "").replace(/[\uE000-\uF8FF]|[\uDB80-\uDBBF][\uDC00-\uDFFF]/g, "")
+    .replace(/[§&][0-9a-z]/gi, "").replace(/\s+/g, " ").trim();
+  if(!name) return;
   const rk = String(el.dataset.tr || "").toLowerCase().replace(/[^a-z]/g, "");
   const r = RARITY[rk];
   const pop = document.createElement("div");

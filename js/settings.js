@@ -17,8 +17,9 @@ function renderChips(){
 function applyLang(){
   L = langCode();
   document.documentElement.lang = L;
-  $("#tab1").textContent = T("tab1"); $("#tab2").textContent = T("tab2"); $("#tab3").textContent = T("tab3");
-  $("#tab4").textContent = T("tab4");
+  [["#tab1", "tab1"], ["#tab2", "tab2"], ["#tab3", "tab3"], ["#tab4", "tab4"]].forEach(([s, k]) => {
+    const b = $(s); b.setAttribute("aria-label", T(k)); b.title = T(k);
+  });
   renderLb();
   $("#fetchBtn").textContent = T("snap");
   $("#trendHead").textContent = T("tab2"); $("#setHead").textContent = T("tab3");
