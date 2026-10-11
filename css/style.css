@@ -71,7 +71,8 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.22) 30%,rgba(255,192,46,.35) 50%,rgba(255,255,255,.22) 70%,transparent);
   transform:scaleX(0);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1) .05s,opacity .3s}
 #heroTop.stuck::before{opacity:1;transform:none}
-#heroTop:not(.stuck)::before{transition:opacity .22s ease,transform .22s ease;transform:translate3d(0,-6px,0)}
+#heroTop:not(.stuck)::before{transition:opacity .55s cubic-bezier(.3,0,.2,1),transform .55s cubic-bezier(.3,0,.2,1),
+  -webkit-backdrop-filter .55s ease,backdrop-filter .55s ease;transform:translate3d(0,-4px,0) scaleY(.92)}
 #heroTop:not(.stuck)::after{transition:opacity .18s ease,transform 0s .2s}
 #heroTop.stuck::after{transform:none;opacity:1}
 /* two separate glass drops; on stick the share drop rolls into the search drop and is absorbed */
@@ -275,7 +276,8 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   background:radial-gradient(120% 80% at 50% 0%, rgba(255,192,46,.14), transparent 62%);
   transition:opacity .28s ease}
 .game .big,.game b{transition:color .2s ease}
-.game b{display:block;font-size:16px;font-weight:700;margin-bottom:10px}
+.game b{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;font-size:16px;font-weight:700;margin-bottom:10px}
+.game b .badge{margin-left:0}
 .game .gs{display:grid;gap:8px;margin-top:2px}
 .game .gs > div{background:none;padding:0;border-radius:12px}
 .game .gs span{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;
@@ -464,22 +466,22 @@ svg.line{width:100%;height:100%;display:block}
 .tabs button{flex:1;background:none;border:none;font-size:14px;padding:0;color:var(--soft);
   cursor:pointer}
 .tabs button{font-weight:500;letter-spacing:.01em}
-.tabs button > span{transition:color .25s ease,transform .12s ease,opacity .25s ease;opacity:.86;
-  text-shadow:0 0 12px rgba(255,255,255,.2),0 1px 2px rgba(0,0,0,.65)}
+.tabs button > span{transition:color .25s ease,transform .12s ease,opacity .25s ease,filter .25s ease;opacity:1;color:#b9a9d6;
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.14)) drop-shadow(0 1px 1.5px rgba(0,0,0,.6))}
 .tabs button[aria-current="page"]{color:var(--gold);font-weight:700}
-.tabs button[aria-current="page"] > span{opacity:1;color:transparent;
-  background-image:linear-gradient(180deg,#ffe7a3 0%,#ffc02e 55%,#e8970f 100%);-webkit-background-clip:text;background-clip:text;
-  text-shadow:none;filter:drop-shadow(0 0 5px rgba(255,192,46,.6)) drop-shadow(0 0 14px rgba(255,192,46,.32));
+.tabs button[aria-current="page"] > span{opacity:1;color:#ffcf55;
+  text-shadow:none;filter:drop-shadow(0 0 4px rgba(255,192,46,.65)) drop-shadow(0 0 12px rgba(255,192,46,.35));
   animation:tabPop .45s cubic-bezier(.3,1.4,.5,1)}
 @keyframes tabPop{0%{transform:scale(.92)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
 .lite .tabs button[aria-current="page"] > span{animation:none}
 @media (prefers-reduced-motion: reduce){ .tabs button[aria-current="page"] > span{animation:none} }
-.tabs button > span{display:block;padding:11px;border-radius:10px;pointer-events:none}
+.tabs button > span{display:grid;place-items:center;width:58px;height:44px;margin:0 auto;padding:0;border-radius:10px;pointer-events:none}
+.tabs button > span svg{display:block;width:24px;height:24px}
 .tabs button{position:relative;z-index:1}
 .tabInd{position:absolute;left:0;top:0;z-index:0;border-radius:12px;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 55%,rgba(255,192,46,.08));
   box-shadow:inset 0 1px 1px rgba(255,255,255,.2),inset 0 0 16px rgba(255,255,255,.06),0 6px 16px rgba(0,0,0,.28);
-  transition:transform .5s cubic-bezier(.3,1.25,.45,1),width .5s cubic-bezier(.3,1.25,.45,1)}
+  transition:transform .46s cubic-bezier(.22,1,.36,1),width .46s cubic-bezier(.22,1,.36,1)}
 .tabInd.still{transition:none}
 .tabInd::after{content:"";position:absolute;inset:0;border-radius:inherit;
   background:radial-gradient(80% 60% at 50% 0%,rgba(255,255,255,.22),transparent 70%);opacity:.7}
@@ -663,7 +665,7 @@ html.locked, html.locked body{overflow:hidden}
 @media (max-width:440px){
   .tabs{gap:2px;padding-left:6px;padding-right:6px}
   .tabs button{font-size:13.5px}
-  .tabs button > span{padding:11px 4px}
+  .tabs button > span{width:52px}
 }
 .lbfind{margin-top:10px}
 .lbfind .nickbox{flex:1;min-width:0}
@@ -938,7 +940,8 @@ html.locked, html.locked body{overflow:hidden}
       inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.04),
       inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -14px 22px -14px rgba(0,0,0,.6)}
   /* refracting pieces: clearer tint so the bent backdrop shows, bright rim like thick glass */
-  .refract{-webkit-backdrop-filter:var(--lgf) blur(2.5px) saturate(165%);backdrop-filter:var(--lgf) blur(2.5px) saturate(165%)}
+  .refract{-webkit-backdrop-filter:var(--lgf) blur(4px) saturate(165%);backdrop-filter:var(--lgf) blur(4px) saturate(165%)}
+  .tabs.glass.refract{-webkit-backdrop-filter:var(--lgf) blur(9px) saturate(170%);backdrop-filter:var(--lgf) blur(9px) saturate(170%)}
   .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,.34),rgba(12,6,22,.46));
     box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.09),inset 0 0 28px rgba(255,255,255,.035)}
   .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 60%,rgba(255,192,46,.06));
@@ -994,9 +997,80 @@ html.locked, html.locked body{overflow:hidden}
 @media (prefers-reduced-motion: reduce){ #heroTop .hbtn{animation:none} .lgGlow{display:none} }
 @media (min-width:900px){
   .tabs button:hover > span{opacity:1;color:var(--text);text-shadow:0 0 14px rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.6)}
-  .tabs button[aria-current="page"]:hover > span{color:transparent}
+  .tabs button:hover > span{filter:drop-shadow(0 0 6px rgba(255,255,255,.35))}
+  .tabs button[aria-current="page"]:hover > span{color:#ffcf55;filter:drop-shadow(0 0 4px rgba(255,192,46,.65)) drop-shadow(0 0 12px rgba(255,192,46,.35))}
 }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
   .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.34),rgba(16,8,28,.5) 70%)}
   .lite .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.82),rgba(20,10,34,.9) 70%)}
+}
+
+/* ---------- glass, round 3 ---------- */
+.lgSpec{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;
+  background-size:100% 100%;background-repeat:no-repeat;opacity:.62;mix-blend-mode:screen}
+.lite .lgSpec{display:none}
+@keyframes lgJelly{0%{scale:1 1}16%{scale:1.075 .925}40%{scale:.955 1.045}64%{scale:1.02 .985}84%{scale:.995 1.005}100%{scale:1 1}}
+@keyframes lgJellyWide{0%{scale:1 1}16%{scale:1.012 .94}40%{scale:.994 1.03}66%{scale:1.003 .992}100%{scale:1 1}}
+.lgl.jelly{animation:lgJelly .62s cubic-bezier(.3,.7,.4,1);transform-origin:var(--tx,50%) var(--ty,50%)}
+.tabs.lgl.jelly{animation:lgJellyWide .6s cubic-bezier(.3,.7,.4,1)}
+.lite .lgl.jelly{animation:none}
+@media (prefers-reduced-motion: reduce){ .lgl.jelly{animation:none} }
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 60%,rgba(255,192,46,.05))}
+  .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.2),rgba(16,8,28,.36) 70%)}
+  #heroTop:not(.stuck)::before{-webkit-backdrop-filter:blur(0) saturate(100%);backdrop-filter:blur(0) saturate(100%)}
+  .apidown{background:linear-gradient(180deg,rgba(34,16,46,.62),rgba(18,8,26,.74));
+    -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}
+  .lite .apidown{background:rgba(24,13,38,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* share drop flows into the search drop through a liquid neck, and buds back out */
+.hbridge{position:absolute;left:21px;top:50%;width:50px;height:30px;margin-top:-15px;border-radius:15px;pointer-events:none;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.6),rgba(16,8,28,.72) 70%);
+  transform-origin:100% 50%;transform:scaleX(0);opacity:0}
+@keyframes hbMerge{0%{transform:scaleX(0) scaleY(.6);opacity:0}25%{transform:scaleX(1) scaleY(.55);opacity:1}
+  65%{transform:scaleX(.45) scaleY(.75);opacity:1}100%{transform:scaleX(0) scaleY(.9);opacity:0}}
+@keyframes hbSplit{0%{transform:scaleX(0) scaleY(.9);opacity:0}35%{transform:scaleX(.55) scaleY(.7);opacity:1}
+  70%{transform:scaleX(1) scaleY(.5);opacity:.9}100%{transform:scaleX(0) scaleY(.4);opacity:0}}
+@keyframes shMerge{0%{transform:none;opacity:1}30%{transform:translateX(10px) scale(1.04,.86);opacity:1}
+  70%{transform:translateX(36px) scale(.6,.7);opacity:.8}100%{transform:translateX(48px) scale(.3);opacity:0}}
+@keyframes shSplit{0%{transform:translateX(48px) scale(.3);opacity:0}40%{transform:translateX(26px) scale(.7,.8);opacity:.9}
+  75%{transform:translateX(-3px) scale(1.06,.94);opacity:1}100%{transform:none;opacity:1}}
+#heroTop.merging .hbridge{animation:hbMerge .55s cubic-bezier(.4,0,.3,1) both}
+#heroTop.splitting .hbridge{transform-origin:0 50%;animation:hbSplit .55s cubic-bezier(.4,0,.3,1) both}
+#heroTop.merging #shareBtn{animation:shMerge .5s cubic-bezier(.45,0,.35,1) both}
+#heroTop.splitting #shareBtn{animation:shSplit .6s cubic-bezier(.3,.8,.35,1) both}
+#heroTop.merging #shareBtn svg{transition:opacity .15s ease;opacity:0}
+.lite #heroTop .hbridge,.lite #heroTop #shareBtn{animation:none !important}
+@media (prefers-reduced-motion: reduce){ #heroTop .hbridge,#heroTop #shareBtn{animation:none !important} }
+/* entrance for freshly shown rows and items */
+@keyframes enterUp{from{opacity:0;transform:translate3d(0,10px,0) scale(.985)}to{opacity:1;transform:none}}
+.enter{animation:enterUp .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--ei,0) * 28ms)}
+/* in-page dropdown */
+.selw{position:relative;display:block;flex:1 1 0;min-width:0;cursor:pointer;border-radius:12px;outline:none}
+.selw select{pointer-events:none;width:100%}
+.selw:focus-visible{box-shadow:0 0 0 2px var(--gold)}
+.selw.open select{border-color:rgba(255,192,46,.55)}
+.lbctl .selw[data-for="lbSort"]{grid-column:1 / -1}
+@media (min-width:900px){ .lbctl .selw[data-for="lbSort"]{grid-column:auto} }
+.selpop{position:fixed;z-index:70;overflow:auto;overscroll-behavior:contain;padding:6px;border-radius:16px;
+  background:rgba(22,11,36,.97);box-shadow:0 18px 44px rgba(0,0,0,.55),inset 0 1px 1px rgba(255,255,255,.1);
+  transform-origin:50% 0;animation:selIn .26s cubic-bezier(.2,.9,.25,1)}
+.selpop.up{transform-origin:50% 100%}
+.selpop.out{animation:selOut .18s ease forwards;pointer-events:none}
+@keyframes selIn{from{opacity:0;transform:translate3d(0,-8px,0) scaleY(.9)}to{opacity:1;transform:none}}
+@keyframes selOut{to{opacity:0;transform:translate3d(0,-6px,0) scaleY(.95)}}
+.selo{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 13px;border:none;
+  border-radius:11px;background:none;color:var(--text);font-size:15px;text-align:left;cursor:pointer;
+  animation:enterUp .3s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--ei,0) * 18ms)}
+.selo + .selo{margin-top:2px}
+.selo:active,.selo:hover{background:rgba(255,255,255,.06)}
+.selo.on{color:var(--gold);font-weight:700;background:rgba(255,192,46,.1)}
+.selo:disabled{opacity:.4;cursor:default}
+.selt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lite .selpop,.lite .selo{animation:none}
+@media (prefers-reduced-motion: reduce){ .selpop,.selo,.enter{animation:none} }
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .selpop{background:linear-gradient(180deg,rgba(34,18,54,.72),rgba(16,8,28,.84));
+    -webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%)}
+  .lite .selpop{background:rgba(22,11,36,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
 }
