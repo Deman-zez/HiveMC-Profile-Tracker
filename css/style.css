@@ -57,7 +57,27 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   background:linear-gradient(90deg,var(--gold),rgba(255,192,46,0) 70%)}
 #hero{position:relative}
 .herotop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:2px}
-.herotop .idline{flex:1 1 auto;min-width:0}
+.herotop .idline{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the name row itself sticks: the nick never moves, a glass bar grows in behind it
+   and the capsule folds down to just the search button */
+#heroTop{position:sticky;top:0;z-index:8;margin:-14px -16px 2px;padding:14px 16px 12px}
+#heroTop:empty{display:none}
+#heroTop::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:100vw;margin-left:-50vw;z-index:-1;
+  pointer-events:none;background:rgba(16,8,28,.96);
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+  opacity:0;transform:translate3d(0,-14px,0) scaleY(.6);transform-origin:50% 0;
+  transition:opacity .28s ease,transform .42s cubic-bezier(.2,.9,.25,1)}
+#heroTop::after{content:"";position:absolute;bottom:0;left:50%;width:100vw;margin-left:-50vw;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22) 30%,rgba(255,192,46,.35) 50%,rgba(255,255,255,.22) 70%,transparent);
+  transform:scaleX(0);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1) .05s,opacity .3s}
+#heroTop.stuck::before{opacity:1;transform:none}
+#heroTop.stuck::after{transform:none;opacity:1}
+#heroTop #shareBtn{transition:width .34s cubic-bezier(.2,.9,.25,1),opacity .2s ease,transform .34s cubic-bezier(.2,.9,.25,1)}
+#heroTop.stuck #shareBtn{width:0;opacity:0;transform:scale(.6);pointer-events:none}
+#heroTop.stuck #shareBtn::before{opacity:0}
+.lite #heroTop::before,.lite #heroTop::after,.lite #heroTop #shareBtn{transition:none}
+@media (prefers-reduced-motion: reduce){ #heroTop::before,#heroTop::after,#heroTop #shareBtn{transition:none} }
+@media (min-width:900px){ #heroTop{margin:-20px -24px 2px;padding:20px 24px 14px} }
 .corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;padding:2px;
   border-radius:15px;background:rgba(24,13,38,.72);border:1px solid var(--edge);
   box-shadow:0 6px 18px rgba(0,0,0,.28)}
@@ -440,7 +460,15 @@ svg.line{width:100%;height:100%;display:block}
   padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
 .tabs button{flex:1;background:none;border:none;font-size:14px;padding:0;color:var(--soft);
   cursor:pointer}
+.tabs button{font-weight:500;letter-spacing:.01em}
+.tabs button > span{transition:color .25s ease,transform .12s ease,opacity .25s ease;opacity:.82}
 .tabs button[aria-current="page"]{color:var(--gold);font-weight:700}
+.tabs button[aria-current="page"] > span{opacity:1;color:transparent;
+  background-image:linear-gradient(180deg,#ffe7a3 0%,#ffc02e 55%,#e8970f 100%);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 8px rgba(255,192,46,.32));animation:tabPop .45s cubic-bezier(.3,1.4,.5,1)}
+@keyframes tabPop{0%{transform:scale(.92)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
+.lite .tabs button[aria-current="page"] > span{animation:none}
+@media (prefers-reduced-motion: reduce){ .tabs button[aria-current="page"] > span{animation:none} }
 .tabs button > span{display:block;padding:11px;border-radius:10px;pointer-events:none}
 .tabs button{position:relative;z-index:1}
 .tabInd{position:absolute;left:0;top:0;z-index:0;border-radius:12px;pointer-events:none;
@@ -891,18 +919,33 @@ html.locked, html.locked body{overflow:hidden}
 .adx:active{background:rgba(255,255,255,.06)}
 .lite .apidown{transition:opacity .15s linear}
 
-/* frosted "liquid glass" for the floating bars */
+/* liquid glass: dark tint, rim light, blur — and real edge refraction where the browser can do it (see glass.js) */
+.tabs.glass{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;gap:2px;
+  border:none;border-radius:24px;background:rgba(16,8,28,.94);
+  box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.07)}
+.tabs.glass .tabInd{border-radius:18px}
+.tabs.glass button > span{border-radius:18px}
+.stick.glass{background:rgba(16,8,28,.96)}
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
-  .glass{background:linear-gradient(180deg,rgba(44,24,68,.52),rgba(18,9,30,.62));
-    -webkit-backdrop-filter:blur(22px) saturate(175%) brightness(1.05);backdrop-filter:blur(22px) saturate(175%) brightness(1.05)}
-  .tabs.glass{box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 -12px 30px rgba(0,0,0,.28)}
-  .stick.glass{box-shadow:inset 0 -1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.28)}
-  .glass::before{content:"";position:absolute;left:8%;right:8%;height:1px;pointer-events:none;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent)}
-  .tabs.glass::before{top:0}
-  .stick.glass::before{bottom:0}
-  .modal.msearch .inner{background:linear-gradient(180deg,rgba(40,22,62,.72),rgba(18,9,30,.82));
-    -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%)}
-  .lite .glass,.lite .modal.msearch .inner{background:rgba(19,10,30,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .glass{background:linear-gradient(180deg,rgba(26,14,42,.62),rgba(12,6,22,.74));
+    -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+  .tabs.glass{background:linear-gradient(180deg,rgba(30,16,48,.55),rgba(12,6,22,.7));
+    box-shadow:0 16px 40px rgba(0,0,0,.55),
+      inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.04),
+      inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -14px 22px -14px rgba(0,0,0,.6)}
+  .tabs.glass.refract{-webkit-backdrop-filter:url(#lgRefract) blur(5px) saturate(150%);backdrop-filter:url(#lgRefract) blur(5px) saturate(150%)}
+  .tabs.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(60% 120% at 12% -30%,rgba(255,255,255,.14),transparent 60%),
+      radial-gradient(50% 120% at 92% 130%,rgba(255,192,46,.07),transparent 60%)}
+  #heroTop::before{background:linear-gradient(180deg,rgba(26,14,42,.66),rgba(12,6,22,.78));
+    -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+  .lite #heroTop::before{background:rgba(16,8,28,.96);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .modal.msearch .inner{background:linear-gradient(180deg,rgba(26,14,42,.8),rgba(12,6,22,.88));
+    -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%)}
+  .lite .glass,.lite .tabs.glass.refract,.lite .modal.msearch .inner{background:rgba(16,8,28,.96);
+    -webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (min-width:900px){
+  .tabs.glass{left:50%;right:auto;bottom:16px;width:min(580px,calc(100% - 32px));transform:translateX(-50%);border-radius:24px}
 }
 .stick:not(.on){visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s,visibility 0s .28s}
