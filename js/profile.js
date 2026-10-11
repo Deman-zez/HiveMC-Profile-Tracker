@@ -40,8 +40,8 @@ function renderSnap(){
   $("#fetchBtn").classList.remove("hidden");
   $("#heroTop").innerHTML = '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
-      idHTML + "</h1>" + '<div class="corner">' + searchBtn + shareBtn + "</div>";
-  if(typeof lgAttach === "function"){ lgAttach($("#heroTop .corner"), { scale: 24, band: 12 }); lgDecor($("#heroTop .corner")); lgAdaptSoon(); }
+      idHTML + "</h1>" + '<div class="corner">' + shareBtn + searchBtn + "</div>";
+  if(typeof lgDecor === "function"){ lgDecor($("#heroTop .corner")); lgAdaptSoon(); }
   hero.innerHTML = '<div class="hero"><div class="ava"><span>' +
       (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
           JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'

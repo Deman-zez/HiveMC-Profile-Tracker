@@ -89,17 +89,20 @@ document.querySelectorAll(".tabs button").forEach(b => { b.onclick = () => go(b.
 const tabInd = $(".tabInd");
 let tabIndX = null;
 function placeTabInd(anim){
-  const nav = $(".tabs"), cur = nav && nav.querySelector('button[aria-current="page"] > span');
+  const nav = $(".tabs"), btn = nav && nav.querySelector('button[aria-current="page"]'), cur = btn && btn.firstElementChild;
   if(!tabInd || !cur) return;
-  const n = nav.getBoundingClientRect(), r = cur.getBoundingClientRect();
-  const x = r.left - n.left, moved = tabIndX !== null && Math.abs(x - tabIndX) > 1;
+  // layout offsets ignore the press/pop transforms, so the plate always lands exactly under the label
+  const r = { width: cur.offsetWidth, height: cur.offsetHeight };
+  const x = btn.offsetLeft + cur.offsetLeft, top = btn.offsetTop + cur.offsetTop;
+  if(!r.width) return;
+  const moved = tabIndX !== null && Math.abs(x - tabIndX) > 1;
   tabInd.classList.toggle("still", !anim || tabIndX === null);
   if(moved && anim){
     tabInd.classList.remove("stretch"); void tabInd.offsetWidth; tabInd.classList.add("stretch");
   }
   tabInd.style.width = r.width + "px";
   tabInd.style.height = r.height + "px";
-  tabInd.style.transform = "translate3d(" + x.toFixed(1) + "px," + (r.top - n.top).toFixed(1) + "px,0)";
+  tabInd.style.transform = "translate3d(" + x.toFixed(1) + "px," + top.toFixed(1) + "px,0)";
   tabIndX = x;
 }
 addEventListener("resize", () => placeTabInd(false));
