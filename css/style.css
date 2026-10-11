@@ -74,30 +74,28 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 #heroTop:not(.stuck)::before{transition:opacity .22s ease,transform .22s ease;transform:translate3d(0,-6px,0)}
 #heroTop:not(.stuck)::after{transition:opacity .18s ease,transform 0s .2s}
 #heroTop.stuck::after{transform:none;opacity:1}
-#heroTop .corner{clip-path:inset(-24px -24px -24px -24px round 38px);
-  transition:clip-path .36s cubic-bezier(.2,.9,.25,1)}
-#heroTop.stuck .corner{clip-path:inset(0 0 0 44px round 14px)}
-#heroTop .corner .hbtn{transition:opacity .2s ease,transform .36s cubic-bezier(.2,.9,.25,1)}
-#heroTop.stuck #shareBtn{opacity:0;transform:translateX(26px) scale(.4);pointer-events:none}
-#heroTop.stuck #searchBtn::before{opacity:0}
+/* two separate glass drops; on stick the share drop rolls into the search drop and is absorbed */
+#heroTop .corner .hbtn{transition:opacity .26s ease,transform .42s cubic-bezier(.3,.9,.35,1)}
+#heroTop.stuck #shareBtn{opacity:0;transform:translateX(48px) scale(.45);pointer-events:none;
+  transition:opacity .3s ease .06s,transform .42s cubic-bezier(.5,0,.4,1)}
 .lite #heroTop::before,.lite #heroTop::after,.lite #heroTop #shareBtn{transition:none}
 @media (prefers-reduced-motion: reduce){ #heroTop::before,#heroTop::after,#heroTop #shareBtn{transition:none} }
 @media (min-width:900px){ #heroTop{margin:-20px -24px 2px;padding:20px 24px 14px} }
-.corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;padding:2px;
-  border-radius:15px;background:rgba(24,13,38,.72);border:1px solid transparent;
-  box-shadow:0 6px 18px rgba(0,0,0,.28),inset 0 1px 1px rgba(255,255,255,.1)}
-.hbtn{position:relative;width:42px;height:36px;flex:none;padding:0;border:none;border-radius:11px;cursor:pointer;
-  background:none;color:var(--text);display:grid;place-items:center;
-  transition:transform .12s ease,color .2s ease,background .2s ease}
+.corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;gap:8px}
+.hbtn{position:relative;width:42px;height:42px;flex:none;padding:0;border:none;border-radius:50%;cursor:pointer;
+  color:var(--text);display:grid;place-items:center;isolation:isolate;
+  background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.82),rgba(20,10,34,.9) 70%);
+  box-shadow:0 8px 20px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.12),inset 0 0 14px rgba(255,255,255,.04)}
 .hbtn svg{width:19px;height:19px}
-.hbtn + .hbtn::before{content:"";position:absolute;left:-1px;top:10px;bottom:10px;width:1px;background:var(--edge)}
-.hbtn:active{color:var(--gold);background:rgba(255,192,46,.16)}
+.hbtn svg{position:relative;z-index:1}
+.hbtn{transition:color .2s ease}
+.hbtn:active{color:var(--gold)}
 @keyframes hbtnFlash{
   0%{background:rgba(255,192,46,.34);color:var(--gold)}
   60%{background:rgba(255,192,46,.14);color:var(--gold)}
   100%{background:transparent}
 }
-.hbtn.press{animation:press .33s cubic-bezier(.2,.8,.3,1), hbtnFlash .5s ease-out}
+.hbtn.press{animation:press .33s cubic-bezier(.2,.8,.3,1)}
 .lite .hbtn.press{animation:none}
 .hbtn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .myBtn{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -161,7 +159,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 @media (min-width:900px){
   .modal.mpick .inner{max-width:520px;overflow:visible}
   .mainBtn:hover{background:rgba(255,192,46,.13);border-color:var(--gold)}
-  .hbtn:hover{color:var(--gold);background:rgba(255,192,46,.09)}
+  .hbtn:hover{color:var(--gold)}
   .mainBtn.set:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.4)}
 }
 .idline{display:flex;align-items:center;gap:9px;padding:0;margin:0;font-size:24px;font-weight:800;
@@ -485,7 +483,7 @@ svg.line{width:100%;height:100%;display:block}
 .tabInd.still{transition:none}
 .tabInd::after{content:"";position:absolute;inset:0;border-radius:inherit;
   background:radial-gradient(80% 60% at 50% 0%,rgba(255,255,255,.22),transparent 70%);opacity:.7}
-@keyframes tabStretch{0%{scale:1 1}35%{scale:1.14 .9}70%{scale:.97 1.04}100%{scale:1 1}}
+@keyframes tabStretch{0%{scale:1 1}35%{scale:1.08 .93}70%{scale:.98 1.03}100%{scale:1 1}}
 .tabInd.stretch{animation:tabStretch .5s cubic-bezier(.3,.9,.4,1)}
 .lite .tabInd{transition:none}.lite .tabInd.stretch{animation:none}
 @media (prefers-reduced-motion: reduce){ .tabInd{transition:none} .tabInd.stretch{animation:none} }
@@ -947,7 +945,7 @@ html.locked, html.locked body{overflow:hidden}
     box-shadow:inset 0 1px 1px rgba(255,255,255,.2),inset 0 0 16px rgba(255,255,255,.07),0 6px 18px rgba(0,0,0,.28)}
 
   .lite .refract{-webkit-backdrop-filter:none;backdrop-filter:none}
-  .lite .tabs.glass.refract,.lite #heroTop .corner.refract{background:rgba(16,8,28,.96)}
+  .lite .tabs.glass.refract{background:rgba(16,8,28,.96)}
   .tabs.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
     background:radial-gradient(60% 120% at 12% -30%,rgba(255,255,255,.14),transparent 60%),
       radial-gradient(50% 120% at 92% 130%,rgba(255,192,46,.07),transparent 60%)}
@@ -986,15 +984,19 @@ html.locked, html.locked body{overflow:hidden}
   .lite .toTop.refract{background:radial-gradient(120% 120% at 30% 20%,#2e1848 0%,#170c25 70%)}
 }
 /* the share button flows into the search button like two drops merging, and splits back out */
-#heroTop .corner{transform-origin:100% 50%}
+
 
 @keyframes lgMerge{0%{transform:none}35%{transform:scale(.9,1.1)}65%{transform:scale(1.05,.95)}85%{transform:scale(.99,1.01)}100%{transform:none}}
 @keyframes lgSplit{0%{transform:none}30%{transform:scale(1.08,.9)}60%{transform:scale(.97,1.04)}100%{transform:none}}
-#heroTop.merging .corner{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1)}
-#heroTop.splitting .corner{animation:lgSplit .6s cubic-bezier(.3,.9,.4,1)}
-.lite #heroTop .corner{animation:none}
-@media (prefers-reduced-motion: reduce){ #heroTop .corner{animation:none} .lgGlow{display:none} }
+#heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .12s}
+#heroTop.splitting #searchBtn{animation:lgSplit .6s cubic-bezier(.3,.9,.4,1)}
+.lite #heroTop .hbtn{animation:none}
+@media (prefers-reduced-motion: reduce){ #heroTop .hbtn{animation:none} .lgGlow{display:none} }
 @media (min-width:900px){
   .tabs button:hover > span{opacity:1;color:var(--text);text-shadow:0 0 14px rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.6)}
   .tabs button[aria-current="page"]:hover > span{color:transparent}
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.34),rgba(16,8,28,.5) 70%)}
+  .lite .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.82),rgba(20,10,34,.9) 70%)}
 }
