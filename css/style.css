@@ -74,15 +74,18 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 #heroTop:not(.stuck)::before{transition:opacity .22s ease,transform .22s ease;transform:translate3d(0,-6px,0)}
 #heroTop:not(.stuck)::after{transition:opacity .18s ease,transform 0s .2s}
 #heroTop.stuck::after{transform:none;opacity:1}
-#heroTop #shareBtn{transition:width .34s cubic-bezier(.2,.9,.25,1),opacity .2s ease,transform .34s cubic-bezier(.2,.9,.25,1)}
-#heroTop.stuck #shareBtn{width:0;opacity:0;transform:scale(.6);pointer-events:none}
-#heroTop.stuck #shareBtn::before{opacity:0}
+#heroTop .corner{clip-path:inset(-24px -24px -24px -24px round 38px);
+  transition:clip-path .36s cubic-bezier(.2,.9,.25,1)}
+#heroTop.stuck .corner{clip-path:inset(0 0 0 44px round 14px)}
+#heroTop .corner .hbtn{transition:opacity .2s ease,transform .36s cubic-bezier(.2,.9,.25,1)}
+#heroTop.stuck #shareBtn{opacity:0;transform:translateX(26px) scale(.4);pointer-events:none}
+#heroTop.stuck #searchBtn::before{opacity:0}
 .lite #heroTop::before,.lite #heroTop::after,.lite #heroTop #shareBtn{transition:none}
 @media (prefers-reduced-motion: reduce){ #heroTop::before,#heroTop::after,#heroTop #shareBtn{transition:none} }
 @media (min-width:900px){ #heroTop{margin:-20px -24px 2px;padding:20px 24px 14px} }
 .corner{position:relative;z-index:2;flex:none;display:flex;align-items:center;padding:2px;
-  border-radius:15px;background:rgba(24,13,38,.72);border:1px solid var(--edge);
-  box-shadow:0 6px 18px rgba(0,0,0,.28)}
+  border-radius:15px;background:rgba(24,13,38,.72);border:1px solid transparent;
+  box-shadow:0 6px 18px rgba(0,0,0,.28),inset 0 1px 1px rgba(255,255,255,.1)}
 .hbtn{position:relative;width:42px;height:36px;flex:none;padding:0;border:none;border-radius:11px;cursor:pointer;
   background:none;color:var(--text);display:grid;place-items:center;
   transition:transform .12s ease,color .2s ease,background .2s ease}
@@ -477,8 +480,7 @@ svg.line{width:100%;height:100%;display:block}
 .tabs button{position:relative;z-index:1}
 .tabInd{position:absolute;left:0;top:0;z-index:0;border-radius:12px;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 55%,rgba(255,192,46,.08));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.25),
-    inset 0 0 0 1px rgba(255,255,255,.08),0 6px 16px rgba(0,0,0,.28);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.2),inset 0 0 16px rgba(255,255,255,.06),0 6px 16px rgba(0,0,0,.28);
   transition:transform .5s cubic-bezier(.3,1.25,.45,1),width .5s cubic-bezier(.3,1.25,.45,1)}
 .tabInd.still{transition:none}
 .tabInd::after{content:"";position:absolute;inset:0;border-radius:inherit;
@@ -926,7 +928,7 @@ html.locked, html.locked body{overflow:hidden}
 /* liquid glass: dark tint, rim light, blur — and real edge refraction where the browser can do it (see glass.js) */
 .tabs.glass{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;gap:2px;
   border:none;border-radius:24px;background:rgba(16,8,28,.94);
-  box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.07)}
+  box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 1px rgba(255,255,255,.08)}
 .tabs.glass .tabInd{border-radius:18px}
 .tabs.glass button > span{border-radius:18px}
 .stick.glass{background:rgba(16,8,28,.96)}
@@ -940,15 +942,10 @@ html.locked, html.locked body{overflow:hidden}
   /* refracting pieces: clearer tint so the bent backdrop shows, bright rim like thick glass */
   .refract{-webkit-backdrop-filter:var(--lgf) blur(2.5px) saturate(165%);backdrop-filter:var(--lgf) blur(2.5px) saturate(165%)}
   .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,.34),rgba(12,6,22,.46));
-    box-shadow:0 16px 40px rgba(0,0,0,.5),
-      inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.42),inset -1px -1px 1px -.5px rgba(255,255,255,.16),
-      inset 0 0 0 1px rgba(255,255,255,.07),inset 0 0 24px rgba(255,255,255,.05)}
+    box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.09),inset 0 0 28px rgba(255,255,255,.035)}
   .tabInd.refract{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 60%,rgba(255,192,46,.06));
-    box-shadow:inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.55),inset -1px -1px 1px -.5px rgba(255,255,255,.2),
-      inset 0 0 0 1px rgba(255,255,255,.1),inset 0 0 16px rgba(255,255,255,.08),0 6px 18px rgba(0,0,0,.3)}
-  #heroTop .corner.refract{background:rgba(22,11,38,.3);border-color:transparent;
-    box-shadow:0 8px 22px rgba(0,0,0,.35),inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.4),
-      inset -1px -1px 1px -.5px rgba(255,255,255,.15),inset 0 0 0 1px rgba(255,255,255,.07)}
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.2),inset 0 0 16px rgba(255,255,255,.07),0 6px 18px rgba(0,0,0,.28)}
+
   .lite .refract{-webkit-backdrop-filter:none;backdrop-filter:none}
   .lite .tabs.glass.refract,.lite #heroTop .corner.refract{background:rgba(16,8,28,.96)}
   .tabs.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
@@ -970,11 +967,9 @@ html.locked, html.locked body{overflow:hidden}
 /* ---- liquid glass layers ---- */
 @property --lgt{syntax:"<number>";inherits:true;initial-value:.36}
 .lgl{isolation:isolate}
-.lgRim{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;padding:1.3px;
-  background:radial-gradient(150% 170% at var(--lgx,18%) var(--lgy,0%),rgba(255,255,255,.9),rgba(255,255,255,.18) 34%,
-    rgba(255,255,255,.05) 58%,rgba(255,255,255,.3) 100%);
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
-  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:.8}
+.lgRim{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:radial-gradient(90% 140% at var(--lgx,18%) var(--lgy,0%),rgba(255,255,255,.11),rgba(255,255,255,.03) 45%,transparent 70%);
+  mix-blend-mode:screen}
 .lgGlow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;opacity:0;
   background:radial-gradient(circle at var(--tx,50%) var(--ty,50%),rgba(255,240,205,.42),rgba(255,192,46,.14) 32%,transparent 62%);
   transition:opacity .6s ease}
@@ -982,7 +977,7 @@ html.locked, html.locked body{overflow:hidden}
 .lgl.hov > .lgGlow{opacity:.4;transition:opacity .25s ease}
 .tabs.glass,#heroTop{transition:--lgt .45s ease}
 .toTop .lgRim{border-radius:50%}
-.lite .lgRim{background:linear-gradient(160deg,rgba(255,255,255,.4),rgba(255,255,255,.06) 50%,rgba(255,255,255,.18))}
+.lite .lgRim{display:none}
 .lite .lgGlow{display:none}
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
   .tabs.glass.refract{background:linear-gradient(180deg,rgba(30,15,50,calc(var(--lgt) - .02)),rgba(12,6,22,calc(var(--lgt) + .1)))}
@@ -992,7 +987,7 @@ html.locked, html.locked body{overflow:hidden}
 }
 /* the share button flows into the search button like two drops merging, and splits back out */
 #heroTop .corner{transform-origin:100% 50%}
-#heroTop.stuck #shareBtn{transform:translateX(-30px) scale(.35)}
+
 @keyframes lgMerge{0%{transform:none}35%{transform:scale(.9,1.1)}65%{transform:scale(1.05,.95)}85%{transform:scale(.99,1.01)}100%{transform:none}}
 @keyframes lgSplit{0%{transform:none}30%{transform:scale(1.08,.9)}60%{transform:scale(.97,1.04)}100%{transform:none}}
 #heroTop.merging .corner{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1)}
