@@ -861,3 +861,20 @@ html.locked, html.locked body{overflow:hidden}
   border-left:2px solid rgba(255,192,46,.55);font-size:13px;color:var(--soft)}
 .actx .ag{white-space:normal}
 .act .ag.unl{white-space:normal;overflow:visible}
+
+.apidown{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:19;max-width:560px;margin:0 auto;
+  display:flex;align-items:flex-start;gap:12px;padding:13px 10px 13px 14px;border-radius:14px;
+  background:rgba(24,13,38,.97);border:1px solid var(--edge);border-left:4px solid #ff5d5d;
+  box-shadow:0 14px 34px rgba(0,0,0,.5);
+  opacity:0;transform:translate3d(0,-14px,0);pointer-events:none;
+  transition:opacity .22s ease,transform .26s cubic-bezier(.2,.8,.2,1)}
+.apidown.on{opacity:1;transform:none;pointer-events:auto}
+.adi{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;margin-top:1px;
+  background:#ff5d5d;color:#1a0d10;font-weight:900;font-size:15px}
+.adt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.adt b{font-size:15px}
+.adt span{font-size:13px;color:var(--soft);line-height:1.4}
+.adx{flex:none;width:32px;height:32px;margin:-6px -2px 0 0;border:none;border-radius:9px;background:none;
+  color:var(--soft);font-size:22px;line-height:1;cursor:pointer}
+.adx:active{background:rgba(255,255,255,.06)}
+.lite .apidown{transition:opacity .15s linear}
