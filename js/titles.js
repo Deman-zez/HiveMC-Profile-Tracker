@@ -23,7 +23,7 @@ async function loadTitleCatalogue(){
   if(!tcatP) tcatP = (async () => {
     try{
       const c = JSON.parse(localStorage.getItem(TCAT_KEY) || "null");
-      if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d)) return (TCAT = indexCat(c.d));
+      if(c && !tqForce && Date.now() - c.t < 86400000 && Array.isArray(c.d)) return (TCAT = indexCat(c.d));
     }catch(e){}
     noteRequest();
     let res;
@@ -262,7 +262,7 @@ async function loadTitleInfo(){
   if(!tinfoP) tinfoP = (async () => {
     try{
       const c = JSON.parse(localStorage.getItem(TINFO_KEY) || "null");
-      if(c && Date.now() - c.t < 86400000 && Array.isArray(c.d) && c.d.length) return (TINFO = indexInfo(c.d));
+      if(c && !tqForce && Date.now() - c.t < 86400000 && Array.isArray(c.d) && c.d.length) return (TINFO = indexInfo(c.d));
     }catch(e){}
     noteRequest();
     const r = await fetch(PROXY + encodeURIComponent(SUPPORT_TITLES), { cache:"no-store" });
@@ -296,10 +296,22 @@ function howFor(d, t, u){
   const m = d.meta && (d.meta.byExact.get(ex) || d.meta.byLoose.get(lo));
   return m ? T("tqLevel", m.l, NAME(m.g)) : null;
 }
+let tqRefreshed = false, tqForce = false;
+const cacheAge = key => { try{ const c = JSON.parse(localStorage.getItem(key) || "null"); return c && c.t ? Date.now() - c.t : Infinity; }catch(e){ return Infinity; } };
 async function markTq(root){
   const btns = [...(root || document).querySelectorAll(".tq:not(.ok)")];
   if(!btns.length) return;
-  const d = await loadTqData();
+  let d = await loadTqData();
+  let missed = btns.filter(b => b.isConnected && !howFor(d, b.dataset.t, b.dataset.u));
+  // a title unknown to the cached lists is probably new: refresh the lists once and look again
+  if(missed.length && !tqRefreshed && (cacheAge(TINFO_KEY) > 30 * 60 * 1000 || cacheAge(TCAT_KEY) > 30 * 60 * 1000)){
+    tqRefreshed = true;
+    const old = d;
+    tqForce = true; TINFO = null; TCAT = null; tqData = null;
+    try{ d = await loadTqData(); } finally { tqForce = false; }
+    d = { info: d.info || old.info, cat: d.cat || old.cat, meta: d.meta || old.meta };
+    tqData = d;
+  }
   btns.forEach(b => {
     if(!b.isConnected) return;
     const h = howFor(d, b.dataset.t, b.dataset.u);

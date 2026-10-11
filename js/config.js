@@ -11,13 +11,43 @@ async function hiveFetch(url, opts){
   const timer = ctl && setTimeout(() => ctl.abort(), 7000);
   try{
     const r = await fetch(PROXY + encodeURIComponent(url), Object.assign({}, opts, ctl ? { signal: ctl.signal } : {}));
-    if(r.ok){ r.__via = "proxy"; return r; }
+    if(r.ok){ r.__via = "proxy"; apiStatus(true); return r; }
   }catch(e){}
   finally{ if(timer) clearTimeout(timer); }
-  const r = await fetch(url, opts);
+  let r;
+  try{ r = await fetch(url, opts); }
+  catch(e){ apiStatus(false); throw e; }
   r.__via = "direct";
+  if(r.status >= 500) apiStatus(false);
+  else if(r.status !== 429) apiStatus(true);
   return r;
 }
+let apiDownEl = null, apiDismissed = false;
+function apiStatus(ok){
+  if(ok){
+    apiDismissed = false;
+    if(apiDownEl && apiDownEl.classList.contains("on")){
+      apiDownEl.classList.remove("on");
+      setTimeout(() => { if(apiDownEl && !apiDownEl.classList.contains("on")) apiDownEl.hidden = true; }, 260);
+    }
+    return;
+  }
+  if(apiDismissed || typeof T !== "function") return;
+  if(!apiDownEl){
+    apiDownEl = document.createElement("div");
+    apiDownEl.className = "apidown";
+    apiDownEl.setAttribute("role", "status");
+    document.body.append(apiDownEl);
+  }
+  const off = navigator.onLine === false;
+  apiDownEl.innerHTML = '<span class="adi" aria-hidden="true">!</span><div class="adt"><b>' +
+    esc(T(off ? "apiOffTitle" : "apiDownTitle")) + "</b><span>" + esc(T(off ? "apiOffText" : "apiDownText")) + "</span></div>" +
+    '<button type="button" class="adx" aria-label="' + esc(T("close")) + '">×</button>';
+  apiDownEl.querySelector(".adx").onclick = () => { apiDismissed = true; apiDownEl.classList.remove("on"); };
+  apiDownEl.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => apiDownEl.classList.add("on")));
+}
+addEventListener("online", () => { if(apiDownEl && apiDownEl.classList.contains("on")) apiStatus(true); });
 const KEY = "hive.tracker.v1";
 const DIAG_CD = 5 * 1000;
 const REQ_LIMIT = 80;
