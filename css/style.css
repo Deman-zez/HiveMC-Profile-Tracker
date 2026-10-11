@@ -442,7 +442,19 @@ svg.line{width:100%;height:100%;display:block}
   cursor:pointer}
 .tabs button[aria-current="page"]{color:var(--gold);font-weight:700}
 .tabs button > span{display:block;padding:11px;border-radius:10px;pointer-events:none}
-.tabs button[aria-current="page"] > span{background:rgba(255,192,46,.12)}
+.tabs button{position:relative;z-index:1}
+.tabInd{position:absolute;left:0;top:0;z-index:0;border-radius:12px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 55%,rgba(255,192,46,.08));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.25),
+    inset 0 0 0 1px rgba(255,255,255,.08),0 6px 16px rgba(0,0,0,.28);
+  transition:transform .5s cubic-bezier(.3,1.25,.45,1),width .5s cubic-bezier(.3,1.25,.45,1)}
+.tabInd.still{transition:none}
+.tabInd::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(80% 60% at 50% 0%,rgba(255,255,255,.22),transparent 70%);opacity:.7}
+@keyframes tabStretch{0%{scale:1 1}35%{scale:1.14 .9}70%{scale:.97 1.04}100%{scale:1 1}}
+.tabInd.stretch{animation:tabStretch .5s cubic-bezier(.3,.9,.4,1)}
+.lite .tabInd{transition:none}.lite .tabInd.stretch{animation:none}
+@media (prefers-reduced-motion: reduce){ .tabInd{transition:none} .tabInd.stretch{animation:none} }
 
 .modal{position:fixed;inset:0;z-index:20;background:rgba(10,5,16,.75);overflow:auto;
   overscroll-behavior:contain}
@@ -878,3 +890,19 @@ html.locked, html.locked body{overflow:hidden}
   color:var(--soft);font-size:22px;line-height:1;cursor:pointer}
 .adx:active{background:rgba(255,255,255,.06)}
 .lite .apidown{transition:opacity .15s linear}
+
+/* frosted "liquid glass" for the floating bars */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .glass{background:linear-gradient(180deg,rgba(44,24,68,.52),rgba(18,9,30,.62));
+    -webkit-backdrop-filter:blur(22px) saturate(175%) brightness(1.05);backdrop-filter:blur(22px) saturate(175%) brightness(1.05)}
+  .tabs.glass{box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 -12px 30px rgba(0,0,0,.28)}
+  .stick.glass{box-shadow:inset 0 -1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.28)}
+  .glass::before{content:"";position:absolute;left:8%;right:8%;height:1px;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent)}
+  .tabs.glass::before{top:0}
+  .stick.glass::before{bottom:0}
+  .modal.msearch .inner{background:linear-gradient(180deg,rgba(40,22,62,.72),rgba(18,9,30,.82));
+    -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%)}
+  .lite .glass,.lite .modal.msearch .inner{background:rgba(19,10,30,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+.stick:not(.on){visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s,visibility 0s .28s}
