@@ -41,7 +41,10 @@ function renderSnap(){
   $("#heroTop").innerHTML = '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
       idHTML + "</h1>" + '<div class="corner">' + shareBtn + searchBtn + "</div>";
-  if(typeof lgDecor === "function"){ lgDecor($("#heroTop .corner")); lgAdaptSoon(); }
+  if(typeof lgDecor === "function"){
+    document.querySelectorAll("#heroTop .hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
+    lgAdaptSoon();
+  }
   hero.innerHTML = '<div class="hero"><div class="ava"><span>' +
       (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
           JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'

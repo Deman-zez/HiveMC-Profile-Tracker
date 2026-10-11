@@ -22,6 +22,13 @@ function showView(v, y){
   curView = v;
   for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
   requestAnimationFrame(() => placeTabInd(true));
+  // Chrome sometimes keeps a stale backdrop under the glass bar after the page underneath animated in
+  clearTimeout(showView.__rp);
+  showView.__rp = setTimeout(() => {
+    const nav = $(".tabs"); if(!nav) return;
+    nav.style.backdropFilter = "none"; nav.style.webkitBackdropFilter = "none";
+    requestAnimationFrame(() => { nav.style.backdropFilter = ""; nav.style.webkitBackdropFilter = ""; });
+  }, 380);
   document.querySelectorAll(".tabs button").forEach(x => {
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
@@ -100,6 +107,8 @@ function placeTabInd(anim){
   if(moved && anim){
     tabInd.classList.remove("stretch"); void tabInd.offsetWidth; tabInd.classList.add("stretch");
   }
+  // far jumps glide without overshoot (a springy overshoot over a long distance flies past the edge)
+  tabInd.style.transitionTimingFunction = Math.abs(x - (tabIndX ?? x)) > 120 ? "cubic-bezier(.22,1,.36,1)" : "";
   tabInd.style.width = r.width + "px";
   tabInd.style.height = r.height + "px";
   tabInd.style.transform = "translate3d(" + x.toFixed(1) + "px," + top.toFixed(1) + "px,0)";
