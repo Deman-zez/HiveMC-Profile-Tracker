@@ -1004,8 +1004,7 @@ html.locked{overflow:hidden}
   .tabs button[aria-current="page"]:hover > span{color:#ffcf55;filter:drop-shadow(0 0 4px rgba(255,192,46,.65)) drop-shadow(0 0 12px rgba(255,192,46,.35))}
 }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
-  .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.34),rgba(16,8,28,.5) 70%)}
-  .lite .hbtn.refract{background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.82),rgba(20,10,34,.9) 70%)}
+
 }
 
 /* ---------- glass, round 3 ---------- */
@@ -1064,10 +1063,12 @@ html.locked{overflow:hidden}
 }
 
 /* ---------- Telegram-style swirled glass for the round buttons and the active tab plate ---------- */
-.hbtn{background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
-    radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.16),rgba(0,0,0,0) 60%),rgba(26,14,42,.5);
+/* the tint lives on its own layer so it can fade independently of the button (used by the merge) */
+.hbtn{background:transparent;
   box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 -8px 14px rgba(0,0,0,.28),inset 0 6px 12px rgba(255,255,255,.04)}
 .hbtn::after{content:none}
+.hbtn::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
+    radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.14),rgba(0,0,0,0) 60%),rgba(26,14,42,.3)}
 .tabInd::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;z-index:2;
   background:conic-gradient(from 215deg,rgba(255,255,255,.62),rgba(255,255,255,.08) 18%,rgba(255,255,255,.02) 38%,
     rgba(255,255,255,.34) 56%,rgba(255,255,255,.05) 74%,rgba(255,255,255,.62));
@@ -1076,29 +1077,31 @@ html.locked{overflow:hidden}
 .tabInd{background:radial-gradient(90% 120% at 50% 0%,rgba(255,255,255,.13),rgba(255,255,255,0) 60%),rgba(255,255,255,.04);
   box-shadow:0 8px 18px rgba(0,0,0,.32),inset 0 -6px 12px rgba(0,0,0,.22)}
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
-  .hbtn.refract{background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
-    radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.14),rgba(0,0,0,0) 60%),rgba(26,14,42,.3)}
+  .hbtn.refract{background:transparent}
   .tabInd.refract{background:radial-gradient(90% 120% at 50% 0%,rgba(255,255,255,.13),rgba(255,255,255,0) 60%),rgba(255,255,255,.035);
     box-shadow:0 8px 18px rgba(0,0,0,.32),inset 0 -6px 12px rgba(0,0,0,.22)}
 }
-/* liquid merge: while the share drop moves it is drawn by a "goo" layer that melts it into the search drop
-   through a neck. The goo is tinted exactly like the glass (same dark tint, same top light), so swapping
-   between the real button and the goo drop never changes its colour. Under the search button the goo is
-   cut out, so the search glass never changes at all. */
+/* liquid merge: the share drop is drawn by a "goo" layer that melts it into the search drop through a neck.
+   At the ends the drop and the real glass cross-fade, so nothing flashes; under the search button the goo is
+   cut out, so the search glass never changes. */
 #heroTop .corner{isolation:isolate}
 .goo{position:absolute;inset:-12px;pointer-events:none;z-index:0;filter:url(#gooF);opacity:0;
   -webkit-mask:radial-gradient(circle 20px at 83px 33px,transparent 96%,#000 100%);
   mask:radial-gradient(circle 20px at 83px 33px,transparent 96%,#000 100%)}
 .goo i{position:absolute;top:12px;width:42px;height:42px;border-radius:50%;
-  background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.34),rgba(255,255,255,0) 58%),rgb(42,11,73)}
+  background:radial-gradient(110% 90% at 50% 0%,rgba(150,110,200,1),rgba(64,36,98,1) 62%)}
 .goo .g1{left:12px;transition:transform .5s cubic-bezier(.3,1.2,.4,1)}
 .goo .g2{left:62px}
 #heroTop.stuck .goo .g1{transform:translateX(50px) scale(.32);transition:transform .46s cubic-bezier(.55,0,.35,1)}
-#heroTop.merging .goo,#heroTop.splitting .goo{opacity:.32}
+@keyframes gooMerge{0%{opacity:0}18%{opacity:.42}80%{opacity:.42}100%{opacity:0}}
+@keyframes gooSplit{0%{opacity:.42}55%{opacity:.42}100%{opacity:0}}
+@keyframes tintOut{0%{opacity:1}22%{opacity:0}100%{opacity:0}}
+@keyframes tintIn{0%{opacity:0}55%{opacity:0}100%{opacity:1}}
+#heroTop.merging .goo{animation:gooMerge .6s linear}
+#heroTop.splitting .goo{animation:gooSplit .62s linear}
+#heroTop.merging #shareBtn::before{animation:tintOut .6s linear}
+#heroTop.splitting #shareBtn::before{animation:tintIn .62s linear}
 #heroTop .corner #shareBtn{transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1),color .2s ease}
-#heroTop.merging #shareBtn,#heroTop.splitting #shareBtn{background:transparent;
-  -webkit-backdrop-filter:none;backdrop-filter:none;transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1)}
-#heroTop.stuck .corner #shareBtn{transition:opacity .28s ease .14s,transform .46s cubic-bezier(.55,0,.35,1)}
 #heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
 .lite .goo{display:none}
 @media (prefers-reduced-motion: reduce){ .goo{display:none} }
