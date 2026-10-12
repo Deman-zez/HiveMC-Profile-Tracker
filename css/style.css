@@ -472,7 +472,7 @@ svg.line{width:100%;height:100%;display:block}
 .tabs button[aria-current="page"] > span{opacity:1;color:#ffcf55;
   text-shadow:none;filter:drop-shadow(0 0 4px rgba(255,192,46,.65)) drop-shadow(0 0 12px rgba(255,192,46,.35));
   animation:tabPop .45s cubic-bezier(.3,1.4,.5,1)}
-@keyframes tabPop{0%{transform:scale(.92)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes tabPop{0%{transform:scale(.96)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
 .lite .tabs button[aria-current="page"] > span{animation:none}
 @media (prefers-reduced-motion: reduce){ .tabs button[aria-current="page"] > span{animation:none} }
 .tabs button > span{display:grid;place-items:center;width:58px;height:44px;margin:0 auto;padding:0;border-radius:10px;pointer-events:none}
@@ -492,7 +492,7 @@ svg.line{width:100%;height:100%;display:block}
 
 .modal{position:fixed;inset:0;z-index:20;background:rgba(10,5,16,.75);overflow:auto;
   overscroll-behavior:contain}
-html.locked, html.locked body{overflow:hidden}
+html.locked{overflow:hidden}
 .modal .inner{min-height:100%;background:var(--bg-b);max-width:640px;margin:0 auto;
   padding:22px 16px calc(30px + env(safe-area-inset-bottom))}
 .mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
@@ -502,9 +502,14 @@ html.locked, html.locked body{overflow:hidden}
 .raw{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.5;
   background:rgba(0,0,0,.35);border:1px solid var(--edge);border-radius:12px;padding:14px;margin:0 0 14px}
 .hidden{display:none}
-.toast{position:fixed;left:12px;right:12px;bottom:100px;max-width:420px;margin:0 auto;z-index:30;
-  background:#2a1442;border:1px solid var(--edge);color:var(--text);padding:14px 16px;
-  border-radius:12px;font-size:15px;line-height:1.4}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;z-index:30;
+  background:rgba(24,13,38,.97);border:none;border-left:4px solid var(--gold);color:var(--text);padding:13px 16px;
+  border-radius:14px;font-size:14.5px;line-height:1.4;box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.08)}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .toast{background:linear-gradient(180deg,rgba(34,18,50,.66),rgba(18,8,28,.78));
+    -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}
+  .lite .toast{background:rgba(24,13,38,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
 .row2{display:flex;gap:10px}.row2>*{flex:1}
 
 @media (min-width:900px){
@@ -1009,7 +1014,7 @@ html.locked, html.locked body{overflow:hidden}
 @keyframes lgJelly{0%{scale:1 1}16%{scale:1.075 .925}40%{scale:.955 1.045}64%{scale:1.02 .985}84%{scale:.995 1.005}100%{scale:1 1}}
 @keyframes lgJellyWide{0%{scale:1 1}16%{scale:1.012 .94}40%{scale:.994 1.03}66%{scale:1.003 .992}100%{scale:1 1}}
 .lgl.jelly{animation:lgJelly .62s cubic-bezier(.3,.7,.4,1);transform-origin:var(--tx,50%) var(--ty,50%)}
-.tabs.lgl.jelly{animation:lgJellyWide .6s cubic-bezier(.3,.7,.4,1)}
+.tabs.lgl.jelly{animation:none}
 .lite .lgl.jelly{animation:none}
 @media (prefers-reduced-motion: reduce){ .lgl.jelly{animation:none} }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
@@ -1020,28 +1025,18 @@ html.locked, html.locked body{overflow:hidden}
   .lite .apidown{background:rgba(24,13,38,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 /* share drop flows into the search drop through a liquid neck, and buds back out */
-.hbridge{position:absolute;left:21px;top:50%;width:50px;height:30px;margin-top:-15px;border-radius:15px;pointer-events:none;
-  background:radial-gradient(120% 120% at 30% 20%,rgba(48,26,74,.6),rgba(16,8,28,.72) 70%);
-  transform-origin:100% 50%;transform:scaleX(0);opacity:0}
-@keyframes hbMerge{0%{transform:scaleX(0) scaleY(.6);opacity:0}25%{transform:scaleX(1) scaleY(.55);opacity:1}
-  65%{transform:scaleX(.45) scaleY(.75);opacity:1}100%{transform:scaleX(0) scaleY(.9);opacity:0}}
-@keyframes hbSplit{0%{transform:scaleX(0) scaleY(.9);opacity:0}35%{transform:scaleX(.55) scaleY(.7);opacity:1}
-  70%{transform:scaleX(1) scaleY(.5);opacity:.9}100%{transform:scaleX(0) scaleY(.4);opacity:0}}
-@keyframes shMerge{0%{transform:none;opacity:1}30%{transform:translateX(10px) scale(1.04,.86);opacity:1}
-  70%{transform:translateX(36px) scale(.6,.7);opacity:.8}100%{transform:translateX(48px) scale(.3);opacity:0}}
-@keyframes shSplit{0%{transform:translateX(48px) scale(.3);opacity:0}40%{transform:translateX(26px) scale(.7,.8);opacity:.9}
-  75%{transform:translateX(-3px) scale(1.06,.94);opacity:1}100%{transform:none;opacity:1}}
-#heroTop.merging .hbridge{animation:hbMerge .5s cubic-bezier(.4,0,.3,1)}
-#heroTop.splitting .hbridge{transform-origin:0 50%;animation:hbSplit .5s cubic-bezier(.4,0,.3,1)}
 #heroTop.stuck #shareBtn svg{opacity:0;transition:opacity .12s ease}
-.lite #heroTop .hbridge{animation:none !important}
-@media (prefers-reduced-motion: reduce){ #heroTop .hbridge{animation:none !important} }
+
 /* entrance for freshly shown rows and items */
 @keyframes enterUp{from{opacity:0;transform:translate3d(0,10px,0) scale(.985)}to{opacity:1;transform:none}}
 .enter{animation:enterUp .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--ei,0) * 28ms)}
 /* in-page dropdown */
 .selw{position:relative;display:block;flex:1 1 0;min-width:0;cursor:pointer;border-radius:12px;outline:none}
-.selw select{pointer-events:none;width:100%}
+.selw select{pointer-events:none;width:100%;-webkit-appearance:none;appearance:none;background-image:none;padding-right:42px}
+.selw .selArr{position:absolute;right:14px;top:50%;width:18px;height:18px;margin-top:-9px;pointer-events:none;color:var(--soft);
+  transform:rotate(-90deg);transition:transform .32s cubic-bezier(.3,1.3,.5,1),color .2s ease}
+.selw.open .selArr{transform:rotate(0deg);color:var(--gold)}
+.lite .selw .selArr{transition:none}
 .selw:focus-visible{box-shadow:0 0 0 2px var(--gold)}
 .selw.open select{border-color:rgba(255,192,46,.55)}
 .lbctl .selw[data-for="lbSort"]{grid-column:1 / -1}
@@ -1068,3 +1063,37 @@ html.locked, html.locked body{overflow:hidden}
     -webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%)}
   .lite .selpop{background:rgba(22,11,36,.97);-webkit-backdrop-filter:none;backdrop-filter:none}
 }
+
+/* ---------- Telegram-style swirled glass for the round buttons and the active tab plate ---------- */
+.hbtn{background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
+    radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.16),rgba(0,0,0,0) 60%),rgba(26,14,42,.5);
+  box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 -8px 14px rgba(0,0,0,.28),inset 0 6px 12px rgba(255,255,255,.04)}
+.hbtn::after,.tabInd::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;z-index:2;
+  background:conic-gradient(from 215deg,rgba(255,255,255,.62),rgba(255,255,255,.08) 18%,rgba(255,255,255,.02) 38%,
+    rgba(255,255,255,.34) 56%,rgba(255,255,255,.05) 74%,rgba(255,255,255,.62));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:.75}
+.tabInd{background:radial-gradient(90% 120% at 50% 0%,rgba(255,255,255,.13),rgba(255,255,255,0) 60%),rgba(255,255,255,.04);
+  box-shadow:0 8px 18px rgba(0,0,0,.32),inset 0 -6px 12px rgba(0,0,0,.22)}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .hbtn.refract{background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
+    radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.14),rgba(0,0,0,0) 60%),rgba(26,14,42,.3)}
+  .tabInd.refract{background:radial-gradient(90% 120% at 50% 0%,rgba(255,255,255,.13),rgba(255,255,255,0) 60%),rgba(255,255,255,.035);
+    box-shadow:0 8px 18px rgba(0,0,0,.32),inset 0 -6px 12px rgba(0,0,0,.22)}
+}
+/* liquid merge: while the drops move, a goo layer draws them as one melting shape */
+#heroTop .corner{isolation:isolate}
+.goo{position:absolute;inset:-12px;pointer-events:none;z-index:0;filter:url(#gooF);opacity:0;transition:opacity .12s ease}
+.goo i{position:absolute;top:12px;width:42px;height:42px;border-radius:50%;
+  background:radial-gradient(110% 90% at 50% 0%,rgba(120,90,160,.95),rgba(42,22,66,.96) 60%)}
+.goo .g1{left:12px;transition:transform .5s cubic-bezier(.3,1.2,.4,1)}
+.goo .g2{left:62px}
+#heroTop.stuck .goo .g1{transform:translateX(50px) scale(.32);transition:transform .46s cubic-bezier(.55,0,.35,1)}
+#heroTop.merging .goo,#heroTop.splitting .goo{opacity:.92}
+#heroTop.merging .hbtn,#heroTop.splitting .hbtn{background:transparent;box-shadow:none;
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+#heroTop.merging .hbtn::after,#heroTop.splitting .hbtn::after{opacity:0;transition:opacity .1s}
+#heroTop.merging .goo .g2{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
+#heroTop .hbtn::after{transition:opacity .3s ease .2s}
+.lite .goo{display:none}
+@media (prefers-reduced-motion: reduce){ .goo{display:none} }
