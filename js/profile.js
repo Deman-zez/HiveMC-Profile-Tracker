@@ -38,14 +38,27 @@ function renderSnap(){
     return;
   }
   $("#fetchBtn").classList.remove("hidden");
-  $("#heroTop").innerHTML = '<h1 class="idline">' +
+  // the two glass buttons are built once and kept: re-creating them on every render made them
+  // flash a different shade until their glass was set up again
+  const ht = $("#heroTop");
+  let corner = ht.querySelector(".corner");
+  const idlineHTML = '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
-      idHTML + "</h1>" + '<div class="corner"><span class="goo" aria-hidden="true"><i class="g1"></i><i class="g2"></i></span>' +
+      idHTML + "</h1>";
+  if(corner && corner.querySelector("#shareBtn") && corner.querySelector("#searchBtn")){
+    const old = ht.querySelector(".idline");
+    if(old) old.outerHTML = idlineHTML; else ht.insertAdjacentHTML("afterbegin", idlineHTML);
+    const sh = corner.querySelector("#shareBtn"), se = corner.querySelector("#searchBtn");
+    sh.setAttribute("aria-label", T("share")); sh.title = T("share");
+    se.setAttribute("aria-label", T("qsOpen")); se.title = T("qsOpen");
+  }else{
+    ht.innerHTML = idlineHTML + '<div class="corner"><span class="goo" aria-hidden="true"><i class="g1"></i><i class="g2"></i></span>' +
       shareBtn + searchBtn + "</div>";
-  if(typeof lgDecor === "function"){
-    document.querySelectorAll("#heroTop .hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
-    lgAdaptSoon();
+    corner = ht.querySelector(".corner");
+    if(typeof lgDecor === "function")
+      corner.querySelectorAll(".hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
   }
+  if(typeof lgAdaptSoon === "function") lgAdaptSoon();
   hero.innerHTML = '<div class="hero"><div class="ava"><span>' +
       (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
           JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
