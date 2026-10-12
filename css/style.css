@@ -1067,7 +1067,8 @@ html.locked{overflow:hidden}
 .hbtn{background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.12),rgba(255,255,255,0) 58%),
     radial-gradient(120% 120% at 50% 110%,rgba(160,95,214,.16),rgba(0,0,0,0) 60%),rgba(26,14,42,.5);
   box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 -8px 14px rgba(0,0,0,.28),inset 0 6px 12px rgba(255,255,255,.04)}
-.hbtn::after,.tabInd::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;z-index:2;
+.hbtn::after{content:none}
+.tabInd::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;z-index:2;
   background:conic-gradient(from 215deg,rgba(255,255,255,.62),rgba(255,255,255,.08) 18%,rgba(255,255,255,.02) 38%,
     rgba(255,255,255,.34) 56%,rgba(255,255,255,.05) 74%,rgba(255,255,255,.62));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
@@ -1097,8 +1098,6 @@ html.locked{overflow:hidden}
   background .25s ease,box-shadow .25s ease}
 #heroTop.merging #shareBtn,#heroTop.splitting #shareBtn{background:transparent;box-shadow:none;
   -webkit-backdrop-filter:none;backdrop-filter:none}
-#heroTop.merging #shareBtn::after,#heroTop.splitting #shareBtn::after{opacity:0;transition:opacity .1s}
 #heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
-#heroTop .hbtn::after{transition:opacity .3s ease .2s}
 .lite .goo{display:none}
 @media (prefers-reduced-motion: reduce){ .goo{display:none} }
