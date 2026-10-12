@@ -1081,21 +1081,24 @@ html.locked{overflow:hidden}
   .tabInd.refract{background:radial-gradient(90% 120% at 50% 0%,rgba(255,255,255,.13),rgba(255,255,255,0) 60%),rgba(255,255,255,.035);
     box-shadow:0 8px 18px rgba(0,0,0,.32),inset 0 -6px 12px rgba(0,0,0,.22)}
 }
-/* liquid merge: only the moving share drop and the neck are drawn by the goo layer; the search button
-   keeps its own glass the whole time, so nothing changes colour mid-animation */
+/* liquid merge: while the share drop moves it is drawn by a "goo" layer that melts it into the search drop
+   through a neck. The goo is tinted exactly like the glass (same dark tint, same top light), so swapping
+   between the real button and the goo drop never changes its colour. Under the search button the goo is
+   cut out, so the search glass never changes at all. */
 #heroTop .corner{isolation:isolate}
-.goo{position:absolute;inset:-12px;pointer-events:none;z-index:3;filter:url(#gooF);opacity:0;mix-blend-mode:screen;
+.goo{position:absolute;inset:-12px;pointer-events:none;z-index:0;filter:url(#gooF);opacity:0;
   -webkit-mask:radial-gradient(circle 20px at 83px 33px,transparent 96%,#000 100%);
-  mask:radial-gradient(circle 20px at 83px 33px,transparent 96%,#000 100%);
-  transition:opacity .25s ease}
-.goo i{position:absolute;top:12px;width:42px;height:42px;border-radius:50%;background:rgb(206,190,240)}
+  mask:radial-gradient(circle 20px at 83px 33px,transparent 96%,#000 100%)}
+.goo i{position:absolute;top:12px;width:42px;height:42px;border-radius:50%;
+  background:radial-gradient(110% 90% at 50% 0%,rgba(255,255,255,.34),rgba(255,255,255,0) 58%),rgb(42,11,73)}
 .goo .g1{left:12px;transition:transform .5s cubic-bezier(.3,1.2,.4,1)}
 .goo .g2{left:62px}
 #heroTop.stuck .goo .g1{transform:translateX(50px) scale(.32);transition:transform .46s cubic-bezier(.55,0,.35,1)}
-#heroTop.merging .goo,#heroTop.splitting .goo{opacity:.14;transition:opacity .1s ease}
-#heroTop .corner #shareBtn{transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1),color .2s ease,
-  background .25s ease,box-shadow .25s ease}
-
+#heroTop.merging .goo,#heroTop.splitting .goo{opacity:.32}
+#heroTop .corner #shareBtn{transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1),color .2s ease}
+#heroTop.merging #shareBtn,#heroTop.splitting #shareBtn{background:transparent;
+  -webkit-backdrop-filter:none;backdrop-filter:none;transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1)}
+#heroTop.stuck .corner #shareBtn{transition:opacity .28s ease .14s,transform .46s cubic-bezier(.55,0,.35,1)}
 #heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
 .lite .goo{display:none}
 @media (prefers-reduced-motion: reduce){ .goo{display:none} }
