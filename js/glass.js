@@ -8,6 +8,17 @@ const LG_OK = (() => {
     !!(window.CSS && CSS.supports("backdrop-filter", "url(#x)"));
 })();
 let lgSvg = null, lgSeq = 0;
+// metaball ("goo") filter: blurred shapes thresholded back to crisp edges, so two drops melt into one with a smooth neck
+(function(){
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  g.setAttribute("aria-hidden", "true");
+  g.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
+  g.innerHTML = '<filter id="gooF" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">' +
+    '<feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>' +
+    '<feColorMatrix in="b" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 22 -9" result="goo"/>' +
+    '<feComposite in="SourceGraphic" in2="goo" operator="atop"/></filter>';
+  document.body.append(g);
+})();
 const lgObs = typeof ResizeObserver === "function" ? new ResizeObserver(es => es.forEach(e => lgSoon(e.target))) : null;
 
 function lgSdf(x, y, hw, hh, r){

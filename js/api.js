@@ -18,7 +18,7 @@ async function pullAll(){
     throw err;
   }
   noteHit(nickKey());
-  if(!res.ok) throw new Error(httpMsg(res.status));
+  if(!res.ok){ const err = new Error(httpMsg(res.status)); err.status = res.status; throw err; }
   const data = await res.json();
   return { data: (data && typeof data === "object" && !Array.isArray(data)) ? data : {} };
 }
@@ -56,6 +56,7 @@ async function snapshot(){
   btn.disabled = true; btn.classList.add("busy"); btn.textContent = T("snapping");
   const now = Date.now(), snap = { t: now, n, g: {} };
   let failed = "";
+  const slow = setTimeout(() => apiStatus(false), 8000);   // Hive is taking too long to answer
   try{
     let data, missing = null;
     try{ data = (await pullAll()).data; }
@@ -97,7 +98,12 @@ async function snapshot(){
         if(state.main && state.main.toLowerCase() === n){ state.main = cc; const inp = $("#nick"); if(inp) inp.value = cc; }
       }
     }
-  }catch(e){ failed = e.message; }
+    clearTimeout(slow); apiStatus(true);
+  }catch(e){
+    clearTimeout(slow);
+    failed = e.message;
+    if(!e.limited && !(e.status >= 400 && e.status < 500)) apiStatus(false);
+  }
   if(Object.keys(snap.g).length){
     const mine = state.snaps.filter(x => (x.n || "") === n), prev = mine[mine.length-1];
     if(prev){

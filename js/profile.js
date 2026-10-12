@@ -40,7 +40,8 @@ function renderSnap(){
   $("#fetchBtn").classList.remove("hidden");
   $("#heroTop").innerHTML = '<h1 class="idline">' +
       (typeof hubLevel === "number" ? '<span class="lvl">' + esc(T("level")) + " " + nf(hubLevel) + "</span>" : "") +
-      idHTML + "</h1>" + '<div class="corner">' + shareBtn + '<span class="hbridge" aria-hidden="true"></span>' + searchBtn + "</div>";
+      idHTML + "</h1>" + '<div class="corner"><span class="goo" aria-hidden="true"><i class="g1"></i><i class="g2"></i></span>' +
+      shareBtn + searchBtn + "</div>";
   if(typeof lgDecor === "function"){
     document.querySelectorAll("#heroTop .hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
     lgAdaptSoon();

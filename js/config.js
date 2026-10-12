@@ -20,10 +20,9 @@ async function hiveFetch(url, opts){
   finally{ if(timer) clearTimeout(timer); }
   let r;
   try{ r = await fetch(url, opts); }
-  catch(e){ if(!proxyStatus || proxyStatus >= 500) apiStatus(false); throw e; }
+  catch(e){ throw e; }
   r.__via = "direct";
-  if(r.status >= 500) apiStatus(false);
-  else if(r.status !== 429) apiStatus(true);
+  if(r.ok) apiStatus(true);
   return r;
 }
 let apiDownEl = null, apiDismissed = false;

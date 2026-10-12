@@ -22,13 +22,7 @@ function showView(v, y){
   curView = v;
   for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
   requestAnimationFrame(() => placeTabInd(true));
-  // Chrome sometimes keeps a stale backdrop under the glass bar after the page underneath animated in
-  clearTimeout(showView.__rp);
-  showView.__rp = setTimeout(() => {
-    const nav = $(".tabs"); if(!nav) return;
-    nav.style.backdropFilter = "none"; nav.style.webkitBackdropFilter = "none";
-    requestAnimationFrame(() => { nav.style.backdropFilter = ""; nav.style.webkitBackdropFilter = ""; });
-  }, 380);
+
   document.querySelectorAll(".tabs button").forEach(x => {
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
@@ -190,7 +184,7 @@ function onScroll(){
       const ht = $("#heroTop");
       ht.classList.toggle("stuck", on);
       ht.classList.remove("merging", "splitting"); void ht.offsetWidth;
-      ht.classList.add(on ? "merging" : "splitting");
+      if(!state.lite && !matchMedia("(prefers-reduced-motion: reduce)").matches) ht.classList.add(on ? "merging" : "splitting");
       clearTimeout(ht.__mt); ht.__mt = setTimeout(() => ht.classList.remove("merging", "splitting"), 700);
     }
     toTopUpdate();

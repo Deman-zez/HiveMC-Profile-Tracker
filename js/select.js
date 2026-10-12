@@ -14,6 +14,8 @@ function enhanceSelect(sel){
   if(sel.id) wrap.dataset.for = sel.id;
   sel.parentNode.insertBefore(wrap, sel);
   wrap.append(sel);
+  wrap.insertAdjacentHTML("beforeend", '<svg class="selArr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>');
   sel.tabIndex = -1;
   wrap.tabIndex = 0;
   wrap.setAttribute("role", "button");
