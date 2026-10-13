@@ -306,6 +306,16 @@ async function lbFind(q){
 
 const GSTAT_KEY = "hive.tracker.globalstats";
 let GSTAT = null, gstatP = null;
+function noteRealGames(d){
+  if(!d || typeof d !== "object") return;
+  const codes = Object.keys(d).filter(k => k !== "global" && typeof d[k] === "number");
+  if(!codes.length || codes.join() === (state.gstatCodes || []).join()) return;
+  state.gstatCodes = codes;
+  if(Array.isArray(state.apiGames)) applyGameList(state.apiGames, false);
+  state.games = state.games.filter(g => GAMES.some(x => x[0] === g));
+  save();
+  if(typeof renderChips === "function") renderChips();
+}
 async function loadGlobalStats(){
   if(GSTAT) return GSTAT;
   try{
@@ -320,6 +330,7 @@ async function loadGlobalStats(){
     }
     if(!d || typeof d !== "object") return null;
     try{ localStorage.setItem(GSTAT_KEY, JSON.stringify({ t: Date.now(), d })); }catch(e){}
+    noteRealGames(d);
     return (GSTAT = d);
   })().finally(() => { gstatP = null; });
   return gstatP;
@@ -367,10 +378,12 @@ async function renderLb(){
   $("#topSub").textContent = T("topSub");
   $("#lbFind").placeholder = T("lbFindPh");
   $("#lbFindBtn").textContent = T("lbFindBtn");
-  const games = GAMES.map(g => g[0]).filter(g => g !== "main");
+  const real = Array.isArray(state.gstatCodes) ? new Set(state.gstatCodes) : null;
+  const games = GAMES.map(g => g[0]).filter(g => g !== "main" && (!real || real.has(g)));
   const want = (rs && rs.g) || lbPick || gSel.value || lbDefaultGame();
   lbPick = null;
-  gSel.innerHTML = games.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
+  gSel.innerHTML = games.map(g => '<option value="' + g + '"' + (SHORT_NAMES[g] ? ' data-short="' + SHORT_NAMES[g] + '"' : "") +
+    ">" + esc(NAME(g)) + "</option>").join("");
   gSel.value = games.includes(want) ? want : lbDefaultGame();
   const game = gSel.value, per = lbPeriods(game), keepP = rs ? rs.p : pSel.value;
   pSel.innerHTML = per.map(([v, t]) => '<option value="' + v + '">' + esc(t) + "</option>").join("");

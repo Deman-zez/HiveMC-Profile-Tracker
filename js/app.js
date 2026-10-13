@@ -12,6 +12,8 @@ applyLang();
 })();
 navSave();
 loadHiveData().then(() => { if(HD){ renderSnap(); } });
+// learn which modes are real (cached for a day); sub-modes with empty stats drop out everywhere
+setTimeout(() => { loadGlobalStats().then(d => { if(d){ noteRealGames(d); renderSnap(); } }).catch(() => {}); }, 1500);
 if(state.sync && state.sync.id) syncNow(false);
 loadTitleMeta().catch(() => {});
 setInterval(tickStatus, 30000);

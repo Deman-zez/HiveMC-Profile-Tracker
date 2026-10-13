@@ -87,6 +87,7 @@ async function syncNow(manual){
     else if(res.status !== 404) throw new Error(await errText(res));
     const up = await fetch(url, { method:"PUT", body: await gzipPack(syncPayload()),
       headers: { "Content-Type": "application/octet-stream" } });
+    if(up.status === 429){ syncAgain = true; return; }   // the worker throttles bursts: just try again shortly
     if(!up.ok) throw new Error(await errText(up));
     state.sync.at = Date.now(); state.sync.err = ""; save();
     if(changed){

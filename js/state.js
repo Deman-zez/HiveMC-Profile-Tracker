@@ -48,8 +48,12 @@ function applyGameList(codes, fresh){
   }
   const have = new Set(codes);
   const next = GAMES_BASE.filter(g => g[0] === "main" || have.has(g[0]));
+  // a code Hive returns in profiles is a real mode only if Hive also counts it in /global/statistics;
+  // sub-modes like sky-kits / sky-classic only carry empty stats and stay out
+  const real = Array.isArray(state.gstatCodes) ? new Set(state.gstatCodes) : null;
   codes.forEach(c => {
     if(c === "main" || GAME_OWN_CARD.has(c) || !/^[a-z0-9-]{1,24}$/.test(c) || next.some(g => g[0] === c)) return;
+    if(!real || !real.has(c)) return;
     const g = [c, "", ""]; g.dyn = true; next.push(g);
   });
   const before = GAMES.map(g => g[0]).join(), after = next.map(g => g[0]).join();

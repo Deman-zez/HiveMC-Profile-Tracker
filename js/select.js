@@ -14,6 +14,18 @@ function enhanceSelect(sel){
   if(sel.id) wrap.dataset.for = sel.id;
   sel.parentNode.insertBefore(wrap, sel);
   wrap.append(sel);
+  const lab = document.createElement("span");
+  lab.className = "selLab"; lab.setAttribute("aria-hidden", "true");
+  wrap.append(lab);
+  sel.__lab = lab;
+  // keep the label in sync even when code sets .value directly
+  const proto = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  Object.defineProperty(sel, "value", { configurable: true,
+    get(){ return proto.get.call(this); },
+    set(v){ proto.set.call(this, v); selLabel(this); } });
+  sel.addEventListener("change", () => selLabel(sel));
+  new MutationObserver(() => selLabel(sel)).observe(sel, { childList: true, subtree: true, characterData: true });
+  selLabel(sel);
   wrap.insertAdjacentHTML("beforeend", '<svg class="selArr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>');
   sel.tabIndex = -1;
@@ -25,6 +37,20 @@ function enhanceSelect(sel){
   });
 }
 
+function selLabel(sel){
+  const lab = sel.__lab; if(!lab) return;
+  const o = sel.options[sel.selectedIndex];
+  const full = o ? o.textContent : "", short = o && o.dataset.short;
+  lab.textContent = full;
+  lab.style.fontSize = "";
+  if(!lab.clientWidth) return;                         // hidden view: refit when shown
+  if(short && lab.scrollWidth > lab.clientWidth + 1) lab.textContent = short;
+  let size = parseFloat(getComputedStyle(lab).fontSize) || 16, guard = 0;
+  while(lab.scrollWidth > lab.clientWidth + 1 && size > 12 && guard++ < 12){ size -= .5; lab.style.fontSize = size + "px"; }
+}
+function refitSelects(root){ (root || document).querySelectorAll("select").forEach(s => s.__lab && selLabel(s)); }
+addEventListener("resize", () => refitSelects());
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => refitSelects());
 function closeSelect(instant){
   const o = selOpen; if(!o) return;
   selOpen = null;

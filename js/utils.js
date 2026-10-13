@@ -210,6 +210,7 @@ function staggerIn(els, cap){
     setTimeout(() => el.classList.remove("enter"), 700 + i * 30);
   });
 }
+const SHORT_NAMES = { ctf: "CTF" };   // used when the full name does not fit a closed dropdown
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
 const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Object.entries(c).some(([k, v]) =>
   typeof v === "number" && v > 0 && !SKIP.has(k) && !isDateKey(k) && !/^(level|prestige)$/.test(k));

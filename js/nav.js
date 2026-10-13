@@ -21,7 +21,7 @@ function showView(v, y){
   if(!VIEWS[v]) v = "snap";
   curView = v;
   for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
-  requestAnimationFrame(() => placeTabInd(true));
+  requestAnimationFrame(() => { placeTabInd(true); if(typeof refitSelects === "function") refitSelects(); });
 
   document.querySelectorAll(".tabs button").forEach(x => {
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
