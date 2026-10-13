@@ -1040,6 +1040,8 @@ html.locked{overflow:hidden}
 #heroTop.merging #shareBtn .lgGlow,#heroTop.merging #shareBtn .lgRim{display:none}
 #heroTop.splitting #shareBtn::before{animation:tintIn .62s linear}
 #heroTop .corner #shareBtn{transition:opacity .34s ease .05s,transform .5s cubic-bezier(.3,1.2,.4,1),color .2s ease}
+/* the button and its liquid drop must move with exactly the same timing, or two drops are seen */
+#heroTop.stuck .corner #shareBtn{transition:opacity .28s ease .14s,transform .46s cubic-bezier(.55,0,.35,1),color .2s ease}
 #heroTop.merging #searchBtn{animation:lgMerge .62s cubic-bezier(.3,.9,.4,1) .2s backwards}
 .lite .goo{display:none}
 @media (prefers-reduced-motion: reduce){ .goo{display:none}}
