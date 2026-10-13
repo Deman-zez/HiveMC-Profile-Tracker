@@ -73,26 +73,63 @@ function mergeRemote(r){
     for(const [k, v] of Object.entries(r.avatars)) if(!state.avatars[k] && typeof v === "string") state.avatars[k] = v;
   return state.snaps.length !== before || (state.setAt || 0) !== setBefore;
 }
-var syncBusy = false, syncAgain = false, syncTimer = null;
-const syncSoon = () => { if(!state.sync) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); };
+/* Sync model
+   - pull first: on opening the page, on returning to it, and every 90 s while it is open, the site asks the
+     worker only "when was this code last written?" (a few bytes) and downloads the data only if it changed;
+   - push only real local changes (a snapshot, a setting), right after they happen, and flush them when the
+     page is being hidden, so closing the tab right after a snapshot does not lose it. */
+var syncBusy = false, syncAgain = false, syncTimer = null, syncPullAt = 0;
+const markDirty = () => { if(state.sync){ state.sync.dirty = true; save(); } };
+const syncSoon = () => {
+  if(!state.sync) return;
+  markDirty();
+  clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 1200);
+};
+async function syncPull(force){
+  const url = SYNC_URL + state.sync.id;
+  if(!force){
+    const m = await fetch(url + "/meta", { cache: "no-store" }).catch(() => null);
+    if(m && m.status === 404) return { remote: false, changed: false };
+    if(m && m.ok){
+      const j = await m.json().catch(() => ({}));
+      if(j && +j.at && +j.at <= (state.sync.remoteAt || 0)) return { remote: true, changed: false };
+    }
+  }
+  const res = await fetch(url, { cache: "no-store" });
+  if(res.status === 404) return { remote: false, changed: false };
+  if(!res.ok) throw new Error(await errText(res));
+  const changed = mergeRemote(await gzipUnpack(await res.arrayBuffer()));
+  const at = +res.headers.get("X-Sync-At");
+  if(at) state.sync.remoteAt = at;
+  return { remote: true, changed };
+}
+async function syncPush(keepalive){
+  const body = await gzipPack(syncPayload());
+  const up = await fetch(SYNC_URL + state.sync.id, { method: "PUT", body, cache: "no-store",
+    keepalive: !!keepalive && body.byteLength < 60000, headers: { "Content-Type": "application/octet-stream" } });
+  if(up.status === 429) return false;                      // throttled burst: try again shortly
+  if(!up.ok) throw new Error(await errText(up));
+  const j = await up.json().catch(() => ({}));
+  if(j && +j.at) state.sync.remoteAt = +j.at;
+  state.sync.dirty = false;
+  return true;
+}
 async function syncNow(manual){
   if(!state.sync || !state.sync.id) return;
   if(syncBusy){ syncAgain = true; return; }
   syncBusy = true; renderSync();
   try{
-    const url = SYNC_URL + state.sync.id;
-    const res = await fetch(url, { cache:"no-store" });
-    let changed = false;
-    if(res.ok) changed = mergeRemote(await gzipUnpack(await res.arrayBuffer()));
-    else if(res.status !== 404) throw new Error(await errText(res));
-    const up = await fetch(url, { method:"PUT", body: await gzipPack(syncPayload()),
-      headers: { "Content-Type": "application/octet-stream" } });
-    if(up.status === 429){ syncAgain = true; return; }   // the worker throttles bursts: just try again shortly
-    if(!up.ok) throw new Error(await errText(up));
+    syncPullAt = Date.now();
+    const p = await syncPull(manual);
+    // push when there are local changes, or when the server has nothing yet for this code
+    if(state.sync.dirty !== false || !p.remote || manual){
+      if(!(await syncPush(false))) syncAgain = true;
+    }
     state.sync.at = Date.now(); state.sync.err = ""; save();
-    if(changed){
+    if(p.changed){
       $("#finals").checked = !!state.finals;
       renderChips(); renderSnap(); renderTrend();
+      if(!manual) toast(T("syncPulled"));
     }
     if(manual) toast(T("syncDone"));
   }catch(e){
@@ -101,7 +138,7 @@ async function syncNow(manual){
     if(manual) toast(T("syncFail", msg));
   }finally{
     syncBusy = false; renderSync();
-    if(syncAgain){ syncAgain = false; syncSoon(); }
+    if(syncAgain){ syncAgain = false; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); }
   }
 }
 async function errText(res){
@@ -140,5 +177,14 @@ $("#syncOffBtn").onclick = () => {
   delete state.sync; save(); $("#syncCode").value = ""; renderSync();
 };
 document.addEventListener("visibilitychange", () => {
-  if(document.visibilityState === "visible" && state.sync && Date.now() - (state.sync.at || 0) > 60000) syncNow(false);
+  if(!state.sync || !state.sync.id) return;
+  if(document.visibilityState === "visible"){
+    if(Date.now() - syncPullAt > 5000) syncNow(false);       // came back: check the other device's changes
+  }else if(state.sync.dirty){
+    clearTimeout(syncTimer);
+    syncPush(true).catch(() => {});                          // leaving: send what was not sent yet
+  }
 });
+setInterval(() => {
+  if(state.sync && state.sync.id && document.visibilityState === "visible" && Date.now() - syncPullAt > 85000) syncNow(false);
+}, 30000);
