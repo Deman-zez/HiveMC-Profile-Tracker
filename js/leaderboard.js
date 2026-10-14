@@ -93,7 +93,7 @@ function lbPlayerUrl(game, period, nick){
   if(period === "all") return API + "/game/all/" + game + "/" + n;
   if(period[0] === "m"){
     const d = lbMonthDate(+period.slice(1));
-    return API + "/game/monthly/player/all/" + n + "/" + d.getUTCFullYear() + "/" + (d.getUTCMonth() + 1);
+    return API + "/game/monthly/player/" + game + "/" + n + "/" + d.getUTCFullYear() + "/" + (d.getUTCMonth() + 1);
   }
   return API + "/game/season/player/" + game + "/" + n + "/" + period.slice(1);
 }
@@ -117,6 +117,7 @@ async function loadLb(game, period, stale){
   try{
     const d = lbArr(await lbFetch(lbUrl(game, period)));
     LB[key] = { t: Date.now(), d, more: period !== "all" && d.length >= LB_PAGE };
+    d.forEach(p => learnNick(lbName(p)));
   }catch(e){ if(c) return c; throw e; }
   return LB[key];
 }
@@ -221,6 +222,7 @@ function lbHTML(entry, game, sort){
   if(!entry.d.length) return '<p class="sub" style="margin-top:20px">' + esc(T("lbEmpty")) + "</p>";
   const overall = game === "overall";
   const { list, m } = lbView(entry, game, sort);
+  list.forEach(x => learnNick(lbName(x.p)));
   const me = lbMe(), top = list.reduce((mx, x) => Math.max(mx, x.sv !== undefined ? x.sv : m.v(x.p)), 0);
   const podium = lbPodium(list, m, me);
   const rest = podium ? list.slice(3) : list;
@@ -243,8 +245,21 @@ function lbHTML(entry, game, sort){
 async function lbPlayerPlace(game, period, nick){
   const key = game + "|" + period + "|" + nick.toLowerCase(), c = LB_PLACE[key];
   if(c && Date.now() - c.t < 10 * 60 * 1000) return c.v;
-  let d = await lbFetch(lbPlayerUrl(game, period, nick));
-  if(period[0] === "m") d = d && d[game];
+  let d;
+  try{ d = await lbFetch(lbPlayerUrl(game, period, nick)); }
+  catch(e){
+    // the top for this period has just loaded fine, so Hive is up: a server error for one player's
+    // position is Hive's way of saying it has no record of them for this period
+    if(e.status >= 500){ LB_PLACE[key] = { t: Date.now(), v: null }; return null; }
+    throw e;
+  }
+  if(!d && period[0] === "m"){
+    // older form of the monthly lookup: all games at once
+    const m = lbMonthDate(+period.slice(1));
+    try{ d = await lbFetch(API + "/game/monthly/player/all/" + encodeURIComponent(nick) + "/" + m.getUTCFullYear() + "/" + (m.getUTCMonth() + 1)); }
+    catch(e){ if(!(e.status >= 500)) throw e; d = null; }
+  }
+  if(d && period[0] === "m" && d[game] && typeof d[game] === "object") d = d[game];
   let v = null;
   if(d && typeof d === "object" && !Array.isArray(d)){
     const place = typeof d.human_index === "number" ? d.human_index : typeof d.index === "number" ? d.index + 1 : 0;
@@ -293,14 +308,22 @@ async function lbFind(q){
     return;
   }
   const hit = lbView(entry, game, sort).list.find(x => lbName(x.p).toLowerCase() === q.toLowerCase());
-  if(hit){ lbFlash(hit.place); return; }
+  if(hit){
+    const real = lbName(hit.p), inp = $("#lbFind");
+    if(inp && inp.value.trim().toLowerCase() === real.toLowerCase()) inp.value = real;
+    lbFlash(hit.place); return;
+  }
   if(game === "overall"){ out.innerHTML = '<p class="sub">' + esc(T("lbNotFound", q)) + "</p>"; return; }
   out.innerHTML = '<p class="sub">' + esc(T("tqLoading")) + "</p>";
   try{
     const r = await lbPlayerPlace(game, period, q);
     if(seq !== lbSeq) return;
     if(!r){ out.innerHTML = '<p class="sub">' + esc(T("lbNotFound", q)) + "</p>"; return; }
-    out.innerHTML = lbFoundCard((r.p.username_cc || r.p.username || q), r.place, r.p, game);
+    const real = r.p.username_cc || r.p.username || q;
+    learnNick(real);
+    const inp = $("#lbFind");
+    if(inp && inp.value.trim().toLowerCase() === String(real).toLowerCase()) inp.value = real;
+    out.innerHTML = lbFoundCard(real, r.place, r.p, game);
   }catch(e){ if(seq === lbSeq) out.innerHTML = '<p class="sub">' + esc(e.message) + "</p>"; }
 }
 

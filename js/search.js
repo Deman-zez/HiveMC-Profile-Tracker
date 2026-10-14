@@ -29,9 +29,11 @@ async function searchPlayers(q){
           uuid: pick(it, "UUID", "uuid"),
           rank: pick(it, "rank", "player_rank"),
           icon: cosIcon(pick(it, "avatar", "equipped_avatar")) || pick(it, "avatar_url", "icon")
-                || state.avatars[String(pick(it, "username", "username_cc", "name") || "").toLowerCase()] }
+                || avatarFor(pick(it, "username", "username_cc", "name")) }
   ).filter(x => x.name);
   if(list.length) searchCache.set(q, list);
+  list.forEach(x => learnNick(x.name));
+  setTimeout(fixActiveNickField, 0);        // the field the user is typing in gets the exact spelling
   return list;
 }
 function hueOf(str){

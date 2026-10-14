@@ -88,8 +88,10 @@ async function snapshot(){
       const who = (pick(md, "username", "username_cc") || state.nick).toLowerCase();
       if(url){
         state.avatars[who] = url;
-        const keys = Object.keys(state.avatars);
-        if(keys.length > 60) delete state.avatars[keys[0]];
+        // keep the cache small, but never drop your own avatar or the one on screen
+        const keep = new Set([(state.main || "").toLowerCase(), nickKey()]);
+        const keys = Object.keys(state.avatars).filter(k => !keep.has(k));
+        while(keys.length > 150) delete state.avatars[keys.shift()];
       }
       const cc = md.username_cc;
       if(cc && state.main && state.main.toLowerCase() === cc.toLowerCase()) state.main = cc;

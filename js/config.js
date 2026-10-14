@@ -14,8 +14,9 @@ async function hiveFetch(url, opts){
     const r = await fetch(PROXY + encodeURIComponent(url), Object.assign({}, opts, ctl ? { signal: ctl.signal } : {}));
     proxyStatus = r.status;
     if(r.ok){ r.__via = "proxy"; apiStatus(true); return r; }
-    // 404 and friends are real answers from Hive; retrying direct would only hit CORS
-    if(r.status < 500 && r.status !== 403){ r.__via = "proxy"; if(r.status !== 429) apiStatus(true); return r; }
+    // any real answer from Hive (404, 500...) is final: asking Hive directly would get the same answer,
+    // only slower and usually blocked by CORS. Only a refusal by the proxy itself (403) falls through.
+    if(r.status !== 403){ r.__via = "proxy"; return r; }
   }catch(e){}
   finally{ if(timer) clearTimeout(timer); }
   let r;

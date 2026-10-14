@@ -1,7 +1,20 @@
 "use strict";
 
+// avatar for a nick: the cache, or else the avatar from that player's own latest snapshot
+function avatarFor(name){
+  const k = String(name || "").toLowerCase();
+  if(!k) return "";
+  if(state.avatars[k]) return state.avatars[k];
+  for(let i = state.snaps.length - 1; i >= 0; i--){
+    const s = state.snaps[i];
+    if(s.n !== k || !s.g || !s.g.main) continue;
+    const url = cosIcon(pick(s.g.main, "equipped_avatar", "avatar_equipped"));
+    if(url){ state.avatars[k] = url; return url; }
+  }
+  return "";
+}
 function pavHTML(name){
-  const url = state.avatars[String(name).toLowerCase()];
+  const url = avatarFor(name);
   const letter = String(name).trim().charAt(0).toUpperCase() || "?";
   return '<span class="pav" style="--h:' + hueOf(String(name).toLowerCase()) + '">' +
     (url ? '<img alt="" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +

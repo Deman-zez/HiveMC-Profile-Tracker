@@ -210,6 +210,27 @@ function staggerIn(els, cap){
     setTimeout(() => el.classList.remove("enter"), 700 + i * 30);
   });
 }
+/* exact spelling of nicks: Hive nicks are case-insensitive for lookups, but the site should always show
+   them the way the player wrote them. Every source of real names (snapshots, leaderboards, search
+   answers) teaches this map, and nick fields correct themselves from it. */
+const NICK_CASE = new Map();
+function learnNick(n){ if(typeof n === "string" && n.trim()) NICK_CASE.set(n.trim().toLowerCase(), n.trim()); }
+function properNick(q){ return NICK_CASE.get(String(q || "").trim().toLowerCase()) || null; }
+const NICK_FIELDS = "#lbFind, #nick, #cmpNick, #qsNick, #onbNick";
+function fixNickField(inp){
+  if(!inp || !inp.matches || !inp.matches(NICK_FIELDS)) return false;
+  const v = inp.value, t = v.trim();
+  if(t.length < 3 || /^#?\d+$/.test(t)) return false;
+  const p = properNick(t);
+  if(!p || p === t) return false;
+  inp.value = p;
+  try{ inp.setSelectionRange(p.length, p.length); }catch(e){}
+  inp.dispatchEvent(new Event("input", { bubbles: true }));
+  return true;
+}
+const fixActiveNickField = () => fixNickField(document.activeElement);
+document.addEventListener("focusout", e => fixNickField(e.target), true);
+document.addEventListener("keydown", e => { if(e.key === "Enter") fixNickField(e.target); }, true);
 const SHORT_NAMES = { ctf: "CTF" };   // used when the full name does not fit a closed dropdown
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
 const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Object.entries(c).some(([k, v]) =>

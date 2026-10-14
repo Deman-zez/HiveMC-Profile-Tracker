@@ -75,6 +75,11 @@ function applyGameList(codes, fresh){
   return before !== after;
 }
 applyGameList(state.apiGames, false);
+setTimeout(() => {
+  if(typeof learnNick !== "function") return;
+  state.snaps.forEach(s => { const m = s.g && s.g.main; if(m) learnNick(m.username_cc || m.username); });
+  learnNick(state.main); learnNick(state.nick);
+}, 0);
 state.games = state.games.filter(g => GAMES.some(x => x[0] === g));
 state.lastDiag = state.lastDiag || 0;
 state.reqLog = state.reqLog || [];

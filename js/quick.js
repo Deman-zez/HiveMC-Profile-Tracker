@@ -17,7 +17,7 @@ function recentNicks(limit){
 
 function recentRow(x){
   const k = x.name.toLowerCase(), isMain = !!state.main && state.main.toLowerCase() === k;
-  const url = state.avatars[k], letter = x.name.trim().charAt(0).toUpperCase() || "?";
+  const url = avatarFor(k), letter = x.name.trim().charAt(0).toUpperCase() || "?";
   return '<button type="button" data-n="' + esc(x.name) + '">' +
     '<span class="av" style="--h:' + hueOf(k) + '"><span>' +
       (url ? '<img alt="" loading="lazy" src="' + esc(url) + '">' : "<i>" + esc(letter) + "</i>") +
