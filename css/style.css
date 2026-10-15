@@ -1211,14 +1211,6 @@ html.locked{overflow:hidden}
   .calDay:not(:disabled):not(.sel):hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.35)}
 }
 
-/* ---------- leaderboard rows: value as a slim track, rank badge sized for 3 digits ---------- */
-.lbr{position:relative;background:none}
-.lbr::after{content:"";position:absolute;left:58px;right:12px;bottom:3px;height:2px;border-radius:2px;pointer-events:none;
-  background:linear-gradient(90deg,rgba(160,95,214,.75) var(--w,0%),rgba(255,255,255,.05) var(--w,0%))}
-.lbr.me{background:rgba(255,192,46,.07)}
-.lbr.me::after{background:linear-gradient(90deg,var(--gold) var(--w,0%),rgba(255,192,46,.12) var(--w,0%))}
-.lbp{min-width:38px;padding:4px 5px;font-size:12.5px;letter-spacing:-.02em}
-@media (min-width:900px){ .lbr::after{left:88px} }
 
 /* ---------- recent games: days as soft panels, games as rows inside ---------- */
 .actCard{padding:8px}
@@ -1288,7 +1280,19 @@ html.locked{overflow:hidden}
   color:var(--text);font-size:14px;font-weight:600;letter-spacing:.01em}
 .mini:active{transform:scale(.97);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05))}
 .mini:disabled{opacity:.45;cursor:default}
-@media (min-width:900px){ .mini:hover{border-color:rgba(255,192,46,.38);background:linear-gradient(180deg,rgba(255,192,46,.12),rgba(255,192,46,.03))} }
+.mini{isolation:isolate}
+/* light that follows the mouse inside the button, and a brighter piece of the rim next to it */
+.mglow,.mring{position:absolute;pointer-events:none;border-radius:inherit;opacity:0;z-index:-1;transition:opacity .3s ease}
+.mglow{inset:0;background:radial-gradient(150px circle at var(--mx,50%) var(--my,50%),rgba(255,192,46,.2),rgba(255,192,46,.06) 40%,transparent 70%)}
+.mring{inset:-1px;padding:1px;
+  background:radial-gradient(110px circle at var(--mx,50%) var(--my,50%),rgba(255,222,140,.95),rgba(255,192,46,.3) 45%,transparent 75%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+          mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+@media (hover:hover) and (pointer:fine){
+  .mini:hover:not(:disabled) .mglow,.mini:hover:not(:disabled) .mring{opacity:1}
+  .mini:hover:not(:disabled){background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.035))}
+}
+.lite .mglow,.lite .mring{display:none}
 .mini.more,#openMain,.cmpgo,.lbgo{display:flex;width:100%;margin-top:14px;color:var(--gold)}
 .mini.more::after,#openMain::after,.lbgo::after{content:"";width:7px;height:7px;margin-left:2px;border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg)}
 .cmpgo::before{content:"";width:16px;height:16px;flex:none;background:currentColor;
