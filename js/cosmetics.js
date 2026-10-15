@@ -81,14 +81,29 @@ function openCos(base, arr, from){
     '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  requestAnimationFrame(() => {
+  // Hundreds of items at once froze the tap for half a second. The window opens first, the first screen of
+  // items lands right after, and the rest is added in small batches between frames.
+  const list = LIST_KIND(base);
+  const piece = part => list ? rowsHTML(base, part).replace(/^<div class="tlist">|<\/div>$/g, "")
+                             : part.map(it => itemHTML(base, it)).join("");
+  setTimeout(() => {
     const box = m.querySelector(".mbody");
-    if(!box) return;
-    box.innerHTML = '<div class="card">' + (LIST_KIND(base) ? rowsHTML(base, arr)
-      : '<div class="grid">' + arr.map(it => itemHTML(base, it)).join("") + "</div>") + "</div>";
-    staggerIn(box.querySelectorAll(".grid > .it, .tlist > div"), 36);
-    markTq(box);
-  });
+    if(!box || !m.isConnected) return;
+    box.innerHTML = '<div class="card"><div class="' + (list ? "tlist" : "grid") + '"></div></div>';
+    const holder = box.querySelector(".tlist, .grid");
+    let i = 0;
+    const FIRST = list ? 30 : 36, STEP = list ? 60 : 72;
+    const add = n => {
+      if(!m.isConnected) return;
+      const from = holder.children.length;
+      holder.insertAdjacentHTML("beforeend", piece(arr.slice(i, i + n)));
+      i += n;
+      if(from === 0) staggerIn(holder.children, 36);
+      markTq(holder);
+      if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(() => add(STEP), { timeout: 120 });
+    };
+    add(FIRST);
+  }, 30);
 }
 function fmtTicks(t){
   const ms = Math.round(t * 50), m = Math.floor(ms / 60000), sec = Math.floor(ms % 60000 / 1000);

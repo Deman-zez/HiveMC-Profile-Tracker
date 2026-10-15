@@ -34,7 +34,6 @@ function applyLang(){
   tickDiag();
   $("#exportBtn").textContent = T("exportBtn"); $("#importBtn").textContent = T("importBtn");
   $("#wipeBtn").textContent = T("wipeBtn"); $("#diagBtn").textContent = T("diagBtn");
-  $("#limitNote").textContent = T("limitNote");
   if(typeof renderSync === "function") renderSync();
   renderChips(); renderSnap(); renderTrend();
 }

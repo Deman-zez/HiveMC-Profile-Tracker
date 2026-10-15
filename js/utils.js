@@ -20,7 +20,14 @@ const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
 const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
 function mountModal(m, from){
   document.body.append(m);
-  document.documentElement.classList.add("locked");
+  // Locking the page scroll changes the root's overflow, and some browsers (Chrome's desktop-site mode on
+  // phones) re-lay the whole page out for a frame because of it. Wide layouts show a centred dialog with
+  // its own scroll, so there the page is held still by eating wheel and touch scrolling on the backdrop.
+  if(innerWidth >= 900){
+    const stop = e => { if(!e.target.closest || !e.target.closest(".inner")) e.preventDefault(); };
+    m.addEventListener("wheel", stop, { passive: false });
+    m.addEventListener("touchmove", stop, { passive: false });
+  }else document.documentElement.classList.add("locked");
   const ok = from && from.getBoundingClientRect &&
     !matchMedia("(prefers-reduced-motion: reduce)").matches && !state.lite;
   if(ok){

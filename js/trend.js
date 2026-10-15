@@ -17,7 +17,26 @@ const TREND_RANGES = [
 const ACT = {};
 const ACT_MAX = 300;
 let actShown = 20;
+let actDaysShown = 7, actOpen = null;
+const actDayKey = sec => { const d = new Date(sec * 1000);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+function actDayLabel(key){
+  const [y, m, d] = key.split("-").map(Number), date = new Date(y, m - 1, d), now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((today - date) / 86400000);
+  if(diff === 0) return T("actToday");
+  if(diff === 1) return T("actYesterday");
+  const loc = L === "ru" ? "ru-RU" : "en-US";
+  const s = date.toLocaleDateString(loc, Object.assign({ weekday: "short", day: "numeric", month: "long" },
+    y !== now.getFullYear() ? { year: "numeric" } : {}));
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+let actClockOnly = false;
 function agoText(sec){
+  if(actClockOnly){
+    const d = new Date(sec * 1000);
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
   const diff = Date.now() - sec * 1000;
   if(diff < 60000) return T("agoNow");
   if(diff < 3600000) return T("agoMin", Math.floor(diff / 60000));
@@ -147,31 +166,172 @@ function lockerName(id){
   walk(main, 0);
   return found;
 }
+/* Recent games: today's games are listed as they are; older days are one line each with their totals and
+   open on tap. An open day's header sticks to the top like a date in a chat, on a frosted bar. */
 function actHTML(list, err){
   const all = list || [];
   const groups = actGroups(all);
-  const rows = groups.slice(0, actShown).map(g => actRow(g.e, g.ex)).join("");
-  const more = groups.length > actShown
-    ? '<button type="button" class="mini actmore">' + esc(T("actMore", Math.min(20, groups.length - actShown))) + "</button>" : "";
+  const today = actDayKey(Date.now() / 1000);
+  const todayRows = [], days = [];
+  groups.forEach(g => {
+    const k = typeof g.e.time === "number" ? actDayKey(g.e.time) : "?";
+    if(k === today){ todayRows.push(g); return; }
+    let d = days[days.length - 1];
+    if(!d || d.k !== k) days.push(d = { k, gs: [], games: 0, wins: 0, rewards: 0 });
+    d.gs.push(g);
+    if(g.e.type === "ROUND_PLAYED"){ d.games++; if(g.e.victory === true) d.wins++; }
+    d.rewards += (g.e.type === "ROUND_PLAYED" ? 0 : 1) + g.ex.length;
+  });
+  if(!actOpen) actOpen = new Set();
+  let head = "";
+  if(todayRows.length){
+    const tg = todayRows.filter(g => g.e.type === "ROUND_PLAYED"), tw = tg.filter(g => g.e.victory === true).length;
+    const twr = tg.length ? Math.round(tw / tg.length * 100) : 0;
+    const tsum = tg.length
+      ? '<span class="adg">' + esc(nf(tg.length) + " " + gamesWord(tg.length)) + '</span><span class="adw' + (twr >= 50 ? " good" : "") + '">' + twr + "%</span>"
+      : "";
+    const now = new Date();
+    const dateTxt = now.toLocaleDateString(L === "ru" ? "ru-RU" : "en-US", { weekday: "short", day: "numeric", month: "long" });
+    const strip = tg.slice(0, 24).reverse().map((g, i) => '<i class="' + (g.e.victory === true ? "w" : "l") + '" style="--ei:' + i + '"></i>').join("");
+    head = '<div class="actDay open today"><div class="actDh static">' +
+      '<span class="tdl"><span class="tdLive"></span><span class="tdT"><b>' + esc(T("actToday")) + "</b><small>" + esc(dateTxt) + "</small></span></span>" +
+      '<span class="ads">' + tsum + "</span>" +
+      (tg.length > 1 ? '<span class="tdStrip" aria-hidden="true">' + strip + "</span>" : "") + "</div>" +
+      '<div class="actDb"><div class="actDbIn">' + actDayRows(today, todayRows) + "</div></div></div>";
+  }
+  const body = days.slice(0, actDaysShown).map((d, i) => {
+    const open = actOpen.has(d.k);
+    const wr = d.games ? Math.round(d.wins / d.games * 100) : 0;
+    const sum = d.games
+      ? '<span class="adg">' + esc(nf(d.games) + " " + gamesWord(d.games)) + '</span><span class="adw' + (wr >= 50 ? " good" : "") + '">' + wr + "%</span>"
+      : '<span class="adg">' + esc(T("actDayRewards", nf(d.rewards))) + "</span>";
+    return '<div class="actDay' + (open ? " open" : "") + '" data-k="' + d.k + '" style="--ei:' + i + '">' +
+      '<button type="button" class="actDh" aria-expanded="' + open + '"><b>' + esc(d.k === "?" ? "—" : actDayLabel(d.k)) + "</b>" +
+      '<span class="ads">' + sum + "</span>" + ACT_CHEV + "</button>" +
+      '<div class="actDb"' + (open ? "" : ' hidden') + '><div class="actDbIn">' + (open ? actDayRows(d.k, d.gs) : "") + "</div></div></div>";
+  }).join("");
+  const more = days.length > actDaysShown
+    ? '<button type="button" class="mini actmore">' + esc((n => T(n === 1 ? "actMoreDay1" : "actMoreDays", n))(Math.min(14, days.length - actDaysShown))) + "</button>" : "";
+  const empty = !head && !body ? '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>" : "";
   return "<h2>" + esc(T("actTitle")) + (groups.length ? ' <span class="actn">' + nf(groups.length) + "</span>" : "") +
-    '</h2><div class="card">' +
-    (rows || '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>") + more + "</div>";
+    '</h2><div class="card actCard">' + head + body + empty + more + "</div>";
 }
+const winsWord = n => L === "ru" ? "поб." : (n === 1 ? "win" : "wins");
+// rows of one day: today keeps "5 min ago", older days only need the clock time
+function actDayRows(k, groups){
+  const today = actDayKey(Date.now() / 1000);
+  actClockOnly = k !== today;
+  try{ return groups.map(g => actRow(g.e, g.ex)).join(""); }
+  finally{ actClockOnly = false; }
+}
+const ACT_CHEV = '<svg class="actCh" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>';
+const actMotion = () => !state.lite && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+function actSlide(body, open, done){
+  const inner = body.firstElementChild;
+  if(body.__anim){ body.__anim.cancel(); body.__anim = null; }
+  if(open) body.hidden = false;
+  if(!actMotion()){ if(!open) body.hidden = true; if(done) done(); return; }
+  const h = inner.offsetHeight, from = open ? 0 : h, to = open ? h : 0;
+  body.style.overflow = "hidden";
+  const a = body.animate([{ height: from + "px" }, { height: to + "px" }],
+    { duration: open ? Math.min(560, 300 + h * .35) : Math.min(380, 220 + h * .15),
+      easing: open ? "cubic-bezier(.22,1,.36,1)" : "cubic-bezier(.45,0,.55,1)", fill: "forwards" });
+  body.__anim = a;
+  let fade = null;
+  if(open){
+    // One animation for the whole list: a dozen separate row animations made phone browsers repaint the
+    // entire card on every frame, which showed up as flicker. The list glides down as one piece instead.
+    fade = inner.animate([{ opacity: 0, transform: "translate3d(0,-14px,0)" }, { opacity: 1, transform: "none" }],
+      { duration: 420, delay: 40, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" });
+  }else{
+    // the fade is held at zero until the day is really hidden, otherwise rows pop back mid-collapse
+    fade = inner.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" });
+  }
+  a.onfinish = () => {
+    if(!open) body.hidden = true;
+    body.style.overflow = "";
+    a.cancel(); body.__anim = null;
+    if(fade && !open) fade.cancel();
+    if(done) done();
+  };
+  a.oncancel = () => { if(fade) fade.cancel(); };
+}
+function actBindDays(box, list){
+  box.querySelectorAll(".actDay .actDh:not(.static)").forEach(h => h.onclick = () => {
+    const day = h.parentNode, k = day.dataset.k, body = day.querySelector(".actDb"), inner = body.firstElementChild;
+    const opening = !day.classList.contains("open");
+    if(opening){
+      actOpen.add(k);
+      if(!inner.childElementCount){
+        const groups = actGroups(list || []).filter(g => typeof g.e.time === "number" && actDayKey(g.e.time) === k);
+        inner.innerHTML = actDayRows(k, groups);
+        fillCatalogue(box);
+      }
+      day.classList.add("open");
+      actSlide(body, true);
+    }else if(day.classList.contains("stuck")){
+      // Closing a day you have scrolled into: collapsing it in place would yank everything under the
+      // pinned header. Instead the header stays exactly where it is on screen, the day's games vanish
+      // above the fold, and the days below glide up into view.
+      actOpen.delete(k);
+      if(body.__anim){ body.__anim.cancel(); body.__anim = null; }
+      const docTop = day.getBoundingClientRect().top + scrollY;
+      const pin = parseFloat(getComputedStyle(h).top) || 0;
+      day.classList.remove("open", "stuck");
+      body.hidden = true;
+      scrollTo({ top: Math.max(0, docTop - pin), behavior: "instant" });
+      if(actMotion()){
+        let el = day.nextElementSibling, i = 0;
+        while(el && i < 8){
+          el.animate([{ opacity: 0, transform: "translate3d(0,22px,0)" }, { opacity: 1, transform: "none" }],
+            { duration: 360, delay: i * 30, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" });
+          el = el.nextElementSibling; i++;
+        }
+      }
+      actStickCheck();
+    }else{
+      actOpen.delete(k);
+      day.classList.remove("open", "stuck");
+      actSlide(body, false);
+    }
+    h.setAttribute("aria-expanded", opening);
+  });
+}
+/* a sticky day header gets its frosted bar only while it is actually stuck at the top */
+let actStickTick = false;
+function actStickCheck(){
+  if(actStickTick) return;
+  actStickTick = true;
+  requestAnimationFrame(() => {
+    actStickTick = false;
+    const view = $("#vTrend"); if(!view || view.classList.contains("hidden")) return;
+    view.querySelectorAll(".actDay.open > .actDh").forEach(h => {
+      const top = parseFloat(getComputedStyle(h).top) || 0;
+      const r = h.getBoundingClientRect(), d = h.parentNode.getBoundingClientRect();
+      h.parentNode.classList.toggle("stuck", r.top <= top + 1 && d.top < r.top - 1);
+    });
+  });
+}
+addEventListener("scroll", actStickCheck, { passive: true });
 async function renderActivity(){
   const box = $("#trendAct"); if(!box) return;
+  if(typeof calAnim !== "undefined" && !$("#vTrend").classList.contains("hidden")) calAnim = "in";
   const mine = mySnaps(), last = mine[mine.length - 1];
   const uuid = last && last.g.main && pick(last.g.main, "UUID", "uuid");
-  if(!uuid){ box.innerHTML = ""; return; }
+  if(!uuid){ box.innerHTML = ""; const sd = $("#trendSide"); if(sd) sd.innerHTML = ""; return; }
   const draw = () => {
     const c = ACT[uuid] || {};
     const list = (state.actLog || {})[uuid] || [];
-    box.innerHTML = list.length || !c.p ? actHTML(list, c.err)
-      : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>";
+    box.innerHTML = (list.length || !c.p ? actHTML(list, c.err)
+      : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>");
+    const side = $("#trendSide");
+    if(side && typeof calHTML === "function"){ side.innerHTML = calHTML(list); calBind(side); }
+    actBindDays(box, list);
     const mb = box.querySelector(".actmore");
     if(mb) mb.onclick = () => {
-      const from = box.querySelectorAll(".card > .act").length;
-      actShown += 20; draw();
-      staggerIn([...box.querySelectorAll(".card > .act")].slice(from), 20);
+      const from = box.querySelectorAll(".actCard > .actDay").length;
+      actDaysShown += 14; draw();
+      staggerIn([...box.querySelectorAll(".actCard > .actDay")].slice(from), 14);
     };
     fillCatalogue(box, draw);
   };
