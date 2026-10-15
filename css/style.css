@@ -525,7 +525,7 @@ html.locked{overflow:hidden}
   .game:hover::before{transform:scaleX(1)}
   .game:hover::after{opacity:1}
   .game:hover b{color:var(--gold)}
-  .chip:hover,.mini:hover{border-color:rgba(255,192,46,.4);
+  .chip:hover{border-color:rgba(255,192,46,.4);
     background:color-mix(in srgb, var(--gold) 9%, var(--panel))}
   .chip[aria-pressed="true"]:hover{background:var(--gold);border-color:var(--gold)}
   .tile.tap:hover{background:color-mix(in srgb, var(--gold) 11%, var(--tile));
@@ -949,10 +949,7 @@ html.locked{overflow:hidden}
 #heroTop.splitting #searchBtn{animation:lgSplit .6s cubic-bezier(.3,.9,.4,1)}
 .lite #heroTop .hbtn{animation:none}
 @media (prefers-reduced-motion: reduce){ #heroTop .hbtn{animation:none} .lgGlow{display:none}}
-@media (min-width:900px){
-  .tabs button:hover > span{opacity:1;color:var(--text);text-shadow:0 0 14px rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.6)}
-  .tabs button:hover > span{filter:drop-shadow(0 0 6px rgba(255,255,255,.35))}
-  .tabs button[aria-current="page"]:hover > span{color:#ffcf55;filter:drop-shadow(0 0 4px rgba(255,192,46,.65)) drop-shadow(0 0 12px rgba(255,192,46,.35))}}
+
 
 /* ---------- glass{display:none}
 @keyframes lgJelly{0%{scale:1 1}16%{scale:1.075 .925}40%{scale:.955 1.045}64%{scale:1.02 .985}84%{scale:.995 1.005}100%{scale:1 1}}
@@ -1282,16 +1279,16 @@ html.locked{overflow:hidden}
 .mini:disabled{opacity:.45;cursor:default}
 .mini{isolation:isolate}
 /* light that follows the mouse inside the button, and a brighter piece of the rim next to it */
-.mglow,.mring{position:absolute;pointer-events:none;border-radius:inherit;opacity:0;z-index:-1;transition:opacity .3s ease}
-.mglow{inset:0;background:radial-gradient(150px circle at var(--mx,50%) var(--my,50%),rgba(255,192,46,.2),rgba(255,192,46,.06) 40%,transparent 70%)}
+.mglow,.mring{position:absolute;pointer-events:none;border-radius:inherit;opacity:0;z-index:-1;overflow:hidden}
+.mglow{inset:0}
 .mring{inset:-1px;padding:1px;
-  background:radial-gradient(110px circle at var(--mx,50%) var(--my,50%),rgba(255,222,140,.95),rgba(255,192,46,.3) 45%,transparent 75%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
           mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
-@media (hover:hover) and (pointer:fine){
-  .mini:hover:not(:disabled) .mglow,.mini:hover:not(:disabled) .mring{opacity:1}
-  .mini:hover:not(:disabled){background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.035))}
-}
+.mglow i,.mring i{position:absolute;left:0;top:0;border-radius:50%;will-change:transform;transform:translate3d(-999px,-999px,0)}
+.mglow i{width:380px;height:380px;margin:-190px 0 0 -190px;
+  background:radial-gradient(circle,rgba(255,192,46,.22),rgba(255,192,46,.07) 40%,transparent 70%)}
+.mring i{width:300px;height:300px;margin:-150px 0 0 -150px;
+  background:radial-gradient(circle,rgba(255,222,140,.95),rgba(255,192,46,.3) 45%,transparent 75%)}
 .lite .mglow,.lite .mring{display:none}
 .mini.more,#openMain,.cmpgo,.lbgo{display:flex;width:100%;margin-top:14px;color:var(--gold)}
 .mini.more::after,#openMain::after,.lbgo::after{content:"";width:7px;height:7px;margin-left:2px;border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg)}
@@ -1302,7 +1299,7 @@ html.locked{overflow:hidden}
 #vSet .chips.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #vSet .chips.btns .mini{width:100%}
 #wipeBtn{color:#ff8a7a}
-@media (min-width:900px){ #wipeBtn:hover{border-color:rgba(255,95,79,.45);background:linear-gradient(180deg,rgba(255,95,79,.14),rgba(255,95,79,.03))} }
+
 
 /* ---------- settings switches ---------- */
 #vSet .check{justify-content:space-between;gap:16px}
@@ -1319,3 +1316,19 @@ html.locked{overflow:hidden}
 #vSet .check input:active{background-size:34px 30px}
 .lite #vSet .check input{transition:none}
 .calDetIn,.actDbIn{display:flow-root}
+
+/* ---------- tab bar icons: a soft halo behind each icon ---------- */
+.tabs button > span{position:relative}
+.tabs button > span::before{content:"";position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;
+  pointer-events:none;opacity:0;transform:scale(.55);z-index:-1;
+  background:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,.06) 45%,transparent 70%);
+  transition:opacity .25s ease,transform .35s cubic-bezier(.3,1.4,.5,1)}
+.tabs button > span svg{transition:transform .3s cubic-bezier(.3,1.4,.5,1)}
+.tabs button.th > span{color:#fff;filter:drop-shadow(0 0 7px rgba(255,255,255,.45)) drop-shadow(0 1px 1.5px rgba(0,0,0,.6))}
+.tabs button.th > span::before{opacity:1;transform:scale(1)}
+.tabs button.th > span svg{transform:translateY(-1px) scale(1.1)}
+.tabs button[aria-current="page"] > span::before{opacity:1;transform:scale(1);
+  background:radial-gradient(circle,rgba(255,192,46,.32),rgba(255,192,46,.08) 45%,transparent 70%)}
+.tabs button[aria-current="page"].th > span{color:#ffd970;
+  filter:drop-shadow(0 0 5px rgba(255,192,46,.8)) drop-shadow(0 0 14px rgba(255,192,46,.45))}
+.lite .tabs button > span::before,.lite .tabs button > span svg{transition:none}
