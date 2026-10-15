@@ -216,16 +216,19 @@ function lbPodium(list, m, me){
       '<small class="pods">' + esc(m.unit() || T("winrate")) + "</small></button>";
   }).join("") + "</div>";
 }
-const lbHead = m => '<div class="lbhead"><span>#</span><span>' + esc(T("lbColPlayer")) + "</span><span>" +
+const lbHead = m => '<div class="lbhead"><span></span><span>' + esc(T("lbColPlayer")) + "</span><span>" +
   esc(m.unit() || T("winrate")) + "</span><span>" + esc(T("played")) + "</span><span>" + esc(T("lbColWr")) + "</span></div>";
 function lbHTML(entry, game, sort){
   if(!entry.d.length) return '<p class="sub" style="margin-top:20px">' + esc(T("lbEmpty")) + "</p>";
   const overall = game === "overall";
   const { list, m } = lbView(entry, game, sort);
   list.forEach(x => learnNick(lbName(x.p)));
-  const me = lbMe(), top = list.reduce((mx, x) => Math.max(mx, x.sv !== undefined ? x.sv : m.v(x.p)), 0);
+  const me = lbMe();
   const podium = lbPodium(list, m, me);
   const rest = podium ? list.slice(3) : list;
+  // the fill is measured against the best row of the list itself (place 4 when the podium is shown),
+  // not against the leader on the podium, so the first row is full and the rest read clearly against it
+  const top = rest.reduce((mx, x) => Math.max(mx, x.sv !== undefined ? x.sv : m.v(x.p)), 0);
   const first = Math.max(LB_CHUNK, lbMinRows);
   lbPending = { rows: rest.slice(first), m, me, top, overall };
   const rows = rest.slice(0, first).map(x => lbRow(x, m, me, top, overall)).join("");

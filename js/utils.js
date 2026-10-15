@@ -244,3 +244,15 @@ const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Objec
   typeof v === "number" && v > 0 && !SKIP.has(k) && !isDateKey(k) && !/^(level|prestige)$/.test(k));
 
 function httpMsg(st){ return st >= 500 ? T("hiveDown", st) : T("httpErr", st); }
+
+/* cursor glow on secondary buttons: the light sits where the mouse is */
+document.addEventListener("pointermove", e => {
+  if(e.pointerType !== "mouse" || state.lite) return;
+  const b = e.target.closest && e.target.closest(".mini");
+  if(!b || b.disabled) return;
+  if(!b.querySelector(":scope > .mglow"))
+    b.insertAdjacentHTML("beforeend", '<span class="mglow" aria-hidden="true"></span><span class="mring" aria-hidden="true"></span>');
+  const r = b.getBoundingClientRect();
+  b.style.setProperty("--mx", Math.round(e.clientX - r.left) + "px");
+  b.style.setProperty("--my", Math.round(e.clientY - r.top) + "px");
+}, { passive: true });
