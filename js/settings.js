@@ -119,7 +119,7 @@ function goMain(){
   if(!state.main) return;
   const other = state.main.toLowerCase() !== nickKey();
   if(other) navSave();
-  wheelTo = null; scrollTo(0, 0);
+  scrollTo(0, 0);
   if(other){ switchNick(state.main); navPush("snap", 0); }
   snapshot();
 }

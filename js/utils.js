@@ -209,11 +209,20 @@ function iconUrl(base, id){
   if(!slug) return null;
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
+/* Entrance cascade for a group of new elements. Every element that is on screen takes part - on a wide
+   screen that can be far more than on a phone - and the ones off screen simply appear, since nobody sees
+   them arrive. "cap" limits how far the delay grows, so long lists don't take ages to finish. */
 function staggerIn(els, cap){
   if((typeof state === "object" && state.lite) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  [...els].slice(0, cap || 40).forEach((el, i) => {
+  const list = [...els], vh = innerHeight, steps = cap || 24;
+  let k = 0;
+  const seen = list.filter(el => { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < vh + 40; });
+  seen.forEach(el => el.classList.remove("enter"));
+  if(seen.length) void seen[0].offsetWidth;
+  seen.forEach(el => {
+    const i = Math.min(k++, steps);
     el.style.setProperty("--ei", i);
-    el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
+    el.classList.add("enter");
     setTimeout(() => el.classList.remove("enter"), 700 + i * 30);
   });
 }
@@ -245,14 +254,70 @@ const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Objec
 
 function httpMsg(st){ return st >= 500 ? T("hiveDown", st) : T("httpErr", st); }
 
-/* cursor glow on secondary buttons: the light sits where the mouse is */
+/* Cursor light for secondary buttons: the light comes from the mouse itself, and the buttons are
+   windows onto it - a button near the cursor catches the edge of the glow, the one under it is lit most.
+   Keeping up with the cursor:
+   - the light is a ready-made circle that is only moved (transform) and faded (opacity): the browser does
+     not repaint anything per frame, it just slides an existing layer, which phones and tablets do instantly;
+   - it is moved inside the input event itself;
+   - where the browser can predict where the pointer is going (Chrome), the light is placed at the
+     predicted point, which hides the frame or two between the hardware cursor and the page. */
+const GLOW_R = 190;
+let glowX = -1e4, glowY = -1e4, glowLit = new Set(), glowBtns = [], glowBtnsAt = 0;
+function glowParts(b){
+  let g = b.__glow;
+  if(!g || !g[0].isConnected){
+    b.insertAdjacentHTML("beforeend", '<span class="mglow" aria-hidden="true"><i></i></span><span class="mring" aria-hidden="true"><i></i></span>');
+    const sp = b.querySelectorAll(":scope > .mglow, :scope > .mring");
+    g = b.__glow = [sp[0], sp[0].firstChild, sp[1], sp[1].firstChild];
+  }
+  return g;
+}
+function glowPaint(){
+  const now = new Set();
+  if(!state.lite && glowX > -1e3){
+    const t = performance.now();
+    if(t - glowBtnsAt > 400){ glowBtns = [...document.querySelectorAll(".mini")]; glowBtnsAt = t; }
+    for(const b of glowBtns){
+      if(b.disabled || !b.isConnected) continue;
+      const r = b.getBoundingClientRect();
+      if(!r.width || r.bottom < -GLOW_R || r.top > innerHeight + GLOW_R) continue;
+      const dx = glowX < r.left ? r.left - glowX : glowX > r.right ? glowX - r.right : 0;
+      const dy = glowY < r.top ? r.top - glowY : glowY > r.bottom ? glowY - r.bottom : 0;
+      const d = Math.hypot(dx, dy);
+      if(d > GLOW_R) continue;
+      const [gw, gi, rw, ri] = glowParts(b), k = 1 - d / GLOW_R;
+      // the inner light lives inside the 1px border, the rim light starts at the outer edge
+      gi.style.transform = "translate3d(" + (glowX - r.left - 1).toFixed(1) + "px," + (glowY - r.top - 1).toFixed(1) + "px,0)";
+      ri.style.transform = "translate3d(" + (glowX - r.left).toFixed(1) + "px," + (glowY - r.top).toFixed(1) + "px,0)";
+      const o = (k * k * (3 - 2 * k)).toFixed(3);
+      gw.style.opacity = o; rw.style.opacity = o;
+      now.add(b);
+    }
+  }
+  glowLit.forEach(b => { if(!now.has(b) && b.__glow){ b.__glow[0].style.opacity = "0"; b.__glow[2].style.opacity = "0"; } });
+  glowLit = now;
+}
 document.addEventListener("pointermove", e => {
-  if(e.pointerType !== "mouse" || state.lite) return;
-  const b = e.target.closest && e.target.closest(".mini");
-  if(!b || b.disabled) return;
-  if(!b.querySelector(":scope > .mglow"))
-    b.insertAdjacentHTML("beforeend", '<span class="mglow" aria-hidden="true"></span><span class="mring" aria-hidden="true"></span>');
-  const r = b.getBoundingClientRect();
-  b.style.setProperty("--mx", Math.round(e.clientX - r.left) + "px");
-  b.style.setProperty("--my", Math.round(e.clientY - r.top) + "px");
+  if(e.pointerType !== "mouse") return;
+  let x = e.clientX, y = e.clientY;
+  const pr = e.getPredictedEvents ? e.getPredictedEvents() : null;
+  if(pr && pr.length){ const p = pr[Math.min(pr.length - 1, 1)]; x = p.clientX; y = p.clientY; }
+  glowX = x; glowY = y; glowPaint();
+}, { passive: true });
+document.addEventListener("pointerout", e => { if(!e.relatedTarget){ glowX = glowY = -1e4; glowPaint(); } });
+let glowScrollRaf = 0;
+addEventListener("scroll", () => {
+  if(glowX < -1e3 || glowScrollRaf) return;
+  glowScrollRaf = requestAnimationFrame(() => { glowScrollRaf = 0; glowPaint(); });
+}, { passive: true });
+
+/* tab bar icons light up under a mouse (set by script: tablets with a mouse report touch as primary input) */
+document.addEventListener("pointerover", e => {
+  if(e.pointerType !== "mouse") return;
+  const b = e.target.closest && e.target.closest(".tabs button");
+  if(b && !b.classList.contains("th")){
+    b.classList.add("th");
+    b.addEventListener("pointerleave", () => b.classList.remove("th"), { once: true });
+  }
 }, { passive: true });

@@ -93,16 +93,24 @@ function openCos(base, arr, from){
     const holder = box.querySelector(".tlist, .grid");
     let i = 0;
     const FIRST = list ? 30 : 36, STEP = list ? 60 : 72;
-    const add = n => {
-      if(!m.isConnected) return;
+    const put = n => { holder.insertAdjacentHTML("beforeend", piece(arr.slice(i, i + n))); i += n; };
+    // The first batch fills the whole visible window (a wide screen shows far more than a phone), so
+    // everything the eye sees arrives in ONE cascade. Later batches land below the fold, out of sight.
+    put(FIRST);
+    const inner = m.querySelector(".inner");
+    const bottom = () => Math.min(innerHeight, inner ? inner.getBoundingClientRect().bottom : innerHeight);
+    while(i < arr.length && holder.lastElementChild && holder.lastElementChild.getBoundingClientRect().top < bottom()) put(STEP);
+    staggerIn(holder.children, 30);
+    markTq(holder);
+    const more = () => {
+      if(!m.isConnected || i >= arr.length) return;
       const from = holder.children.length;
-      holder.insertAdjacentHTML("beforeend", piece(arr.slice(i, i + n)));
-      i += n;
-      if(from === 0) staggerIn(holder.children, 36);
+      put(STEP);
+      staggerIn([...holder.children].slice(from), 30);   // only animates what happens to be on screen
       markTq(holder);
-      if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(() => add(STEP), { timeout: 120 });
+      if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(more, { timeout: 120 });
     };
-    add(FIRST);
+    if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(more, { timeout: 120 });
   }, 30);
 }
 function fmtTicks(t){

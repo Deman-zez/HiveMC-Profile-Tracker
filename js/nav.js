@@ -26,7 +26,6 @@ function showView(v, y){
   document.querySelectorAll(".tabs button").forEach(x => {
     if(x.dataset.v === v) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
   });
-  wheelTo = null;
   if(typeof toTopShow === "function") toTopShow(false);
   let done = null;
   if(v === "trend") renderTrend();
@@ -164,7 +163,6 @@ addEventListener("scroll", e => { if(e.target !== document && e.target.closest &
   { capture: true, passive: true });
 if(typeof MutationObserver === "function") new MutationObserver(toTopSoon).observe(document.body, { childList: true });
 if(toTopEl) toTopEl.onclick = () => {
-  wheelTo = null;
   toTopEl.classList.remove("go");
   void toTopEl.offsetWidth;
   toTopEl.classList.add("go");
@@ -241,32 +239,4 @@ addEventListener("pointerdown", e => {
 }, { passive:true });
 addEventListener("scroll", onScroll, { passive:true });
 addEventListener("resize", onScroll, { passive:true });
-let wheelTo = null, wheelRAF = 0;
-const dropWheel = () => {
-  wheelTo = null;
-  if(wheelRAF){ cancelAnimationFrame(wheelRAF); wheelRAF = 0; }
-};
-function wheelStep(){
-  if(wheelTo === null){ wheelRAF = 0; return; }
-  const cur = scrollY, d = wheelTo - cur;
-  if(Math.abs(d) < .6){ scrollTo(0, wheelTo); wheelTo = null; wheelRAF = 0; return; }
-  scrollTo(0, cur + d * .16);
-  wheelRAF = requestAnimationFrame(wheelStep);
-}
-addEventListener("wheel", e => {
-  if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if(e.ctrlKey || e.shiftKey || e.defaultPrevented) return;
-  if(document.documentElement.classList.contains("locked")) return;
-  if(e.target.closest && e.target.closest(".modal,.sugg")) return;
-  if(e.deltaMode === 0 && Math.abs(e.deltaY) < 15) return;
-  const max = document.documentElement.scrollHeight - innerHeight;
-  if(max <= 0) return;
-  e.preventDefault();
-  const from = wheelTo === null ? scrollY : wheelTo;
-  const step = e.deltaY * (e.deltaMode === 1 ? 18 : 1);
-  wheelTo = Math.max(0, Math.min(max, from + step));
-  if(!wheelRAF) wheelRAF = requestAnimationFrame(wheelStep);
-}, { passive:false });
-addEventListener("touchstart", dropWheel, { passive:true });
-addEventListener("keydown", dropWheel);
-addEventListener("pointerdown", dropWheel, { passive:true });
+// the mouse wheel scrolls the page natively: no added glide, momentum belongs to finger scrolling only
