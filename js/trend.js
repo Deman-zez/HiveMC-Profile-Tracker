@@ -12,7 +12,7 @@ function metricVal(c, k){
   return typeof c[k] === "number" ? c[k] : null;
 }
 const TREND_RANGES = [
-  ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000]
+  ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000], ["months", null]
 ];
 const ACT = {};
 const ACT_MAX = 300;
@@ -358,14 +358,15 @@ function renderTrend(){
   const withData = state.games.filter(g => mine.some(s => s.g[g]))
     .sort((a, b) => order.indexOf(a) - order.indexOf(b));
   const ctl = $(".trendctl");
-  if(mine.length < 2){
+  // monthly history comes from Hive itself, so one snapshot (to know the player's games) is enough
+  if(mine.length < 1){
     body.innerHTML = '<p class="sub" style="margin-top:10px">' + esc(T("trendNeed")) + "</p>";
     gSel.innerHTML = mSel.innerHTML = "";
     if(ctl) ctl.classList.add("hidden");
     return;
   }
   if(ctl) ctl.classList.remove("hidden");
-  const keepG = gSel.value;
+  const keepG = gSel.value || "main";
   gSel.innerHTML = withData.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
   if(withData.includes(keepG)) gSel.value = keepG;
   const game = gSel.value;
@@ -378,15 +379,38 @@ function renderTrend(){
   if(metricVal(sample, "__winrate") !== null) opts.push("__winrate");
   if(metricVal(sample, "__kd") !== null) opts.push("__kd");
   opts.push(...numeric);
-  const keepM = mSel.value;
+  const keepM = mSel.value || (game === "main" ? "daily_login_streak" : "");
   mSel.innerHTML = opts.map(k => '<option value="' + k + '">' + esc(derivedLabel(k)) + "</option>").join("");
   if(opts.includes(keepM)) mSel.value = keepM;
   const metric = mSel.value;
 
   const keepR = rSel.value || "all";
   rSel.innerHTML = TREND_RANGES.map(([v]) =>
-    '<option value="' + v + '">' + esc(T("range" + (v === "all" ? "All" : v))) + "</option>").join("");
-  rSel.value = keepR;
+    '<option value="' + v + '">' + esc(T("range" + (v === "all" ? "All" : v === "months" ? "Months" : v))) + "</option>").join("");
+  rSel.value = mine.length < 2 ? "months" : keepR;
+  if(rSel.value === "months"){
+    // Hive's monthly stats exist per game only, and carry their own set of fields
+    const games = withData.filter(g => g !== "main");
+    const months = histMonthList(HIST_MONTHS).map(x => histMonth(state.nick, x.y, x.m)).filter(Boolean);
+    const keepG2 = gSel.value !== "main" ? gSel.value : (keepG !== "main" ? keepG : "");
+    gSel.innerHTML = games.map(g => '<option value="' + g + '">' + esc(NAME(g)) + "</option>").join("");
+    gSel.value = games.includes(keepG2) ? keepG2 : (games[0] || "");
+    const g2 = gSel.value;
+    const keys = new Set();
+    months.forEach(d => { const c = d[g2]; if(c) Object.keys(c).forEach(k => {
+      if(!SKIP.has(k) && typeof c[k] === "number" && !isDateKey(k) && !/^(index|human_index)$/.test(k)) keys.add(k); }); });
+    const mopts = [];
+    if(keys.has("played") || keys.has("games_played")) mopts.push("__winrate");
+    if(keys.has("deaths")) mopts.push("__kd");
+    ["played", "victories", "kills", "deaths", "xp"].forEach(k => { if(keys.has(k)){ mopts.push(k); keys.delete(k); } });
+    mopts.push(...keys);
+    if(!mopts.length) mopts.push("played", "victories");
+    const keepM2 = mSel.value;
+    mSel.innerHTML = mopts.map(k => '<option value="' + k + '">' + esc(derivedLabel(k)) + "</option>").join("");
+    mSel.value = mopts.includes(keepM2) ? keepM2 : (mopts.includes("played") ? "played" : mopts[0]);
+    renderTrendMonths(g2, mSel.value, body);
+    return;
+  }
   const range = TREND_RANGES.find(x => x[0] === rSel.value) || TREND_RANGES[0];
   const cutoff = range[1] === null ? -Infinity : Date.now() - range[1];
 
@@ -433,3 +457,57 @@ function renderTrend(){
 $("#trendGame").onchange = renderTrend;
 $("#trendMetric").onchange = renderTrend;
 $("#trendRange").onchange = renderTrend;
+
+/* "By month": one bar per calendar month from Hive's monthly stats, newest on the right */
+function renderTrendMonths(game, metric, body){
+  const nick = state.nick, list = histMonthList(HIST_MONTHS).reverse();
+  const st = histState(nick);
+  const first = histFirstPlayed();
+  const months = list.filter(x => !first || Date.UTC(x.y, x.m, 1) > first);
+  const loc = L === "ru" ? "ru-RU" : "en-US";
+  const rows = months.map(x => {
+    const d = histMonth(nick, x.y, x.m), c = d && d[game];
+    const v = c ? metricVal(c, metric) : (d ? 0 : null);
+    return { x, v, known: !!d };
+  });
+  const known = rows.filter(r => r.known && r.v !== null);
+  const unit = metric === "__winrate" ? "%" : "";
+  const fmt = n => (metric === "__kd" || metric === "__winrate" ? (+n).toFixed(2) : nf(Math.round(n))) + unit;
+  const ratioMetric = metric === "__kd" || metric === "__winrate";
+  const max = Math.max(1, ...known.map(r => r.v || 0));
+  const note = st.got < st.want
+    ? (st.waiting ? T("histLater", st.got, st.want) : T("histLoading", st.got, st.want)) : T("histNote");
+  if(!known.length){
+    body.innerHTML = '<div class="card"><p class="sub" style="margin:0">' + esc(note) + "</p></div>";
+  }else{
+    const best = known.reduce((a, b) => (b.v > a.v ? b : a));
+    const total = known.reduce((s, r) => s + (r.v || 0), 0);
+    const active = known.filter(r => r.v > 0);
+    const avg = active.length ? total / active.length : 0;
+    body.innerHTML = '<div class="card hmCard"><div class="hmBars">' + rows.map((r, i) => {
+      const h = r.known && r.v !== null ? Math.max(r.v > 0 ? 4 : 0, r.v / max * 100) : 0;
+      const label = new Date(Date.UTC(r.x.y, r.x.m - 1, 1)).toLocaleDateString(loc, { month: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3);
+      return '<div class="hmCol' + (r.known ? "" : " wait") + (r === best ? " best" : "") + (r.x.current ? " now" : "") + '" style="--ei:' + i + '">' +
+        '<span class="hmVal">' + (r.known && r.v ? esc(fmt(r.v)) : "") + "</span>" +
+        '<span class="hmTrack"><i style="height:' + h.toFixed(1) + '%"></i></span>' +
+        '<span class="hmLbl">' + esc(label) + "</span></div>";
+    }).join("") + "</div>" +
+    '<div class="hmSum">' +
+      '<div><small>' + esc(T("histBest")) + "</small><b>" + esc(fmt(best.v)) + "</b><em>" +
+        esc(new Date(Date.UTC(best.x.y, best.x.m - 1, 1)).toLocaleDateString(loc, { month: "long", timeZone: "UTC" }) + " " + best.x.y) + "</em></div>" +
+      (ratioMetric ? "" : '<div><small>' + esc(T("histTotal")) + "</small><b>" + esc(fmt(total)) + "</b></div>") +
+      '<div><small>' + esc(T("histAvg")) + "</small><b>" + esc(fmt(avg)) + "</b></div>" +
+    '</div><p class="sub hmNote">' + esc(note) + "</p></div>";
+  }
+  if(st.got < st.want && !st.waiting) histLoad();
+}
+let histRedraw = 0;
+onHist(() => {
+  clearTimeout(histRedraw);
+  histRedraw = setTimeout(() => {
+    const r = $("#trendRange");
+    if(r && r.value === "months" && !$("#vTrend").classList.contains("hidden")) renderTrend();
+    const w = document.querySelector("#trendSide .calWrap");
+    if(w && typeof calRender === "function") calRender(w, "");
+  }, 120);
+});

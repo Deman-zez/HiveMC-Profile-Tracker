@@ -225,7 +225,7 @@ function openGame(code, from){
   requestAnimationFrame(fillAll);
   if(MAP_GAMES.includes(code)) loadMaps(code).then(list => {
     const box = m.querySelector(".mmaps");
-    if(box && list && list.length) box.innerHTML = mapsHTML(list);
+    if(box && list && list.length){ box.innerHTML = mapsHTML(list); mapsBind(box, list); }
   }).catch(() => {});
   if(lvArgs && xpRate(lvArgs[0], lvArgs[1]).src === "all" && !MONTHLY[nickKey()]){
     loadMonthly().then(() => {
@@ -408,13 +408,117 @@ const MAP_VARIANT = { REGULAR:["Обычная","Regular"], DUOS:["Дуо","Duos
   MEGA:["Мега","Mega"], ROYALE:["Royale","Royale"] };
 const MAP_SEASON = { WINTERFEST:["зимняя","Winterfest"], SPRING:["весенняя","Spring"], SUMMER:["летняя","Summer"],
   HALLOWEEN:["хэллоуинская","Halloween"], AUTUMN:["осенняя","Autumn"] };
+const MAP_ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>';
+function mapTags(x){
+  const i = L === "ru" ? 0 : 1, out = [];
+  if(MAP_VARIANT[x.variant] && x.variant !== "REGULAR") out.push('<i class="mt v">' + esc(MAP_VARIANT[x.variant][i]) + "</i>");
+  if(MAP_SEASON[x.season]) out.push('<i class="mt s">' + esc(MAP_SEASON[x.season][i]) + "</i>");
+  return out.join("");
+}
+const mapImg = x => x.image && /^https?:/.test(x.image) ? x.image : "";
+/* Maps: the mode card shows a compact grid of the first few maps; "All maps" opens a gallery with a name
+   filter and variant/season chips. Any tile opens the big viewer, which pages through the same list. */
+const MAPS_PREVIEW = 6;
+function mapTile(x, k){
+  const img = mapImg(x);
+  return '<button type="button" class="map" data-k="' + k + '">' +
+    '<span class="mpic">' + (img ? '<img alt="" loading="lazy" decoding="async" src="' + esc(img) + '" onerror="this.remove()">' : "") + "</span>" +
+    '<span class="mcap"><b>' + esc(x.name) + "</b>" + (mapTags(x) ? '<span class="mtags">' + mapTags(x) + "</span>" : "") + "</span></button>";
+}
 function mapsHTML(list){
+  return '<div class="mapsHead"><span class="mapsT">' + esc(T("mapsTitle")) + '</span><span class="mapsN">' + list.length + "</span></div>" +
+    '<div class="mapsGrid">' + list.slice(0, MAPS_PREVIEW).map(mapTile).join("") + "</div>" +
+    (list.length > MAPS_PREVIEW ? '<button type="button" class="mini more mapsAll">' + esc(T("mapsAll", list.length)) + "</button>" : "");
+}
+function mapsBind(box, list){
+  box.querySelectorAll(".mapsGrid .map").forEach(c => tapOn(c, () => openMap(list, +c.dataset.k, c)));
+  staggerIn(box.querySelectorAll(".mapsGrid .map"), 8);
+  const all = box.querySelector(".mapsAll");
+  if(all) tapOn(all, () => openMapsAll(list, all));
+}
+function openMapsAll(list, from){
   const i = L === "ru" ? 0 : 1;
-  return "<h3>" + esc(T("mapsTitle", list.length)) + '</h3><div class="maps">' + list.map(x => {
-    const tags = [MAP_VARIANT[x.variant] && x.variant !== "REGULAR" ? MAP_VARIANT[x.variant][i] : "",
-      MAP_SEASON[x.season] ? MAP_SEASON[x.season][i] : ""].filter(Boolean).join(" · ");
-    return '<div class="map">' + (x.image && /^https?:/.test(x.image)
-      ? '<img alt="" loading="lazy" decoding="async" src="' + esc(x.image) + '" onerror="this.style.visibility=\'hidden\'">'
-      : '<img alt="" style="visibility:hidden">') + "<b>" + esc(x.name) + "</b><small>" + esc(tags || T("mapsRegular")) + "</small></div>";
-  }).join("") + "</div>";
+  const kinds = [];
+  list.forEach(x => {
+    if(MAP_VARIANT[x.variant] && x.variant !== "REGULAR" && !kinds.some(k => k.v === x.variant)) kinds.push({ v: x.variant, t: MAP_VARIANT[x.variant][i], c: "v" });
+    if(MAP_SEASON[x.season] && !kinds.some(k => k.s === x.season)) kinds.push({ s: x.season, t: MAP_SEASON[x.season][i], c: "s" });
+  });
+  const m = document.createElement("div");
+  m.className = "modal mapsx";
+  m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(T("mapsTitle")) + ' <span class="mapsN">' + list.length + "</span></h3>" +
+    '<button class="close">' + esc(T("close")) + "</button></div>" +
+    '<div class="mapsTools"><label class="mapsFind"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>' +
+      '<input type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(T("mapsFind")) + '"></label>' +
+      (kinds.length ? '<div class="mapsChips">' + kinds.map((k, n) => '<button type="button" class="mchip ' + k.c + '" data-n="' + n + '">' + esc(k.t) + "</button>").join("") + "</div>" : "") +
+    '</div><div class="mapsGrid all"></div><p class="sub mapsNone" hidden>' + esc(T("mapsNone")) + "</p></div>";
+  const grid = m.querySelector(".mapsGrid"), inp = m.querySelector(".mapsFind input"), none = m.querySelector(".mapsNone");
+  const on = new Set();
+  let shown = list;
+  const draw = animate => {
+    const q = inp.value.trim().toLowerCase();
+    shown = list.filter(x => (!q || String(x.name).toLowerCase().includes(q)) &&
+      [...on].every(n => { const k = kinds[n]; return k.v ? x.variant === k.v : x.season === k.s; }));
+    grid.innerHTML = shown.map(mapTile).join("");
+    none.hidden = shown.length > 0;
+    grid.querySelectorAll(".map").forEach(c => tapOn(c, () => openMap(shown, +c.dataset.k, c)));
+    if(animate) staggerIn(grid.children, 16);
+  };
+  inp.oninput = () => draw(false);
+  m.querySelectorAll(".mchip").forEach(b => tapOn(b, () => {
+    const n = +b.dataset.n;
+    on.has(n) ? on.delete(n) : on.add(n);
+    b.classList.toggle("on", on.has(n));
+    draw(true);
+  }));
+  m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
+  mountModal(m, from);
+  setTimeout(() => draw(true), 30);
+}
+function openMap(list, k, from){
+  const m = document.createElement("div");
+  m.className = "modal mapv";
+  m.innerHTML = '<div class="inner"><div class="mvStage"><div class="mvPic"></div>' +
+    (list.length > 1 ? '<button type="button" class="mvBtn" data-d="-1" aria-label="' + esc(T("mapsPrev")) + '">' + MAP_ARROW + "</button>" +
+      '<button type="button" class="mvBtn next" data-d="1" aria-label="' + esc(T("mapsNext")) + '">' + MAP_ARROW + "</button>" : "") +
+    '<button type="button" class="close mvClose" aria-label="' + esc(T("close")) + '">✕</button></div>' +
+    '<div class="mvInfo"><div><b class="mvName"></b><span class="mtags mvTags"></span></div><span class="mvNum"></span></div></div>';
+  const pic = m.querySelector(".mvPic"), motion = !state.lite && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const show = (n, dir) => {
+    k = (n + list.length) % list.length;
+    const x = list[k], img = mapImg(x);
+    const el = document.createElement("div");
+    el.className = "mvImg";
+    if(img) el.innerHTML = '<img alt="" decoding="async" src="' + esc(img) + '">';
+    const old = pic.querySelector(".mvImg:not(.leaving)");
+    pic.append(el);
+    if(old && motion && dir){
+      old.classList.add("leaving");
+      old.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translate3d(" + (-dir * 8) + "%,0,0) scale(.98)" }],
+        { duration: 280, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" }).onfinish = () => old.remove();
+      el.animate([{ opacity: 0, transform: "translate3d(" + (dir * 10) + "%,0,0) scale(.98)" }, { opacity: 1, transform: "none" }],
+        { duration: 380, easing: "cubic-bezier(.22,1,.36,1)" });
+    }else if(old) old.remove();
+    m.querySelector(".mvName").textContent = x.name;
+    m.querySelector(".mvTags").innerHTML = mapTags(x);
+    m.querySelector(".mvNum").textContent = (k + 1) + " / " + list.length;
+  };
+  show(k, 0);
+  m.querySelectorAll(".mvBtn").forEach(b => tapOn(b, e => { e.stopPropagation(); show(k + +b.dataset.d, +b.dataset.d); }));
+  tapOn(m.querySelector(".mvClose"), e => { e.stopPropagation(); closeModal(m); });
+  const key = e => {
+    if(!m.isConnected){ removeEventListener("keydown", key); return; }
+    if(e.key === "ArrowRight") show(k + 1, 1);
+    else if(e.key === "ArrowLeft") show(k - 1, -1);
+  };
+  addEventListener("keydown", key);
+  let sx = null;
+  pic.addEventListener("pointerdown", e => { sx = e.clientX; });
+  pic.addEventListener("pointercancel", () => { sx = null; });
+  pic.addEventListener("pointerup", e => {
+    if(sx === null) return;
+    const dx = e.clientX - sx; sx = null;
+    if(Math.abs(dx) > 40 && list.length > 1) show(k + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+  });
+  m.onclick = e => { if(e.target === m) closeModal(m); };
+  mountModal(m, from);
 }

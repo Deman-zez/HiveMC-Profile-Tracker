@@ -115,7 +115,8 @@ function calInner(){
     '<div class="calHead">' +
       '<button type="button" class="calNav" data-d="-1"' + (prevOk ? "" : " disabled") + ' aria-label="' + esc(T("calPrev")) + '">' + CAL_ARROW + "</button>" +
       '<div class="calTitle ' + (anim ? "a-" + anim : "") + '"><b>' + esc(monthName.charAt(0).toUpperCase() + monthName.slice(1)) + "</b>" +
-        "<small>" + esc(monthGames ? T("calMonthSum", nf(monthGames), monthGames ? (monthWins / monthGames * 100).toFixed(0) : 0) : T("calMonthNone")) + "</small></div>" +
+        "<small>" + esc(monthGames ? T("calMonthSum", nf(monthGames), monthGames ? (monthWins / monthGames * 100).toFixed(0) : 0) : T("calMonthNone")) + "</small>" +
+        calHiveLine(y, mo + 1) + "</div>" +
       '<button type="button" class="calNav next" data-d="1"' + (nextOk ? "" : " disabled") + ' aria-label="' + esc(T("calNext")) + '">' + CAL_ARROW + "</button>" +
     "</div>" +
     '<form class="calFind" autocomplete="off"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>' +
@@ -247,4 +248,18 @@ function calBindWrap(wrap){
     if(calSel) b.classList.add("sel");
     calShowDetail(wrap);
   });
+}
+
+/* the whole month as Hive counts it (every game played, not only the ones the site saw) */
+function calHiveLine(y, m){
+  if(typeof histMonth !== "function") return "";
+  const d = histMonth(state.nick, y, m);
+  if(!d){
+    const inRange = histMonthList(HIST_MONTHS).some(x => x.y === y && x.m === m);
+    if(inRange) setTimeout(() => histLoad(histKeyOf(y, m)), 0);
+    return "";
+  }
+  const t = histTotals(d);
+  if(!t.played) return "";
+  return '<small class="calHive">' + esc(T("calHive", nf(t.played), (t.wins / t.played * 100).toFixed(0))) + "</small>";
 }

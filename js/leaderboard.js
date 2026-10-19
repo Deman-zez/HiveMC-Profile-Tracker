@@ -135,17 +135,35 @@ async function lbMore(entry, game, period){
   }
 }
 
+// prestige as a plain number, whatever shape a leaderboard row carries it in (number, "2", {…})
+function lbPrestige(p){
+  const v = p && p.prestige;
+  if(typeof v === "number") return v;
+  if(typeof v === "string") return parseInt(v, 10) || 0;
+  if(v && typeof v === "object"){
+    for(const k of ["prestige", "level", "value", "current"]) if(typeof v[k] === "number") return v[k];
+    const n = Object.values(v).find(x => typeof x === "number");
+    return n || 0;
+  }
+  return 0;
+}
 const lbGameLevel = (p, code) => Math.floor(levelFromXP(num(p, "xp"), code) || gameLevel(p, code) || 0);
 
-function lbSortOptions(game, entry){
+// modes with a prestige system: a level there means nothing without the prestige next to it
+const LB_PRESTIGE_GAMES = ["bed", "sky", "murder", "wars"];
+const lbHasPrestige = entry => !!(entry && entry.d && entry.d.some(p => p && p.prestige !== null && p.prestige !== undefined));
+function lbSortOptions(game, entry, period){
   const common = [["wins", T("lbSortWins")], ["played", T("lbSortPlayed")], ["winrate", T("lbSortWr")],
     ["kills", T("lbSortKills")], ["kd", "K/D"]];
-  const hasLv = Object.keys(META_GAMES).length > 0;
+  // Hive leaves prestige out of some leaderboards (SkyWars: always null). There a prestiged player
+  // would show as "level 5", so the level ranking is only offered where it can be told honestly.
+  const hasLv = Object.keys(META_GAMES).length > 0 && (!period || period === "all") &&
+    (!LB_PRESTIGE_GAMES.includes(game) || !entry || lbHasPrestige(entry));
   const base = game === "overall"
     ? (hasLv ? [["level", T("lbSortLevel")]].concat(common) : common)
     : [["hive", T("lbSortHive")]].concat(common, hasLv ? [["level", T("lbSortLv")]] : []);
   if(game !== "overall" && entry && entry.d.length){
-    const seen = new Set(["victories", "played", "games_played", "kills", "deaths", "xp"]);
+    const seen = new Set(["victories", "played", "games_played", "kills", "deaths", "xp", "prestige"]);
     const keys = [];
     entry.d.slice(0, 20).forEach(p => Object.keys(p).forEach(k => {
       if(!LB_SKIP_KEYS.has(k) && !seen.has(k) && typeof p[k] === "number"){ seen.add(k); keys.push(k); }
@@ -164,9 +182,14 @@ function lbMetric(sort, game){
     kills:   { v: p => game === "overall" ? num(p, "kills") : killsOf(p), f: nf, unit: () => T("lbKillsLow") },
     kd:      { v: p => { const k = game === "overall" ? num(p, "kills") : killsOf(p), d = num(p, "deaths"); return d ? k / d : k; },
                f: v => v.toFixed(2), unit: () => "K/D" },
-    level:   { v: p => lbGameLevel(p, game), f: nf, unit: () => T("lbLevelLow") }
+    level:   { v: p => lbGameLevel(p, game) + (game !== "overall" ? lbPrestige(p) * (maxLevelOf(game) || 0) : 0),
+               f: nf, unit: () => T("lbLevelLow") }
   };
-  if(sort.startsWith("f:")){ const k = sort.slice(2); return { v: p => num(p, k), f: nf, unit: () => label(k) }; }
+  if(sort.startsWith("f:")){
+    const k = sort.slice(2);
+    const unit = () => { const t = label(k); return L === "ru" ? t.charAt(0).toLowerCase() + t.slice(1) : t.toLowerCase(); };
+    return { v: p => num(p, k), f: nf, unit };
+  }
   return M[sort] || M.hive;
 }
 function lbView(entry, game, sort){
@@ -417,7 +440,7 @@ async function renderLb(){
   pSel.disabled = per.length < 2;
   const keepS = rs ? rs.s : sSel.value;
   const fillSort = entry => {
-    const opts = lbSortOptions(game, entry);
+    const opts = lbSortOptions(game, entry, pSel.value);
     sSel.innerHTML = opts.map(([v, t]) => '<option value="' + v + '">' + esc(T("lbSortBy", t)) + "</option>").join("");
     sSel.value = opts.some(o => o[0] === keepS) ? keepS : opts[0][0];
   };
@@ -461,7 +484,7 @@ function openLb(game){
   lbPick = game;
   go("top", { force: true });
 }
-$("#lbGame").onchange = () => { $("#lbPeriod").value = "all"; $("#lbSort").value = ""; renderLb(); };
+$("#lbGame").onchange = () => renderLb();
 $("#lbPeriod").onchange = renderLb;
 $("#lbSort").onchange = () => {
   const { game, period, sort } = lbCur(), entry = LB[game + "|" + period];

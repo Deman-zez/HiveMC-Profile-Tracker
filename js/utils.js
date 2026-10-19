@@ -312,6 +312,16 @@ addEventListener("scroll", () => {
   glowScrollRaf = requestAnimationFrame(() => { glowScrollRaf = 0; glowPaint(); });
 }, { passive: true });
 
+/* map cards react to a mouse the same way (tablets with a mouse report touch as primary input) */
+document.addEventListener("pointerover", e => {
+  if(e.pointerType !== "mouse") return;
+  const c = e.target.closest && e.target.closest(".map, .mvBtn");
+  if(c && !c.classList.contains("mh")){
+    c.classList.add("mh");
+    c.addEventListener("pointerleave", () => c.classList.remove("mh"), { once: true });
+  }
+}, { passive: true });
+
 /* tab bar icons light up under a mouse (set by script: tablets with a mouse report touch as primary input) */
 document.addEventListener("pointerover", e => {
   if(e.pointerType !== "mouse") return;
@@ -321,3 +331,34 @@ document.addEventListener("pointerover", e => {
     b.addEventListener("pointerleave", () => b.classList.remove("th"), { once: true });
   }
 }, { passive: true });
+
+/* Reliable finger taps for controls that sit over moving content (map viewer, map tiles): the action
+   runs on the finger lifting inside the control, without waiting for the browser's click, which some
+   phones drop on the first tap while an image or the dialog itself is still animating. A real click
+   afterwards is ignored so nothing runs twice; mouse and keyboard keep using the normal click. */
+function tapOn(el, fn){
+  if(!el) return;
+  let sx = 0, sy = 0, down = false;
+  el.addEventListener("pointerdown", e => {
+    if(e.pointerType === "mouse") return;
+    down = true; sx = e.clientX; sy = e.clientY;
+  }, { passive: true });
+  el.addEventListener("pointercancel", () => { down = false; });
+  el.addEventListener("pointerup", e => {
+    if(!down || e.pointerType === "mouse") return;
+    down = false;
+    if(Math.hypot(e.clientX - sx, e.clientY - sy) > 12) return;
+    el.__tapAt = Date.now();
+    e.preventDefault();
+    // the browser still sends its own click a moment later, aimed at whatever is under the finger by
+    // then (often the dialog that just opened): swallow that one click so it can't close or press anything
+    const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    addEventListener("click", eat, { capture: true, once: true });
+    setTimeout(() => removeEventListener("click", eat, true), 600);
+    fn(e);
+  });
+  el.addEventListener("click", e => {
+    if(Date.now() - (el.__tapAt || 0) < 700){ e.preventDefault(); e.stopPropagation(); return; }
+    fn(e);
+  });
+}

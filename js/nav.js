@@ -238,5 +238,8 @@ addEventListener("pointerdown", e => {
   setTimeout(() => t.classList.remove("press"), 440);
 }, { passive:true });
 addEventListener("scroll", onScroll, { passive:true });
+// the darkening follows how far down the page you are, so it must be recalculated whenever the page
+// itself gets longer or shorter (a leaderboard reloading, a day opening) - not only on scroll
+if(typeof ResizeObserver === "function") new ResizeObserver(() => onScroll()).observe(document.body);
 addEventListener("resize", onScroll, { passive:true });
 // the mouse wheel scrolls the page natively: no added glide, momentum belongs to finger scrolling only

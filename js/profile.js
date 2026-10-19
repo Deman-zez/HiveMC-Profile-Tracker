@@ -59,13 +59,15 @@ function renderSnap(){
       corner.querySelectorAll(".hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
   }
   if(typeof lgAdaptSoon === "function") lgAdaptSoon();
-  hero.innerHTML = '<div class="hero"><div class="ava"><span>' +
-      (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="this.replaceWith(document.createTextNode(' +
-          JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
+  // players without an avatar get a coloured tile of their own (hue from the nick, like everywhere else)
+  const avaHue = hueOf(String(state.nick || "").toLowerCase());
+  const avaFail = "this.parentNode.classList.add('noava');this.replaceWith(document.createTextNode(" +
+    JSON.stringify(letter).replace(/"/g,"&quot;") + "))";
+  const hasAva = !!avaUrl || typeof avaName === "string";
+  hero.innerHTML = '<div class="hero"><div class="ava"><span' + (hasAva ? "" : ' class="noava"') + ' style="--h:' + avaHue + '">' +
+      (avaUrl ? '<img alt="" src="' + esc(avaUrl) + '" onerror="' + avaFail + '">'
        : typeof avaName === "string"
-        ? '<img alt="" src="https://cdn.playhive.com/avatars/' + encodeURIComponent(avaName) +
-          '.png" onerror="this.replaceWith(document.createTextNode(' +
-          JSON.stringify(letter).replace(/"/g,"&quot;") + '))">'
+        ? '<img alt="" src="https://cdn.playhive.com/avatars/' + encodeURIComponent(avaName) + '.png" onerror="' + avaFail + '">'
         : esc(letter)) +
     "</span></div>" +
     (title ? '<p class="title">' + mcText(cosName(title) || title, true) + titleIcon(title) +
