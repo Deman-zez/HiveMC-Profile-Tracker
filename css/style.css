@@ -1418,8 +1418,6 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{width:0 !im
 .ava span.noava{position:relative;color:#fff;font-size:44px;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.45);
   background:radial-gradient(120% 90% at 30% 15%,rgba(255,255,255,.28),transparent 55%),
     linear-gradient(155deg,hsl(var(--h,270) 60% 50%),hsl(calc(var(--h,270) + 38) 64% 26%))}
-.ava span.noava::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.1;
-  background:radial-gradient(circle at 50% 50%,transparent 0 9px,rgba(255,255,255,.6) 9.5px 10.5px,transparent 11px) 0 0/22px 19px}
 
 /* calendar: Hive's own monthly total under the title */
 .calHive{color:#e7c873 !important;font-weight:700}
@@ -1444,3 +1442,9 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{width:0 !im
 .hmSum em{font-style:normal;font-size:11px;color:var(--soft);text-transform:capitalize}
 .hmNote{margin:10px 2px 0;font-size:12px}
 .lite .hmTrack i{animation:none}
+
+.hmProg{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 12px;border-radius:12px;background:var(--tile);font-size:12px;color:var(--soft)}
+.hmPbar{flex:1;height:6px;border-radius:3px;background:rgba(0,0,0,.3);overflow:hidden}
+.hmPbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#a874e6,var(--gold));transition:width .5s ease}
+.hmProg b{color:var(--text);font-variant-numeric:tabular-nums}
+.hmProg.wait .hmPbar i{background:linear-gradient(90deg,#6a4a8a,#8a6a3a)}
