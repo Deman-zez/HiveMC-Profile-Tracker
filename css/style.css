@@ -512,8 +512,8 @@ html.locked{overflow:hidden}
   .modal{display:grid;place-items:center;padding:32px}
   .modal .inner{min-height:0;width:100%;max-width:920px;max-height:86vh;overflow:auto;
     border-radius:20px;border:1px solid var(--edge);padding:24px 26px 30px;
-    box-shadow:0 24px 70px rgba(0,0,0,.5);scrollbar-width:thin}
-  .modal .mhead{position:sticky;top:-24px;z-index:2;margin:-24px -26px 14px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5)}
+  .modal .mhead{position:sticky;top:-24px;z-index:12;margin:-24px -26px 14px;
     padding:22px 26px 14px;background:var(--bg-b);
     border-bottom:1px solid var(--edge);border-radius:20px 20px 0 0}
   .modal .tiles{grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
@@ -753,15 +753,84 @@ html.locked{overflow:hidden}
 .lbgs small{display:block;color:var(--soft);font-size:12px;margin-top:1px}
 .lbnote{margin:12px 2px 0;font-size:12px;line-height:1.5}
 #lbPeriod:disabled{opacity:.55}
-.mmaps{margin-top:18px}
+.mmaps{margin-top:20px}
 .mmaps:empty{display:none}
-.mmaps h3{margin-bottom:10px}
-.maps{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
-.map{flex:0 0 170px;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:var(--panel);border:1px solid var(--edge)}
-.map img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#170e22}
-.map b{display:block;padding:8px 10px 0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.map small{display:block;padding:0 10px 9px;color:var(--soft);font-size:11.5px}
-@media (min-width:900px){ .map{flex-basis:200px}}
+/* ---------- maps in rotation ---------- */
+.mapsHead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mapsHead::before{content:"";flex:none;width:4px;height:15px;border-radius:2px;
+  background:linear-gradient(180deg,#ffe08a,var(--gold) 45%,#e0890b);box-shadow:0 0 12px rgba(255,192,46,.55)}
+.mapsT{font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#dccbf2}
+.mapsN{flex:none;padding:2px 8px;border-radius:10px;background:rgba(255,192,46,.13);color:var(--gold);font-size:11.5px;font-weight:800;letter-spacing:0}
+.mapsHead::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,192,46,.08) 40%,transparent)}
+.mapsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.map{position:relative;display:block;padding:0;border:none;cursor:pointer;text-align:left;
+  border-radius:14px;overflow:hidden;background:#170e22;color:var(--text);font:inherit;isolation:isolate;
+  box-shadow:0 0 0 1px rgba(255,255,255,.09),0 6px 16px rgba(0,0,0,.3);
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s ease}
+.mpic{display:block;aspect-ratio:16/10;background:linear-gradient(135deg,#2a1442,#170e22)}
+.mpic img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.22,1,.36,1),filter .35s ease}
+.mcap{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:4px;padding:22px 10px 8px;
+  background:linear-gradient(180deg,transparent,rgba(12,6,22,.7) 45%,rgba(12,6,22,.94))}
+.mcap b{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.mtags{display:flex;gap:4px;flex-wrap:wrap}
+.mt{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.mt.v{background:rgba(255,192,46,.22);color:#ffd970}
+.mt.s{background:rgba(120,190,255,.2);color:#a9d8ff}
+.map::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 0 1.5px rgba(255,192,46,.55);transition:opacity .3s ease}
+.map:active{transform:scale(.96)}
+.map:active .mpic img{transform:scale(1.05)}
+.map.mh,.map:focus-visible{transform:translateY(-3px);box-shadow:0 0 0 1px rgba(255,192,46,.3),0 14px 26px rgba(0,0,0,.45)}
+.map.mh::after,.map:focus-visible::after{opacity:1}
+.map.mh .mpic img{transform:scale(1.08);filter:brightness(1.08)}
+.mapsAll{margin-top:12px}
+@media (min-width:600px){ .mapsGrid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (min-width:900px){ .mapsGrid.all{grid-template-columns:repeat(4,minmax(0,1fr))} }
+/* gallery */
+.modal.mapsx .mhead h3{display:flex;align-items:center;gap:10px}
+.mapsTools{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px}
+.mapsFind{display:flex;align-items:center;gap:8px;margin:0;padding:0 12px;border-radius:12px;background:rgba(0,0,0,.25);
+  color:var(--soft);box-shadow:inset 0 0 0 1px var(--edge);transition:box-shadow .2s ease,color .2s ease}
+.mapsFind:focus-within{box-shadow:inset 0 0 0 1.5px rgba(255,192,46,.6);color:var(--gold)}
+.mapsFind input{flex:1;min-width:0;border:none;background:none;padding:11px 0;font-size:14.5px;color:var(--text);outline:none;box-shadow:none}
+.mapsChips{display:flex;gap:7px;flex-wrap:wrap}
+.mchip{border:none;cursor:pointer;padding:7px 12px;border-radius:20px;font:inherit;font-size:12.5px;font-weight:700;
+  background:rgba(255,255,255,.06);color:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+  transition:transform .25s cubic-bezier(.3,1.4,.5,1),background .2s ease,color .2s ease,box-shadow .2s ease}
+.mchip:active{transform:scale(.93)}
+.mchip.v.on{background:rgba(255,192,46,.2);color:#ffd970;box-shadow:inset 0 0 0 1px rgba(255,192,46,.5)}
+.mchip.s.on{background:rgba(120,190,255,.18);color:#a9d8ff;box-shadow:inset 0 0 0 1px rgba(120,190,255,.5)}
+.mapsNone{text-align:center;margin:18px 0}
+/* ---------- map viewer ---------- */
+.mvBtn{display:grid;place-items:center;border:none;cursor:pointer;color:#fff;border-radius:50%;
+  transition:transform .25s cubic-bezier(.3,1.4,.5,1),background .2s ease}
+.mvBtn.next svg{transform:scaleX(-1)}
+.mvBtn:active{transform:scale(.86)}
+.mvBtn.mh{background:rgba(40,22,62,.75)}
+.modal.mapv .inner{max-width:980px;padding:0;background:#0d0716;overflow:hidden}
+.mvStage{position:relative;aspect-ratio:16/10;background:#0a0512;overflow:hidden;touch-action:pan-y;user-select:none}
+.mvPic{position:absolute;inset:0}
+.mvImg{position:absolute;inset:0;display:grid;place-items:center}
+.mvImg img{width:100%;height:100%;object-fit:cover;-webkit-user-drag:none}
+.mvBtn{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;z-index:2;
+  background:rgba(12,6,22,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 1px rgba(255,255,255,.12)}
+.mvBtn{left:12px}
+.mvBtn.next{left:auto;right:12px}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  .mvBtn,.mvClose{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+}
+.mvClose{position:absolute;top:12px;right:12px;z-index:3;width:38px;height:38px;padding:0;border-radius:50%;
+  background:rgba(12,6,22,.55);color:#fff;font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 1px rgba(255,255,255,.12)}
+.mvInfo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px 16px}
+.mvInfo > div{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.mvName{font-size:19px;font-weight:900}
+.mvNum{color:var(--soft);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:899px){
+  .modal.mapv{display:grid;place-items:center;padding:12px}
+  .modal.mapv .inner{min-height:0;width:100%;border-radius:18px;border:1px solid var(--edge)}
+}
+.lite .map,.lite .mpic img{transition:none}
+
 .lbctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .lbctl #lbSort{grid-column:1 / -1}
 @media (min-width:900px){
@@ -1332,3 +1401,46 @@ html.locked{overflow:hidden}
 .tabs button[aria-current="page"].th > span{color:#ffd970;
   filter:drop-shadow(0 0 5px rgba(255,192,46,.8)) drop-shadow(0 0 14px rgba(255,192,46,.45))}
 .lite .tabs button > span::before,.lite .tabs button > span svg{transition:none}
+
+/* no visible scrollbars anywhere: dialogs, dropdowns, lists, the page itself */
+html,body,*{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{width:0 !important;height:0 !important;display:none !important;background:transparent}
+.modal.mapsx .mhead h3{font-size:22px;white-space:nowrap}
+.mchip::first-letter{text-transform:uppercase}
+
+/* leaderboard: long stat names stay inside their card/row */
+.pods{max-width:100%;white-space:normal;text-align:center;line-height:1.2;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.lbv small{max-width:132px;margin-left:auto;white-space:normal;line-height:1.2;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* profile without an avatar: a coloured tile with the initial instead of a blank white square */
+.ava span.noava{position:relative;color:#fff;font-size:44px;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.45);
+  background:radial-gradient(120% 90% at 30% 15%,rgba(255,255,255,.28),transparent 55%),
+    linear-gradient(155deg,hsl(var(--h,270) 60% 50%),hsl(calc(var(--h,270) + 38) 64% 26%))}
+.ava span.noava::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.1;
+  background:radial-gradient(circle at 50% 50%,transparent 0 9px,rgba(255,255,255,.6) 9.5px 10.5px,transparent 11px) 0 0/22px 19px}
+
+/* calendar: Hive's own monthly total under the title */
+.calHive{color:#e7c873 !important;font-weight:700}
+/* trend: bars by month */
+.hmCard{padding:16px 14px 12px}
+.hmBars{display:flex;gap:6px;height:170px;align-items:stretch}
+.hmCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.hmVal{font-size:10.5px;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap;min-height:13px}
+.hmTrack{flex:1;width:100%;max-width:30px;display:flex;align-items:flex-end;border-radius:7px;background:rgba(255,255,255,.04);overflow:hidden}
+.hmTrack i{display:block;width:100%;border-radius:7px;background:linear-gradient(180deg,#a874e6,#6a35aa);
+  transform-origin:50% 100%;animation:hmGrow .7s cubic-bezier(.22,1,.36,1) backwards;animation-delay:calc(var(--ei,0) * 40ms)}
+@keyframes hmGrow{from{transform:scaleY(0)}}
+.hmCol.best i{background:linear-gradient(180deg,#ffe08a,#e8920c);box-shadow:0 0 12px rgba(255,192,46,.4)}
+.hmCol.best .hmVal{color:var(--gold)}
+.hmCol.now .hmLbl{color:var(--gold)}
+.hmCol.wait .hmTrack{background:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 4px,transparent 4px 8px)}
+.hmLbl{font-size:10.5px;color:var(--soft);text-transform:capitalize;white-space:nowrap}
+.hmSum{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:14px}
+.hmSum > div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--tile)}
+.hmSum small{font-size:11px;color:var(--soft)}
+.hmSum b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.hmSum em{font-style:normal;font-size:11px;color:var(--soft);text-transform:capitalize}
+.hmNote{margin:10px 2px 0;font-size:12px}
+.lite .hmTrack i{animation:none}
