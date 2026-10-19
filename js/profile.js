@@ -246,9 +246,8 @@ function todayHTML(mine){
   }
   const at = new Date(day0).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US", { hour:"2-digit", minute:"2-digit" });
   const cell = (v, k) => '<div class="tdc' + (v ? "" : " zero") + '"><b>+' + nf(v) + "</b><small>" + esc(k) + "</small></div>";
-  const inner = P || W || K || X
-    ? '<div class="tdrow">' + cell(P, T("tdPlayed")) + cell(W, T("tdWins")) + cell(K, T("tdKills")) + cell(X, T("tdXp")) + "</div>"
-    : '<p class="sub" style="margin:0;text-align:center">' + esc(T("todayNone")) + "</p>";
+  if(!(P || W || K || X)) return "";
+  const inner = '<div class="tdrow">' + cell(P, T("tdPlayed")) + cell(W, T("tdWins")) + cell(K, T("tdKills")) + cell(X, T("tdXp")) + "</div>";
   return '<h2 class="tdhead">' + esc(T("today")) + ' <span class="tdsince">' + esc(T("todaySince", at)) + "</span></h2>" +
     '<div class="card tdcard">' + inner + "</div>";
 }

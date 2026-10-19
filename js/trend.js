@@ -15,7 +15,7 @@ const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000], ["months", null]
 ];
 const ACT = {};
-const ACT_MAX = 300;
+const ACT_MAX = 2000;
 let actShown = 20;
 let actDaysShown = 7, actOpen = null;
 const actDayKey = sec => { const d = new Date(sec * 1000);
@@ -59,10 +59,38 @@ function mergeAct(uuid, list){
   if(added) save();
   return added;
 }
+/* Games recorded while the site was closed: the worker polls the activity feed of the site owner's own
+   profile every 20 minutes and keeps it, and the site merges that history in on every visit. */
+const actSrv = () => PROXY.replace(/\/\?url=$/, "") + "/activity/";
+const ACT_SRV_KEY = "hive.tracker.actsrv.v1";
+async function pullServerActivity(uuid){
+  let st = {};
+  try{ st = JSON.parse(localStorage.getItem(ACT_SRV_KEY) || "{}") || {}; }catch(e){}
+  const me = String(state.main || "").toLowerCase();
+  try{
+    if(me && nickKey() === me && Date.now() - (st["t:" + uuid] || 0) > 12 * 3600 * 1000){
+      const r = await fetch(actSrv() + "track", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uuid, nick: state.nick }) });
+      if(r.ok) st["t:" + uuid] = Date.now();
+    }
+    const since = st["s:" + uuid] || 0;
+    const r = await fetch(actSrv() + uuid + "?since=" + since, { cache: "no-store" });
+    if(r.ok){
+      const j = await r.json();
+      const ev = Array.isArray(j.events) ? j.events : [];
+      if(ev.length){
+        mergeAct(uuid, ev);
+        st["s:" + uuid] = Math.max(since, ...ev.map(e => e.time || 0)) - 600;
+      }
+    }
+  }catch(e){}
+  try{ localStorage.setItem(ACT_SRV_KEY, JSON.stringify(st)); }catch(e){}
+}
 async function fetchActivity(uuid){
   const c = ACT[uuid];
   if(c && (c.p || Date.now() - c.t < 2 * 60 * 1000)) return;
   ACT[uuid] = { t: c ? c.t : 0, p: true };
+  await pullServerActivity(uuid);
   try{
     noteRequest();
     const res = await hiveFetch(API + "/player/activity/" + encodeURIComponent(uuid), { cache:"no-store" });
@@ -475,10 +503,14 @@ function renderTrendMonths(game, metric, body){
   const fmt = n => (metric === "__kd" || metric === "__winrate" ? (+n).toFixed(2) : nf(Math.round(n))) + unit;
   const ratioMetric = metric === "__kd" || metric === "__winrate";
   const max = Math.max(1, ...known.map(r => r.v || 0));
-  const note = st.got < st.want
-    ? (st.waiting ? T("histLater", st.got, st.want) : T("histLoading", st.got, st.want)) : T("histNote");
+  const done = st.got >= st.want;
+  const noteHTML = done ? '<p class="sub hmNote">' + esc(T("histNote")) + "</p>"
+    : '<div class="hmProg' + (st.waiting ? " wait" : "") + '"><span class="hmPt">' + esc(T("histMonthsLbl")) + "</span>" +
+      '<span class="hmPbar"><i style="width:' + (st.got / Math.max(1, st.want) * 100).toFixed(1) + '%"></i></span>' +
+      "<b>" + st.got + " / " + st.want + "</b></div>";
+  const note = done ? T("histNote") : st.got + " / " + st.want;
   if(!known.length){
-    body.innerHTML = '<div class="card"><p class="sub" style="margin:0">' + esc(note) + "</p></div>";
+    body.innerHTML = '<div class="card">' + noteHTML + "</div>";
   }else{
     const best = known.reduce((a, b) => (b.v > a.v ? b : a));
     const total = known.reduce((s, r) => s + (r.v || 0), 0);
@@ -497,7 +529,7 @@ function renderTrendMonths(game, metric, body){
         esc(new Date(Date.UTC(best.x.y, best.x.m - 1, 1)).toLocaleDateString(loc, { month: "long", timeZone: "UTC" }) + " " + best.x.y) + "</em></div>" +
       (ratioMetric ? "" : '<div><small>' + esc(T("histTotal")) + "</small><b>" + esc(fmt(total)) + "</b></div>") +
       '<div><small>' + esc(T("histAvg")) + "</small><b>" + esc(fmt(avg)) + "</b></div>" +
-    '</div><p class="sub hmNote">' + esc(note) + "</p></div>";
+    "</div>" + noteHTML + "</div>";
   }
   if(st.got < st.want && !st.waiting) histLoad();
 }

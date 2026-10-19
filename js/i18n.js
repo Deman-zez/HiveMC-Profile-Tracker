@@ -4,7 +4,7 @@ const STR = {
   ru:{
     tab1:"Профиль", tab2:"Динамика", tab3:"Настройки", tab4:"Рейтинг",
     topSub:"Лучшие игроки Hive по режимам", lbMonth:"%1 · идёт сейчас", lbSeason:"Сезон %1",
-    lbSub:"из %1 игр · %2", lbYou:"Ваше место: #%1", lbNotIn:"%1 нет в этом топе",
+    lbSub:"из %1 игр · %2", lbYou:"Ваше место: #%1", lbNotIn:"%1 нет в этом топе", lbNotInSorted:"%1 нет в сотне Hive по победам — этот список только пересортирован",
     lbEmpty:"Этот рейтинг пуст или ещё не опубликован", lbLimit:"Hive временно ограничил запросы — попробуйте через пару минут",
     lbMore:"Показать ещё 100", lbEnd:"Hive отдаёт для этого рейтинга только %1 мест",
     lbFindPh:"Ник или номер места", lbFindBtn:"Найти", lbBeyond:"Hive отдаёт для этого рейтинга только %1 мест",
@@ -105,7 +105,7 @@ const STR = {
     tqWas:"раньше: уровень %1 в %2", tqUntil:"до %1", tqInactive:" · больше не выдаётся",
     trendSub:"Как менялись показатели от среза к срезу",
     trendWas:"было", trendNow:"стало",
-    rangeAll:"Всё время", rangeMonths:"По месяцам", histNote:"По данным Hive за каждый месяц", histLoading:"Загружаю месяцы из Hive: %1 из %2…", histLater:"Загружено %1 из %2 месяцев. Hive отдаёт историю одного игрока не чаще 3 раз в час, поэтому остальные месяцы догрузятся сами, по 3 в час, пока сайт открыт", histBest:"Лучший месяц", histTotal:"Всего", histAvg:"В среднем за месяц", calHive:"По данным Hive: %1 игр · %2% побед", range24h:"24 часа", range7d:"7 дней", range30d:"30 дней",
+    rangeAll:"Всё время", rangeMonths:"По месяцам", histMonthsLbl:"Месяцы из Hive", histNote:"По данным Hive за каждый месяц", histLoading:"Загружаю месяцы из Hive: %1 из %2…", histLater:"Загружено %1 из %2 месяцев. Hive отдаёт историю одного игрока не чаще 3 раз в час, поэтому остальные месяцы догрузятся сами, по 3 в час, пока сайт открыт", histBest:"Лучший месяц", histTotal:"Всего", histAvg:"В среднем за месяц", calHive:"По данным Hive: %1 игр · %2% побед", range24h:"24 часа", range7d:"7 дней", range30d:"30 дней",
     setSub:"Ник, отслеживаемые игры и ограничения запросов",
     sumNoFinals:"Без финальных убийств", sumWithFinals:"С финальными убийствами",
     killsHint:"Сверьте с титулом «Total Kills» в игре и включите или выключите финальные убийства в настройках — так сумма сойдётся точно."
@@ -113,7 +113,7 @@ const STR = {
   en:{
     tab1:"Profile", tab2:"Trend", tab3:"Settings", tab4:"Leaders",
     topSub:"Top Hive players by mode", lbMonth:"%1 · in progress", lbSeason:"Season %1",
-    lbSub:"of %1 games · %2", lbYou:"Your place: #%1", lbNotIn:"%1 isn't in this top",
+    lbSub:"of %1 games · %2", lbYou:"Your place: #%1", lbNotIn:"%1 isn't in this top", lbNotInSorted:"%1 isn't in Hive\u2019s top 100 by wins — this list is only re-sorted",
     lbEmpty:"This leaderboard is empty or not published yet", lbLimit:"Hive is rate limiting right now — try again in a couple of minutes",
     lbMore:"Show 100 more", lbEnd:"Hive only provides %1 places for this leaderboard",
     lbFindPh:"Username or place number", lbFindBtn:"Find", lbBeyond:"Hive only provides %1 places for this leaderboard",
@@ -204,7 +204,7 @@ const STR = {
     tqWas:"was: level %1 in %2", tqUntil:"until %1", tqInactive:" · no longer available",
     trendSub:"How your stats moved from snapshot to snapshot",
     trendWas:"from", trendNow:"now",
-    rangeAll:"All time", rangeMonths:"By month", histNote:"Hive\u2019s own numbers for each month", histLoading:"Loading months from Hive: %1 of %2…", histLater:"%1 of %2 months loaded. Hive serves a player\u2019s history at most 3 times an hour, so the rest load on their own, 3 an hour, while the site is open", histBest:"Best month", histTotal:"Total", histAvg:"Monthly average", calHive:"Hive\u2019s count: %1 games · %2% won", range24h:"24 hours", range7d:"7 days", range30d:"30 days",
+    rangeAll:"All time", rangeMonths:"By month", histMonthsLbl:"Months from Hive", histNote:"Hive\u2019s own numbers for each month", histLoading:"Loading months from Hive: %1 of %2…", histLater:"%1 of %2 months loaded. Hive serves a player\u2019s history at most 3 times an hour, so the rest load on their own, 3 an hour, while the site is open", histBest:"Best month", histTotal:"Total", histAvg:"Monthly average", calHive:"Hive\u2019s count: %1 games · %2% won", range24h:"24 hours", range7d:"7 days", range30d:"30 days",
     setSub:"Username, tracked games and request limits",
     sumNoFinals:"Without final kills", sumWithFinals:"With final kills",
     killsHint:"Compare with the in-game Total Kills title and toggle final kills in settings so the sum matches."

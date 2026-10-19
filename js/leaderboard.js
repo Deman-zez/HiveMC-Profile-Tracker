@@ -258,7 +258,7 @@ function lbHTML(entry, game, sort){
   const mi = list.find(x => me && lbName(x.p).toLowerCase() === me);
   const who = state.main || state.nick || "";
   const banner = who ? '<div class="lbme"><span class="lbav">' + pavHTML(who) + '</span><span>' +
-    esc(mi ? T("lbYou", nf(mi.place)) : T("lbNotIn", who)) + "</span></div>" : "";
+    esc(mi ? T("lbYou", nf(mi.place)) : T(sort !== "hive" && !overall ? "lbNotInSorted" : "lbNotIn", who)) + "</span></div>" : "";
   const note = overall ? '<p class="sub lbnote">' + esc(T("lbOverallNote", entry.games || 0)) + "</p>"
     : sort !== "hive" ? '<p class="sub lbnote">' + esc(T("lbSortNote", nf(entry.d.length))) + "</p>" : "";
   const foot = entry.more && sort === "hive" ? '<button type="button" class="mini lbmore">' + esc(T("lbMore")) + "</button>"
