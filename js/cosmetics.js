@@ -42,6 +42,13 @@ function itemsOf(v){
 }
 const LIST_KIND = b => /title|costume/.test(b);
 const LIMIT = b => LIST_KIND(b) ? 5 : 12;
+/* limited-edition cosmetics ("Hot Drops") carry their copy number and the print run */
+function edition(it){
+  if(!it || typeof it !== "object") return null;
+  const n = +it.edition, t = +(it.editional_total || it.edition_total);
+  return n > 0 ? { n, t: t > 0 ? t : 0 } : null;
+}
+const edLabel = e => "№ " + nf(e.n) + (e.t ? " / " + nf(e.t) : "");
 function itemHTML(base, it){
   const name = typeof it === "string" ? it : (pick(it, "name", "human_name", "id") || "");
   const id = typeof it === "string" ? it : (pick(it, "id", "index", "name") || "");
@@ -50,11 +57,12 @@ function itemHTML(base, it){
   if(/^\[?placeholder\]?$/i.test(String(name).trim())) return "";
   const clean = String(name).replace(/[§&][0-9a-z]/gi,"").trim();
   const rar = it && typeof it === "object" ? (pick(it, "rarity", "rarity_name") || "") : "";
-  return '<div class="it" data-tn="' + esc(clean) + '" data-tr="' + esc(String(rar)) + '"><div class="box">' +
+  const ed = edition(it);
+  return '<div class="it' + (ed ? " ltd" : "") + '" data-tn="' + esc(clean + (ed ? " · " + edLabel(ed) : "")) + '" data-tr="' + esc(String(rar)) + '"><div class="box">' +
     (url ? '<img alt="" loading="lazy" decoding="async" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
       'document.createElement(\'em\'),{textContent:' + JSON.stringify(first).replace(/"/g, "&quot;") + '}))">'
          : "<em>" + esc(first) + "</em>") +
-    "</div></div>";
+    "</div>" + (ed ? '<i class="edb">' + esc("№" + nf(ed.n)) + "</i>" : "") + "</div>";
 }
 function rowsHTML(base, arr){
   const withHow = /title/.test(base);
@@ -173,6 +181,7 @@ function cosmeticsHTML(main, extra){
         '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "") +
       '<span class="cv">' +
       (n === null ? esc(T("notWorn")) : hasMC(n) ? mcText(n) : esc(nice(n))) +
+      (edition(g[k].eq) ? '<i class="edp">' + esc(edLabel(edition(g[k].eq))) + "</i>" : "") +
       "</span></b></div>";
   }).join("");
   let out = '<div class="card">';

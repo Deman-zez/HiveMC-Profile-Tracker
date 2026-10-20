@@ -2,7 +2,7 @@
 
 const API = "https://api.playhive.com/v0";
 const HIVE_HEADERS = {
-  "X-Hive-Resolve-Stat-Track": "true",
+  "X-Hive-Resolve-Dynamic-Hub-Titles": "true",
   "X-Hive-API-Version": "2024-03-29"
 };
 const PROXY = "https://misty-sky-2dcb.zhoski-demon.workers.dev/?url=";

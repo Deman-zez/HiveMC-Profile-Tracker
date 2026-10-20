@@ -218,7 +218,7 @@ function lbCells(x, m, overall){
   const p = x.p, s = lbStats(p), v = m.f(m.v(p));
   return '<span class="lbp">' + (x.place ? nf(x.place) : "—") + "</span>" +
     '<span class="lbu"><span class="lbnn"><span class="lbn">' +
-    esc(lbName(p)) + '</span><small class="lbs">' + esc(lbSubline(p, overall)) + "</small></span></span>" +
+    esc(lbName(p)) + creatorTag(lbName(p)) + '</span><small class="lbs">' + esc(lbSubline(p, overall)) + "</small></span></span>" +
     '<span class="lbv"><b>' + v + "</b><small>" + esc(m.unit()) + "</small></span>" +
     '<span class="lbc lbcw">' + v + '</span><span class="lbc">' + nf(s.played) + '</span><span class="lbc">' +
     '<em class="wrc">' + s.wr + "</em></span>";
@@ -235,7 +235,7 @@ function lbPodium(list, m, me){
     const x = list[i], name = lbName(x.p), isMe = !!me && name.toLowerCase() === me;
     return '<button type="button" class="pod pod' + x.place + (isMe ? " me" : "") + '" data-n="' + esc(name) +
       '" data-p="' + x.place + '"><span class="podav">' + pavHTML(name) + '<b class="podm">' + x.place + "</b></span>" +
-      '<span class="podn">' + esc(name) + '</span><span class="podw">' + m.f(m.v(x.p)) + "</span>" +
+      '<span class="podn">' + esc(name) + "</span>" + creatorTag(name) + '<span class="podw">' + m.f(m.v(x.p)) + "</span>" +
       '<small class="pods">' + esc(m.unit() || T("winrate")) + "</small></button>";
   }).join("") + "</div>";
 }

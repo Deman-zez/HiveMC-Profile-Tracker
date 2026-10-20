@@ -21,7 +21,12 @@ function renderSnap(){
   document.documentElement.style.setProperty("--rankc1", tag ? tag.c1 : "#8a6a10");
   document.documentElement.style.setProperty("--rankc2", tag ? tag.c2 : "#ffe6a6");
   const tagHTML = tag ? ' <span class="tag">[<span class="rl">' + tag.t + "</span>]</span>" : "";
-  const idHTML = '<span class="nk">' + esc(state.nick || T("noNick")) + tagHTML + "</span>";
+  // the Creator badge belongs to the nick: centred right under it, moving with it into the sticky header
+  const crt = creatorTag(state.nick);
+  // centred under the name itself, not under the name plus the rank tag
+  const idHTML = crt
+    ? '<span class="nk nkc"><span class="nkcol"><span class="nkn">' + esc(state.nick || T("noNick")) + "</span>" + crt + "</span>" + tagHTML + "</span>"
+    : '<span class="nk">' + esc(state.nick || T("noNick")) + tagHTML + "</span>";
 
   const shareBtn = state.nick ? '<button class="hbtn" id="shareBtn" type="button" aria-label="' +
     esc(T("share")) + '" title="' + esc(T("share")) + '">' + SHARE_SVG + "</button>" : "";

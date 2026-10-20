@@ -25,6 +25,33 @@ async function loadPlayerAll(nick){
   CMP[k] = { t: Date.now(), d };
   return rememberAvatar(k, d);
 }
+/* this month's numbers for a player: one request, kept for 10 minutes (own month shared with the rest) */
+const CMPM = {};
+async function loadPlayerMonth(nick){
+  const k = nick.toLowerCase();
+  if(k === nickKey() && MONTHLY[k] && Date.now() - MONTHLY[k].t < 15 * 60 * 1000) return MONTHLY[k].d;
+  const c = CMPM[k];
+  if(c && Date.now() - c.t < 10 * 60 * 1000) return c.d;
+  const d0 = new Date();
+  noteRequest();
+  let res;
+  try{ res = await hiveFetch(API + "/game/monthly/player/all/" + encodeURIComponent(nick) + "/" + d0.getUTCFullYear() + "/" + (d0.getUTCMonth() + 1),
+    { cache: "no-store", headers: HIVE_HEADERS }); }
+  catch(e){ throw new Error(T("netErr")); }
+  if(res.status === 429) throw new Error(limitMsg(k));
+  let d = {};
+  if(res.ok){
+    d = await res.json().catch(() => ({}));
+    if(!d || typeof d !== "object" || Array.isArray(d)) d = {};
+    if(typeof d.message === "string" && !Object.values(d).some(v => v && typeof v === "object")){
+      if(/too many/i.test(d.message)) throw new Error(limitMsg(k));
+      d = {};
+    }
+  }
+  CMPM[k] = { t: Date.now(), d };
+  if(k === nickKey()) MONTHLY[k] = { t: Date.now(), d };
+  return d;
+}
 function cmpHTML(aName, A, bName, B){
   const playedOf = c => c && !Array.isArray(c) ? (num(c, "played") || num(c, "games_played")) : 0;
   const codes = GAMES.map(g => g[0]).filter(g => g !== "main" && (playedOf(A[g]) || playedOf(B[g])));
@@ -97,12 +124,34 @@ function openCompare(from){
     '<p class="sub mhint">' + esc(T("cmpHint")) + "</p>" +
     '<div class="nickbox"><input id="cmpNick" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" ' +
       'placeholder="' + esc(T("nickPh")) + '"><div class="sugg hidden" id="cmpSugg"></div></div>' +
-    '<button class="primary" id="cmpGo">' + esc(T("cmpGo")) + '</button><div class="cmpBody"></div></div>';
+    '<button class="primary" id="cmpGo">' + esc(T("cmpGo")) + '</button>' +
+    '<div class="seg cmpSeg hidden" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
+      '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>" +
+    '<div class="cmpBody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
   const inp = m.querySelector("#cmpNick"), out = m.querySelector(".cmpBody");
   let seq = 0;
   let search = null;
+  const seg = m.querySelector(".cmpSeg");
+  let tf = "all", lastOther = null, lastAll = null;
+  const draw = async () => {
+    if(!lastOther) return;
+    const my = ++seq;
+    if(tf === "all"){ out.innerHTML = cmpHTML(state.nick, last.g, lastOther, lastAll); return; }
+    out.innerHTML = '<p class="sub">' + esc(T("tqLoading")) + "</p>";
+    try{
+      const [a, b] = await Promise.all([loadPlayerMonth(state.nick), loadPlayerMonth(lastOther)]);
+      if(my !== seq || !out.isConnected) return;
+      const any = o => Object.values(o || {}).some(c => c && typeof c === "object" && (num(c, "played") || num(c, "games_played")));
+      out.innerHTML = any(a) || any(b) ? cmpHTML(state.nick, a, lastOther, b) : '<p class="sub">' + esc(T("cmpMonthNone")) + "</p>";
+    }catch(e){ if(my === seq) out.innerHTML = '<p class="sub">' + esc(e.message) + "</p>"; }
+  };
+  seg.querySelectorAll("button").forEach(b => b.onclick = () => {
+    tf = b.dataset.tf;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    draw();
+  });
   const run = async n => {
     n = String(n || "").trim();
     if(!n) return;
@@ -115,7 +164,9 @@ function openCompare(from){
       const d = await loadPlayerAll(n);
       if(my !== seq || !out.isConnected) return;
       const other = (d.main && (d.main.username_cc || d.main.username)) || n;
-      out.innerHTML = cmpHTML(state.nick, last.g, other, d);
+      lastOther = other; lastAll = d;
+      seg.classList.remove("hidden");
+      if(tf === "all") out.innerHTML = cmpHTML(state.nick, last.g, other, d); else draw();
     }catch(e){ if(my === seq) out.innerHTML = '<p class="sub">' + esc(e.message) + "</p>"; }
   };
   search = attachSearch(inp, m.querySelector("#cmpSugg"), run);

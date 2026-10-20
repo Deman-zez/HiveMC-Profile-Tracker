@@ -247,6 +247,9 @@ function fixNickField(inp){
 const fixActiveNickField = () => fixNickField(document.activeElement);
 document.addEventListener("focusout", e => fixNickField(e.target), true);
 document.addEventListener("keydown", e => { if(e.key === "Enter") fixNickField(e.target); }, true);
+/* the site's creator gets a badge next to his nick everywhere it is shown */
+const CREATORS = new Set(["demanzez"]);
+const creatorTag = name => CREATORS.has(String(name || "").trim().toLowerCase()) ? '<span class="crt">Creator</span>' : "";
 const SHORT_NAMES = { ctf: "CTF" };   // used when the full name does not fit a closed dropdown
 const isDateKey = k => /first_(played|joined|login)|last_login|_date$/.test(k);
 const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Object.entries(c).some(([k, v]) =>

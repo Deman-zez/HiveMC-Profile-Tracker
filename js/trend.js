@@ -353,7 +353,11 @@ async function renderActivity(){
     box.innerHTML = (list.length || !c.p ? actHTML(list, c.err)
       : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>");
     const side = $("#trendSide");
-    if(side && typeof calHTML === "function"){ side.innerHTML = calHTML(list); calBind(side); }
+    if(side && typeof calHTML === "function"){
+      side.innerHTML = (typeof daysHTML === "function" ? daysHTML(list) : "") + calHTML(list);
+      calBind(side);
+      if(typeof daysBind === "function") daysBind(side);
+    }
     actBindDays(box, list);
     const mb = box.querySelector(".actmore");
     if(mb) mb.onclick = () => {
@@ -377,7 +381,13 @@ function renderToday(){
   fitNames(box);
   fitText(box);
 }
+/* The Trend tab is the heaviest screen (chart, history, calendar). While it is hidden nothing is drawn:
+   it is only marked out of date and rebuilt the moment it is opened. This keeps the first screen fast. */
+let trendStale = true;
 function renderTrend(){
+  const view = $("#vTrend");
+  if(view && view.classList.contains("hidden")){ trendStale = true; return; }
+  trendStale = false;
   renderToday();
   renderActivity();
   const gSel = $("#trendGame"), mSel = $("#trendMetric"), rSel = $("#trendRange"), body = $("#trendBody");
