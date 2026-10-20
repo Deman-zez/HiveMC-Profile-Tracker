@@ -1448,3 +1448,63 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{width:0 !im
 .hmPbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#a874e6,var(--gold));transition:width .5s ease}
 .hmProg b{color:var(--text);font-variant-numeric:tabular-nums}
 .hmProg.wait .hmPbar i{background:linear-gradient(90deg,#6a4a8a,#8a6a3a)}
+
+/* creator badge */
+.crt{display:inline-flex;align-items:center;flex:none;margin-left:8px;padding:3px 8px 3px;border-radius:7px;
+  font-size:11px;font-weight:900;line-height:1.2;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;vertical-align:middle;
+  color:#2a1442;-webkit-text-fill-color:#2a1442;
+  position:relative;overflow:hidden;isolation:isolate;
+  background:linear-gradient(110deg,#ffd970 0%,#ffc02e 50%,#ff9d2e 100%);
+  box-shadow:0 0 0 1px rgba(255,236,190,.4) inset,0 2px 10px rgba(255,170,30,.45)}
+/* the shine is a separate streak that enters from off the left edge and leaves past the right one,
+   then waits off-badge: both ends of the loop look the same, so it never jumps */
+.crt::after{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:45%;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,250,225,.85) 50%,transparent);transform:translateX(-120%) skewX(-12deg)}
+@keyframes crtShine{0%{transform:translateX(-120%) skewX(-12deg)}55%,100%{transform:translateX(260%) skewX(-12deg)}}
+@media (prefers-reduced-motion: no-preference){ .crt::after{animation:crtShine 3.6s cubic-bezier(.45,.05,.4,.95) infinite} }
+.lite .crt::after{animation:none;display:none}
+.idline .crt{font-size:10px;padding:3px 7px;margin-left:6px;letter-spacing:.06em;align-self:center}
+.lbn .crt{font-size:9.5px;padding:2px 6px;margin-left:6px}
+.pod .crt{margin:4px auto 0;font-size:9.5px;padding:2px 6px}
+/* the name row clips overflow (for long nicks): give the Creator glow room inside it */
+.herotop .idline{padding:12px 16px 12px 0;margin:-12px -16px -12px 0}
+.crt{box-shadow:0 0 0 1px rgba(255,236,190,.4) inset,0 1px 3px rgba(0,0,0,.25),0 0 12px rgba(255,170,30,.32)}
+
+/* Creator badge: small, centred under the nick and part of it */
+.nk.nkc{display:inline-flex;align-items:flex-start;min-width:0;max-width:100%}
+.nk.nkc .tag{margin-left:.25em}
+.nkcol{display:inline-flex;flex-direction:column;align-items:center;min-width:0}
+.nkn{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.idline .nkcol .crt{margin:3px 0 0;font-size:8.5px;padding:2px 7px;letter-spacing:.1em;border-radius:6px;align-self:center}
+
+/* limited edition copies */
+.it{position:relative}
+.it.ltd{background:linear-gradient(160deg,#fff1b8,#ffc02e 40%,#ff8a2e);box-shadow:0 4px 14px rgba(255,160,30,.4)}
+.edb{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);padding:1px 6px;border-radius:6px;font-style:normal;
+  font-size:9.5px;font-weight:900;white-space:nowrap;color:#2a1442;background:linear-gradient(135deg,#ffe08a,#ffc02e);
+  box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.edp{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;font-style:normal;font-size:11px;font-weight:800;
+  color:#2a1442;background:linear-gradient(135deg,#ffe08a,#ffc02e);vertical-align:middle;white-space:nowrap}
+
+.cmpSeg{margin:14px 0 0}
+.cmpSeg.hidden{display:none}
+
+/* games per day */
+.dyCard{padding:14px 12px 12px}
+.dyBars{display:flex;gap:4px;height:150px;align-items:stretch}
+.dyCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;border:none;background:none;cursor:pointer;color:inherit;font:inherit}
+.dyN{font-size:10px;font-weight:800;color:var(--soft);min-height:12px;font-variant-numeric:tabular-nums}
+.dyTrack{flex:1;width:100%;max-width:22px;display:flex;align-items:flex-end;border-radius:6px;background:rgba(255,255,255,.035)}
+.dyBar{display:flex;flex-direction:column-reverse;width:100%;gap:1px;border-radius:6px;overflow:hidden;
+  transform-origin:50% 100%;animation:hmGrow .6s cubic-bezier(.22,1,.36,1) backwards;animation-delay:calc(var(--ei,0) * 25ms)}
+.dyBar i{display:block;min-height:3px}
+.dyD{font-size:10px;color:var(--soft);font-variant-numeric:tabular-nums}
+.dyCol.on .dyTrack{box-shadow:0 0 0 1.5px rgba(255,192,46,.7)}
+.dyCol.on .dyD,.dyCol.on .dyN{color:var(--gold)}
+.dyInfo{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.dyHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dyHead span{font-size:12px;color:var(--soft)}
+.dyModes{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:12.5px}
+.dyModes span{display:inline-flex;align-items:center;gap:6px}
+.dyModes i{width:9px;height:9px;border-radius:3px}
+.lite .dyBar,.dyCard.still .dyBar{animation:none}
