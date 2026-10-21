@@ -8,7 +8,8 @@ const fail = msg => problems.push(msg);
 
 // 1. every script parses
 const scripts = readdirSync("js").filter(f => f.endsWith(".js")).map(f => "js/" + f);
-for (const f of [...scripts, ...readdirSync("worker").filter(f => f.endsWith(".js")).map(f => "worker/" + f)]) {
+const workers = existsSync("worker") ? readdirSync("worker").filter(f => f.endsWith(".js")).map(f => "worker/" + f) : [];
+for (const f of [...scripts, ...workers]) {
   if (!existsSync(f)) continue;
   try { execFileSync(process.execPath, ["--check", f], { stdio: "pipe" }); }
   catch (e) { fail(`${f}: syntax error\n${String(e.stderr || e.message).trim()}`); }
