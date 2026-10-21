@@ -1,10 +1,7 @@
 "use strict";
 
-/* Calendar under "Recent games": a month heat map of the games the site has recorded, and a panel with
-   that day's stats and games when a day is tapped. Days are local calendar days of this device. */
 let calMonth = null, calSel = null, calAnim = "in", calQuery = "", calList = [];
 
-/* "go to date" box: 12.10, 12.10.2026, 12 октября, вчера, октябрь 2026, 3 (day of the shown month) */
 const CAL_MONTHS = [/^(янв|jan)/, /^(фев|feb)/, /^(мар|mar)/, /^(апр|apr)/, /^(мая|май|may)/, /^(июн|jun)/,
   /^(июл|jul)/, /^(авг|aug)/, /^(сен|sep)/, /^(окт|oct)/, /^(ноя|nov)/, /^(дек|dec)/];
 const calMonthOf = w => CAL_MONTHS.findIndex(re => re.test(w));
@@ -179,8 +176,6 @@ function calDaysNow(){
   if(calDaysFor !== calList){ calDaysFor = calList; calDaysCache = calDays(calList); }
   return calDaysCache;
 }
-// Rapid taps only rebuild the panel once per frame, and the panel animates as one piece instead of
-// dozens of separate elements, so switching days quickly stays smooth.
 function calShowDetail(wrap){
   cancelAnimationFrame(calDetRaf);
   calDetRaf = requestAnimationFrame(() => {
@@ -190,8 +185,6 @@ function calShowDetail(wrap){
     const wasOpen = !det.hidden, was = wasOpen ? det.getBoundingClientRect().height : 0;
     if(det.__anim){ det.__anim.cancel(); det.__anim = null; }
     if(inner.__fade){ inner.__fade.cancel(); inner.__fade = null; }
-    // keep the old height while the content changes: otherwise the page is shorter for one frame and the
-    // browser pulls the scroll position up, then the animation pushes it back down - a visible hop
     if(wasOpen && motion){ det.style.height = was + "px"; det.style.overflow = "hidden"; }
     inner.innerHTML = calDetailHTML(calDaysNow());
     det.hidden = !calSel && !motion;
@@ -250,7 +243,6 @@ function calBindWrap(wrap){
   });
 }
 
-/* the whole month as Hive counts it (every game played, not only the ones the site saw) */
 function calHiveLine(y, m){
   if(typeof histMonth !== "function") return "";
   const d = histMonth(state.nick, y, m);
@@ -262,75 +254,4 @@ function calHiveLine(y, m){
   const t = histTotals(d);
   if(!t.played) return "";
   return '<small class="calHive">' + esc(T("calHive", nf(t.played), (t.wins / t.played * 100).toFixed(0))) + "</small>";
-}
-
-/* Games per day for the last two weeks, stacked by mode, with the number of sessions (games no more
-   than 30 minutes apart count as one sitting). Built from the recorded history, which the worker keeps
-   filling while the site is closed. */
-const DAY_COLORS = { bed: "#e0564a", sky: "#5bb8f0", murder: "#a874e6", dr: "#e8c88a", hide: "#4fd48a", sg: "#79c46a",
-  bridge: "#5bd6c8", ctf: "#f09a4a", drop: "#f2d24a", party: "#f07ab8", ground: "#8a9cf0", grav: "#c0a0ff", build: "#ff8f6a", wars: "#d4a03a" };
-const dayColor = g => DAY_COLORS[g] || "hsl(" + hueOf(g) + " 55% 60%)";
-let daysSel = null, daysShown = false;
-function daysData(list){
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const days = [];
-  for(let i = 13; i >= 0; i--){
-    const d = new Date(today.getTime() - i * 86400000);
-    days.push({ key: calKey(d), date: d, modes: {}, games: 0, wins: 0, sessions: 0, times: [] });
-  }
-  const byKey = new Map(days.map(d => [d.key, d]));
-  list.forEach(e => {
-    if(e.type !== "ROUND_PLAYED" || typeof e.time !== "number") return;
-    const d = byKey.get(calKey(new Date(e.time * 1000))); if(!d) return;
-    d.games++; if(e.victory === true) d.wins++;
-    d.modes[e.game] = (d.modes[e.game] || 0) + 1;
-    d.times.push(e.time);
-  });
-  days.forEach(d => {
-    d.times.sort((a, b) => a - b);
-    d.sessions = d.times.reduce((n, t, i) => n + (i === 0 || t - d.times[i - 1] > 30 * 60 ? 1 : 0), 0);
-  });
-  return days;
-}
-function daysHTML(list){
-  if(!list || !list.length) return "";
-  const days = daysData(list);
-  if(!days.some(d => d.games)) return "";
-  const max = Math.max(1, ...days.map(d => d.games));
-  const loc = L === "ru" ? "ru-RU" : "en-US";
-  const sel = days.find(d => d.key === daysSel) || [...days].reverse().find(d => d.games);
-  daysSel = sel.key;
-  const bars = days.map((d, i) => {
-    const segs = Object.entries(d.modes).sort((a, b) => b[1] - a[1]).map(([g, n]) =>
-      '<i style="flex:' + n + ";background:" + dayColor(g) + '"></i>').join("");
-    return '<button type="button" class="dyCol' + (d.key === sel.key ? " on" : "") + '" data-k="' + d.key + '" style="--ei:' + i + '">' +
-      '<span class="dyN">' + (d.games || "") + "</span>" +
-      '<span class="dyTrack"><span class="dyBar" style="height:' + (d.games / max * 100).toFixed(1) + '%">' + segs + "</span></span>" +
-      '<span class="dyD">' + d.date.getDate() + "</span></button>";
-  }).join("");
-  const anim = !daysShown; daysShown = true;            // grow the bars once, not on every refresh
-  return "<h2>" + esc(T("daysTitle")) + '</h2><div class="card dyCard' + (anim ? "" : " still") + '"><div class="dyBars">' + bars + "</div>" +
-    '<div class="dyInfo">' + daysInfo(sel, loc) + "</div></div>";
-}
-function daysInfo(d, loc){
-  const title = d.date.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "long" });
-  if(!d.games) return '<div class="dyHead"><b>' + esc(title.charAt(0).toUpperCase() + title.slice(1)) + "</b></div>" +
-    '<p class="sub" style="margin:6px 0 0">' + esc(T("calNone")) + "</p>";
-  return '<div class="dyHead"><b>' + esc(title.charAt(0).toUpperCase() + title.slice(1)) + "</b><span>" +
-    esc(T("daysSum", nf(d.games), (d.wins / d.games * 100).toFixed(0), nf(d.sessions))) + "</span></div>" +
-    '<div class="dyModes">' + Object.entries(d.modes).sort((a, b) => b[1] - a[1]).map(([g, n]) =>
-      '<span><i style="background:' + dayColor(g) + '"></i>' + esc(NAME(g)) + " <b>" + n + "</b></span>").join("") + "</div>";
-}
-function daysBind(root){
-  const card = root.querySelector(".dyCard"); if(!card) return;
-  const loc = L === "ru" ? "ru-RU" : "en-US";
-  card.querySelectorAll(".dyCol").forEach(b => b.onclick = () => {
-    daysSel = b.dataset.k;
-    card.querySelectorAll(".dyCol.on").forEach(x => x.classList.remove("on"));
-    b.classList.add("on");
-    const d = daysData(calList).find(x => x.key === daysSel);
-    const info = card.querySelector(".dyInfo");
-    if(d && info){ info.innerHTML = daysInfo(d, loc);
-      if(!state.lite) info.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 220, easing: "ease-out" }); }
-  });
 }

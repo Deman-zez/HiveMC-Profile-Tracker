@@ -1,12 +1,5 @@
 "use strict";
 
-/* Monthly history straight from Hive: /game/monthly/player/all/{nick}/{year}/{month} returns that
-   player's stats for every game in one calendar month. It fills what snapshots can't - months when the
-   site wasn't opened - and works from the very first visit.
-   Requests are spent carefully: a finished month never changes, so it is fetched once and kept for good;
-   only the current month is refreshed (shared with the "this month" numbers elsewhere). Hive allows only
-   3 requests per hour for the same player and game, so loading stops at the first "too many requests"
-   and the remaining months are picked up later by themselves. */
 const HIST_KEY = "hive.tracker.monthhist.v1";
 const HIST_MONTHS = 12;
 let HIST = {};
@@ -59,7 +52,6 @@ async function histFetch(nick, y, m){
   if(!res.ok) throw new Error(httpMsg(res.status));
   const d = await res.json().catch(() => ({}));
   if(!d || typeof d !== "object" || Array.isArray(d)) return {};
-  // Hive sometimes answers with just {"message": "..."} - a rate limit or "no data", never real stats
   if(typeof d.message === "string" && !Object.values(d).some(v => v && typeof v === "object")){
     if(/too many/i.test(d.message)){ const err = new Error("limited"); err.wait = 20 * 60 * 1000; throw err; }
     return {};
@@ -78,8 +70,6 @@ async function histLoad(onlyKey){
       if(onlyKey && x.key !== onlyKey) continue;
       if(first && Date.UTC(x.y, x.m, 1) <= first) break;      // nothing before the first game
       const e = have[x.key];
-      // a month with stats never changes; an empty answer ("Server Error" is how Hive says "no record")
-      // is re-checked after a few days in case it was a real hiccup
       const emptyOld = e && e.empty && Date.now() - e.t > 3 * 86400000;
       if(e && !emptyOld && (!x.current || Date.now() - e.t < 15 * 60 * 1000)) continue;
       if(x.current && MONTHLY[k] && Date.now() - MONTHLY[k].t < 15 * 60 * 1000){
@@ -114,7 +104,6 @@ function histTotals(d){
   return { played, wins };
 }
 
-// keep loading the remaining months on its own once Hive's window has passed (while the site is open)
 function histResumeLater(){
   clearTimeout(histTimer);
   const wait = histWaitUntil - Date.now();

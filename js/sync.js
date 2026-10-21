@@ -73,11 +73,6 @@ function mergeRemote(r){
     for(const [k, v] of Object.entries(r.avatars)) if(!state.avatars[k] && typeof v === "string") state.avatars[k] = v;
   return state.snaps.length !== before || (state.setAt || 0) !== setBefore;
 }
-/* Sync model
-   - pull first: on opening the page, on returning to it, and every 90 s while it is open, the site asks the
-     worker only "when was this code last written?" (a few bytes) and downloads the data only if it changed;
-   - push only real local changes (a snapshot, a setting), right after they happen, and flush them when the
-     page is being hidden, so closing the tab right after a snapshot does not lose it. */
 var syncBusy = false, syncAgain = false, syncTimer = null, syncPullAt = 0;
 const markDirty = () => { if(state.sync){ state.sync.dirty = true; save(); } };
 const syncSoon = () => {
@@ -85,17 +80,19 @@ const syncSoon = () => {
   markDirty();
   clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 1200);
 };
+const syncUrl = () => SYNC_URL + (state.sync.xbox ? "xbox" : state.sync.id);
+const syncHdr = extra => Object.assign({}, extra || {}, state.sync && state.sync.xbox ? authHeaders() : {});
 async function syncPull(force){
-  const url = SYNC_URL + state.sync.id;
+  const url = syncUrl();
   if(!force){
-    const m = await fetch(url + "/meta", { cache: "no-store" }).catch(() => null);
+    const m = await fetch(url + "/meta", { cache: "no-store", headers: syncHdr() }).catch(() => null);
     if(m && m.status === 404) return { remote: false, changed: false };
     if(m && m.ok){
       const j = await m.json().catch(() => ({}));
       if(j && +j.at && +j.at <= (state.sync.remoteAt || 0)) return { remote: true, changed: false };
     }
   }
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", headers: syncHdr() });
   if(res.status === 404) return { remote: false, changed: false };
   if(!res.ok) throw new Error(await errText(res));
   const changed = mergeRemote(await gzipUnpack(await res.arrayBuffer()));
@@ -105,8 +102,8 @@ async function syncPull(force){
 }
 async function syncPush(keepalive){
   const body = await gzipPack(syncPayload());
-  const up = await fetch(SYNC_URL + state.sync.id, { method: "PUT", body, cache: "no-store",
-    keepalive: !!keepalive && body.byteLength < 60000, headers: { "Content-Type": "application/octet-stream" } });
+  const up = await fetch(syncUrl(), { method: "PUT", body, cache: "no-store",
+    keepalive: !!keepalive && body.byteLength < 60000, headers: syncHdr({ "Content-Type": "application/octet-stream" }) });
   if(up.status === 429) return false;                      // throttled burst: try again shortly
   if(!up.ok) throw new Error(await errText(up));
   const j = await up.json().catch(() => ({}));
@@ -116,6 +113,7 @@ async function syncPush(keepalive){
 }
 async function syncNow(manual){
   if(!state.sync || !state.sync.id) return;
+  if(state.sync.xbox && !authOn()){ delete state.sync; save(); renderSync(); return; }
   if(syncBusy){ syncAgain = true; return; }
   syncBusy = true; renderSync();
   try{
@@ -146,24 +144,40 @@ async function errText(res){
   return T("httpErr", res.status);
 }
 function renderSync(){
-  const on = !!(state.sync && state.sync.id);
+  const on = !!(state.sync && state.sync.id), xb = on && !!state.sync.xbox;
   const inp = $("#syncCode"), btn = $("#syncBtn");
   if(!inp) return;
   $("#lSync").textContent = T("lSync");
+  const box = $("#xbBox");
+  if(box){
+    box.innerHTML = authOn()
+      ? '<div class="xbMe"><span class="xbIcon">' + xbLogo() + '</span><span class="xbWho"><small>' + esc(T("xbAs")) + "</small><b>" + esc(AUTH.gamertag) + "</b></span>" +
+        '<button class="mini" type="button" id="xbOutBtn">' + esc(T("xbOut")) + "</button></div>"
+      : '<button class="mini xbBtn" type="button" id="xbInBtn">' + xbLogo() + "<span>" + esc(T("xbLogin")) + "</span></button>" +
+        '<p class="hint">' + esc(T("xbWhy")) + "</p>";
+    const i = $("#xbInBtn"), o = $("#xbOutBtn");
+    if(i) i.onclick = () => xboxLogin(i);
+    if(o) o.onclick = xboxLogout;
+  }
+  $("#syncOr").textContent = T(authOn() ? "syncOrSigned" : "syncOr");
+  $("#syncOr").classList.toggle("hidden", xb);
+  $("#syncRow").classList.toggle("hidden", xb);
   inp.placeholder = T("syncPh");
   inp.readOnly = on;
-  if(on && document.activeElement !== inp) inp.value = state.sync.code;
+  if(document.activeElement !== inp) inp.value = on && state.sync.code ? state.sync.code : (on ? "" : inp.value === "undefined" ? "" : inp.value);
   btn.classList.toggle("hidden", on);
   btn.textContent = T("syncConnect");
   $("#syncActs").classList.toggle("hidden", !on);
   $("#syncNowBtn").textContent = syncBusy ? T("snapping") : T("syncNowBtn");
   $("#syncNowBtn").disabled = syncBusy;
   $("#syncOffBtn").textContent = T("syncOff");
+  $("#syncGen").textContent = T("syncGen");
+  $("#syncOffBtn").classList.toggle("hidden", xb);
   $("#syncStatus").textContent = !on ? "" : syncBusy ? T("snapping")
     : state.sync.err ? T("syncErr", state.sync.err)
-    : state.sync.at ? T("syncAt", when(state.sync.at)) : T("syncNever");
+    : (xb ? T("syncXbox") + " · " : "") + (state.sync.at ? T("syncAt", when(state.sync.at)) : T("syncNever"));
   $("#syncStatus").classList.toggle("bad", on && !!state.sync.err && !syncBusy);
-  $("#syncHint").textContent = T("syncHint");
+  $("#syncHint").textContent = xb ? "" : T("syncHint");
 }
 $("#syncBtn").onclick = () => {
   const code = $("#syncCode").value.trim();
@@ -174,7 +188,10 @@ $("#syncBtn").onclick = () => {
 $("#syncCode").onkeydown = e => { if(e.key === "Enter" && !(state.sync && state.sync.id)) $("#syncBtn").click(); };
 $("#syncNowBtn").onclick = () => syncNow(true);
 $("#syncOffBtn").onclick = () => {
-  delete state.sync; save(); $("#syncCode").value = ""; renderSync();
+  delete state.sync;
+  if(authOn()) state.sync = { xbox: true, id: "xbox", at: 0, err: "" };
+  save(); $("#syncCode").value = ""; renderSync();
+  if(state.sync) syncNow(true);
 };
 document.addEventListener("visibilitychange", () => {
   if(!state.sync || !state.sync.id) return;
@@ -188,3 +205,14 @@ document.addEventListener("visibilitychange", () => {
 setInterval(() => {
   if(state.sync && state.sync.id && document.visibilityState === "visible" && Date.now() - syncPullAt > 85000) syncNow(false);
 }, 30000);
+function randomSyncCode(){
+  const abc = "abcdefghjkmnpqrstuvwxyz23456789", b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return [...b].map(x => abc[x % abc.length]).join("").replace(/(.{4})(?!$)/g, "$1-");
+}
+$("#syncGen").onclick = () => {
+  const inp = $("#syncCode");
+  inp.value = randomSyncCode();
+  inp.focus(); inp.select();
+  toast(T("syncGenHint"));
+};

@@ -4,8 +4,8 @@ let HD = null, hdTried = false;
 async function loadHiveData(){
   if(hdTried) return HD;
   hdTried = true;
-  for(const u of ["https://cdn.jsdelivr.net/npm/hive-bedrock-data/+esm",
-                  "https://esm.sh/hive-bedrock-data"]){
+  for(const u of ["https://cdn.jsdelivr.net/npm/hive-bedrock-data@4.4.1/+esm",
+                  "https://esm.sh/hive-bedrock-data@4.4.1"]){
     try{ HD = await import(u); if(HD) break; }catch(e){ HD = null; }
   }
   return HD;

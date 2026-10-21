@@ -21,7 +21,6 @@ function renderSnap(){
   document.documentElement.style.setProperty("--rankc1", tag ? tag.c1 : "#8a6a10");
   document.documentElement.style.setProperty("--rankc2", tag ? tag.c2 : "#ffe6a6");
   const tagHTML = tag ? ' <span class="tag">[<span class="rl">' + tag.t + "</span>]</span>" : "";
-  // the Creator badge belongs to the nick: centred right under it, moving with it into the sticky header
   const crt = creatorTag(state.nick);
   // centred under the name itself, not under the name plus the rank tag
   const idHTML = crt
@@ -43,8 +42,6 @@ function renderSnap(){
     return;
   }
   $("#fetchBtn").classList.remove("hidden");
-  // the two glass buttons are built once and kept: re-creating them on every render made them
-  // flash a different shade until their glass was set up again
   const ht = $("#heroTop");
   let corner = ht.querySelector(".corner");
   const idlineHTML = '<h1 class="idline">' +
@@ -64,7 +61,6 @@ function renderSnap(){
       corner.querySelectorAll(".hbtn").forEach(b => { lgAttach(b, { scale: 16, band: 11 }); lgDecor(b); });
   }
   if(typeof lgAdaptSoon === "function") lgAdaptSoon();
-  // players without an avatar get a coloured tile of their own (hue from the nick, like everywhere else)
   const avaHue = hueOf(String(state.nick || "").toLowerCase());
   const avaFail = "this.parentNode.classList.add('noava');this.replaceWith(document.createTextNode(" +
     JSON.stringify(letter).replace(/"/g,"&quot;") + "))";
@@ -94,6 +90,12 @@ function renderSnap(){
 
   tickStatus();
 
+  // a redraw of the same profile (fresh data arriving, settings) must not replay the entrance animations:
+  // that is what made cards vanish and pop back while scrolling
+  const quiet = renderSnap.shown === nickKey() && body.childElementCount > 0 &&
+    performance.now() - (renderSnap.at || 0) > 600;
+  renderSnap.shown = nickKey(); renderSnap.at = performance.now();
+  body.classList.toggle("quiet", quiet);
   body.innerHTML = "";
   if(!last) return;
 
@@ -180,6 +182,16 @@ function renderSnap(){
     body.insertAdjacentHTML("beforeend", '<div class="note">' +
       esc(T("deadNote", state.dead.map(NAME).join(", "))) + "</div>");
   fitText(body);
+  // on a quiet redraw only what is already on screen (or above it) stays still;
+  // everything further down keeps its normal entrance when you scroll to it
+  if(quiet){
+    const edge = innerHeight + 60;
+    body.querySelectorAll(".card,.games,h2,.phead,.chips,.tile,.game,.cos,.it").forEach(el => {
+      if(el.getBoundingClientRect().top >= edge) return;
+      el.classList.add("noanim");
+      if(el.matches(".card,.games,h2,.phead,.chips")) el.classList.add("rv", "in");
+    });
+  }
   reveal(body);
   markTq(body);
 }

@@ -13,15 +13,35 @@ function tilesHTML(list, extra){
       "<small>" + esc(m.k) + "</small></div>";
   }).join("") + "</div>";
 }
+/* cards appear as they scroll in, and the faster you scroll, the quicker they appear
+   (a fast fling shows them almost at once instead of making you wait for each one) */
+let scrollSpeed = 0, lastSY = scrollY, lastST = performance.now();
+addEventListener("scroll", () => {
+  const now = performance.now(), dt = now - lastST;
+  if(dt > 0){
+    const v = Math.abs(scrollY - lastSY) / dt;
+    scrollSpeed = scrollSpeed * .6 + v * .4;
+  }
+  lastSY = scrollY; lastST = now;
+}, { passive: true });
 const revealIO = ("IntersectionObserver" in window) ? new IntersectionObserver(es => {
-  es.forEach(e => { if(e.isIntersecting){ e.target.classList.add("in"); revealIO.unobserve(e.target); } });
-}, { rootMargin:"0px 0px -30px 0px", threshold:.02 }) : null;
+  const idle = performance.now() - lastST > 160;
+  const speed = idle ? 0 : scrollSpeed;
+  const k = speed > 4 ? 0 : speed > 2 ? .3 : speed > .8 ? .6 : 1;
+  let n = 0;
+  es.forEach(e => {
+    if(!e.isIntersecting) return;
+    const el = e.target;
+    el.style.setProperty("--rvk", k);
+    el.style.transitionDelay = k ? Math.min(n++, 4) * 30 * k + "ms" : "0ms";
+    el.classList.add("in"); revealIO.unobserve(el);
+  });
+}, { rootMargin:"0px 0px 60px 0px", threshold:.01 }) : null;
 function reveal(root){
   if(!revealIO){ return; }
   (root || document).querySelectorAll(".card,.games,h2,.phead,.chips").forEach((el, i) => {
     if(el.classList.contains("rv")) return;
     el.classList.add("rv");
-    el.style.transitionDelay = Math.min(i, 6) * 25 + "ms";
     revealIO.observe(el);
   });
 }
@@ -416,8 +436,6 @@ function mapTags(x){
   return out.join("");
 }
 const mapImg = x => x.image && /^https?:/.test(x.image) ? x.image : "";
-/* Maps: the mode card shows a compact grid of the first few maps; "All maps" opens a gallery with a name
-   filter and variant/season chips. Any tile opens the big viewer, which pages through the same list. */
 const MAPS_PREVIEW = 6;
 function mapTile(x, k){
   const img = mapImg(x);

@@ -17,8 +17,26 @@ function navSave(){
 function navPush(v, y, extra){
   try{ history.pushState(navEntry(v, y, extra), ""); }catch(e){}
 }
+const signedIn = () => typeof authOn === "function" && authOn();
+let gateFirst = true;
+function trendGate(){
+  const b = document.querySelector('.tabs button[data-v="trend"]');
+  if(!b) return;
+  const off = !signedIn() || nickKey() !== String(AUTH.gamertag || "").toLowerCase();
+  if(off && curView === "trend") showView("snap");
+  if(b.classList.contains("gone") === off) return;
+  if(gateFirst || state.lite){ b.classList.add("still"); }
+  b.classList.toggle("gone", off);
+  b.setAttribute("aria-hidden", off ? "true" : "false");
+  b.tabIndex = off ? -1 : 0;
+  const settle = () => { b.classList.remove("still"); placeTabInd(false); };
+  if(gateFirst || state.lite){ gateFirst = false; requestAnimationFrame(settle); return; }
+  let t0 = performance.now();
+  const follow = () => { placeTabInd(false); if(performance.now() - t0 < 520) requestAnimationFrame(follow); else settle(); };
+  requestAnimationFrame(follow);
+}
 function showView(v, y){
-  if(!VIEWS[v]) v = "snap";
+  if(!VIEWS[v] || (v === "trend" && !signedIn())) v = "snap";
   curView = v;
   for(const [k, sel] of Object.entries(VIEWS)) $(sel).classList.toggle("hidden", v !== k);
   requestAnimationFrame(() => { placeTabInd(true); if(typeof refitSelects === "function") refitSelects(); });
@@ -85,8 +103,6 @@ addEventListener("popstate", e => {
   showView(st.v, st.y || 0);
 });
 try{ history.replaceState(navEntry("snap", 0), ""); }catch(e){}
-/* tabs switch on finger release, not on the synthesized click: the press animation and the sliding
-   glass plate under the finger must never swallow a tap */
 let tabDown = null, tabUpAt = 0;
 const tabsNav = $(".tabs");
 tabsNav.addEventListener("pointerdown", e => { tabDown = e.button > 0 ? null : e.target.closest("button[data-v]"); }, { passive: true });
@@ -107,7 +123,6 @@ let tabIndX = null;
 function placeTabInd(anim){
   const nav = $(".tabs"), btn = nav && nav.querySelector('button[aria-current="page"]'), cur = btn && btn.firstElementChild;
   if(!tabInd || !cur) return;
-  // layout offsets ignore the press/pop transforms, so the plate always lands exactly under the label
   const r = { width: cur.offsetWidth, height: cur.offsetHeight };
   const x = btn.offsetLeft + cur.offsetLeft, top = btn.offsetTop + cur.offsetTop;
   if(!r.width) return;
@@ -116,7 +131,6 @@ function placeTabInd(anim){
   if(moved && anim){
     tabInd.classList.remove("stretch"); void tabInd.offsetWidth; tabInd.classList.add("stretch");
   }
-  // far jumps glide without overshoot (a springy overshoot over a long distance flies past the edge)
 
   tabInd.style.width = r.width + "px";
   tabInd.style.height = r.height + "px";
@@ -176,7 +190,7 @@ function onScroll(){
   requestAnimationFrame(() => {
     stickTick = false;
     if(document.documentElement.classList.contains("locked")) return;
-    const on = !$("#vSnap").classList.contains("hidden") && (stickOn ? scrollY > 2 : scrollY > 18);
+    const on = !$("#vSnap").classList.contains("hidden") && (stickOn ? scrollY > 6 : scrollY > 18);
     if(on !== stickOn){
       stickOn = on;
       const ht = $("#heroTop");
@@ -196,9 +210,6 @@ function onScroll(){
     }
   });
 }
-/* Press animations shrink a button under the finger. If the finger is near its edge, the release lands
-   outside the shrunken button and the browser sends the click to a parent instead, so nothing happens.
-   Remember the button on press and deliver the click to it when that happens. */
 const TAP_SEL = "button, a[href], [data-act], [data-n], [data-g], .tile.tap, .lbr, .pod";
 let tapEl = null, tapRect = null, tapT = 0;
 addEventListener("pointerdown", e => {
@@ -238,8 +249,32 @@ addEventListener("pointerdown", e => {
   setTimeout(() => t.classList.remove("press"), 440);
 }, { passive:true });
 addEventListener("scroll", onScroll, { passive:true });
-// the darkening follows how far down the page you are, so it must be recalculated whenever the page
-// itself gets longer or shorter (a leaderboard reloading, a day opening) - not only on scroll
+addEventListener("scrollend", onScroll, { passive:true });
+addEventListener("touchend", () => setTimeout(onScroll, 120), { passive:true });
 if(typeof ResizeObserver === "function") new ResizeObserver(() => onScroll()).observe(document.body);
 addEventListener("resize", onScroll, { passive:true });
-// the mouse wheel scrolls the page natively: no added glide, momentum belongs to finger scrolling only
+
+/* big cards and rows you also scroll over: show the pressed look only once the finger has stayed put
+   for a moment, and drop it as soon as the page starts to move. Instant :active made them blink on every scroll. */
+(() => {
+  const SEL = ".game,.map,.lbr,.pod,.tile.tap";
+  let el = null, timer = 0, sx = 0, sy = 0;
+  const clear = () => { clearTimeout(timer); if(el) el.classList.remove("pressing"); el = null; };
+  addEventListener("pointerdown", e => {
+    clear();
+    const t = e.target.closest && e.target.closest(SEL);
+    if(!t) return;
+    el = t; sx = e.clientX; sy = e.clientY;
+    timer = setTimeout(() => { if(el) el.classList.add("pressing"); }, e.pointerType === "mouse" ? 0 : 90);
+  }, { passive: true });
+  addEventListener("pointermove", e => { if(el && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) clear(); }, { passive: true });
+  addEventListener("pointerup", () => {
+    if(!el) return;
+    clearTimeout(timer);
+    el.classList.add("pressing");
+    const t = el;
+    setTimeout(() => { t.classList.remove("pressing"); if(el === t) el = null; }, 140);
+  }, { passive: true });
+  addEventListener("pointercancel", clear, { passive: true });
+  addEventListener("scroll", () => { if(el) clear(); }, { passive: true, capture: true });
+})();

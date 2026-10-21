@@ -94,25 +94,28 @@ addEventListener("keydown", e => {
 });
 
 function onboardHTML(){
-  return '<div class="card onb"><h2 class="onbh">' + esc(T("onbTitle")) + "</h2>" +
-    '<p class="sub">' + esc(T("onbSub")) + "</p>" +
+  if(!state.onbSkip && !authOn()) return '<div class="card onb welcome">' +
+    '<div class="wlIcon">' + xbLogo() + "</div>" +
+    '<h2 class="onbh">' + esc(T("wlTitle")) + "</h2>" +
+    '<p class="sub">' + esc(T("wlSub")) + "</p>" +
+    '<button type="button" class="primary xbPrimary" id="wlXbox">' + xbLogo() + "<span>" + esc(T("xbLogin")) + "</span></button>" +
+    '<button type="button" class="wlSkip" id="wlSkip">' + esc(T("wlSkip")) + "</button></div>";
+  return '<div class="card onb home"><h2 class="onbh">' + esc(T("homeTitle")) + "</h2>" +
+    '<p class="sub">' + esc(T("homeSub")) + "</p>" +
     '<div class="nickbox"><input id="onbNick" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" ' +
-      'enterkeyhint="go" placeholder="' + esc(T("nickPh")) + '"><div class="sugg hidden" id="onbSugg"></div></div>' +
-    '<button type="button" class="primary" id="onbGo">' + esc(T("onbGo")) + "</button></div>";
+      'enterkeyhint="go" placeholder="' + esc(T("qsPh")) + '"><div class="sugg hidden" id="onbSugg"></div></div></div>';
 }
 function onboardBind(){
+  const xb = $("#wlXbox"), skip = $("#wlSkip");
+  if(xb) xb.onclick = () => xboxLogin(xb);
+  if(skip) skip.onclick = () => { state.onbSkip = 1; save(); renderSnap(); };
   const inp = $("#onbNick"); if(!inp) return;
   const go = n => {
     const v = niceNick(String(n || "").trim().slice(0, 32));
     if(!v || !NICK_OK.test(v)){ toast(T("needNick")); return; }
-    state.main = v;
-    touchSettings();
     switchNick(v);
-    $("#nick").value = v;
-    syncSoon();
     snapshot();
   };
   attachSearch(inp, $("#onbSugg"), go);
   inp.onkeydown = e => { if(e.key === "Enter") go(inp.value); };
-  $("#onbGo").onclick = () => go(inp.value);
 }

@@ -25,7 +25,6 @@ async function loadPlayerAll(nick){
   CMP[k] = { t: Date.now(), d };
   return rememberAvatar(k, d);
 }
-/* this month's numbers for a player: one request, kept for 10 minutes (own month shared with the rest) */
 const CMPM = {};
 async function loadPlayerMonth(nick){
   const k = nick.toLowerCase();

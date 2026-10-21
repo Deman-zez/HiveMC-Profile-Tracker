@@ -20,9 +20,6 @@ const label = k => (L === "ru" && LABELS_RU[k]) || pretty(k);
 const cosLabel = k => (L === "ru" && COS_RU[k]) || pretty(k);
 function mountModal(m, from){
   document.body.append(m);
-  // Locking the page scroll changes the root's overflow, and some browsers (Chrome's desktop-site mode on
-  // phones) re-lay the whole page out for a frame because of it. Wide layouts show a centred dialog with
-  // its own scroll, so there the page is held still by eating wheel and touch scrolling on the backdrop.
   if(innerWidth >= 900){
     const stop = e => { if(!e.target.closest || !e.target.closest(".inner")) e.preventDefault(); };
     m.addEventListener("wheel", stop, { passive: false });
@@ -209,12 +206,10 @@ function iconUrl(base, id){
   if(!slug) return null;
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
-/* Entrance cascade for a group of new elements. Every element that is on screen takes part - on a wide
-   screen that can be far more than on a phone - and the ones off screen simply appear, since nobody sees
-   them arrive. "cap" limits how far the delay grows, so long lists don't take ages to finish. */
 function staggerIn(els, cap){
   if((typeof state === "object" && state.lite) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const list = [...els], vh = innerHeight, steps = cap || 24;
+  if(list.length && list[0].closest && list[0].closest(".quiet")) return;
   let k = 0;
   const seen = list.filter(el => { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < vh + 40; });
   seen.forEach(el => el.classList.remove("enter"));
@@ -226,9 +221,6 @@ function staggerIn(els, cap){
     setTimeout(() => el.classList.remove("enter"), 700 + i * 30);
   });
 }
-/* exact spelling of nicks: Hive nicks are case-insensitive for lookups, but the site should always show
-   them the way the player wrote them. Every source of real names (snapshots, leaderboards, search
-   answers) teaches this map, and nick fields correct themselves from it. */
 const NICK_CASE = new Map();
 function learnNick(n){ if(typeof n === "string" && n.trim()) NICK_CASE.set(n.trim().toLowerCase(), n.trim()); }
 function properNick(q){ return NICK_CASE.get(String(q || "").trim().toLowerCase()) || null; }
@@ -247,7 +239,6 @@ function fixNickField(inp){
 const fixActiveNickField = () => fixNickField(document.activeElement);
 document.addEventListener("focusout", e => fixNickField(e.target), true);
 document.addEventListener("keydown", e => { if(e.key === "Enter") fixNickField(e.target); }, true);
-/* the site's creator gets a badge next to his nick everywhere it is shown */
 const CREATORS = new Set(["demanzez"]);
 const creatorTag = name => CREATORS.has(String(name || "").trim().toLowerCase()) ? '<span class="crt">Creator</span>' : "";
 const SHORT_NAMES = { ctf: "CTF" };   // used when the full name does not fit a closed dropdown
@@ -257,14 +248,6 @@ const hasStats = c => !!c && typeof c === "object" && !Array.isArray(c) && Objec
 
 function httpMsg(st){ return st >= 500 ? T("hiveDown", st) : T("httpErr", st); }
 
-/* Cursor light for secondary buttons: the light comes from the mouse itself, and the buttons are
-   windows onto it - a button near the cursor catches the edge of the glow, the one under it is lit most.
-   Keeping up with the cursor:
-   - the light is a ready-made circle that is only moved (transform) and faded (opacity): the browser does
-     not repaint anything per frame, it just slides an existing layer, which phones and tablets do instantly;
-   - it is moved inside the input event itself;
-   - where the browser can predict where the pointer is going (Chrome), the light is placed at the
-     predicted point, which hides the frame or two between the hardware cursor and the page. */
 const GLOW_R = 190;
 let glowX = -1e4, glowY = -1e4, glowLit = new Set(), glowBtns = [], glowBtnsAt = 0;
 function glowParts(b){
@@ -315,7 +298,6 @@ addEventListener("scroll", () => {
   glowScrollRaf = requestAnimationFrame(() => { glowScrollRaf = 0; glowPaint(); });
 }, { passive: true });
 
-/* map cards react to a mouse the same way (tablets with a mouse report touch as primary input) */
 document.addEventListener("pointerover", e => {
   if(e.pointerType !== "mouse") return;
   const c = e.target.closest && e.target.closest(".map, .mvBtn");
@@ -325,7 +307,6 @@ document.addEventListener("pointerover", e => {
   }
 }, { passive: true });
 
-/* tab bar icons light up under a mouse (set by script: tablets with a mouse report touch as primary input) */
 document.addEventListener("pointerover", e => {
   if(e.pointerType !== "mouse") return;
   const b = e.target.closest && e.target.closest(".tabs button");
@@ -335,10 +316,6 @@ document.addEventListener("pointerover", e => {
   }
 }, { passive: true });
 
-/* Reliable finger taps for controls that sit over moving content (map viewer, map tiles): the action
-   runs on the finger lifting inside the control, without waiting for the browser's click, which some
-   phones drop on the first tap while an image or the dialog itself is still animating. A real click
-   afterwards is ignored so nothing runs twice; mouse and keyboard keep using the normal click. */
 function tapOn(el, fn){
   if(!el) return;
   let sx = 0, sy = 0, down = false;
@@ -353,8 +330,6 @@ function tapOn(el, fn){
     if(Math.hypot(e.clientX - sx, e.clientY - sy) > 12) return;
     el.__tapAt = Date.now();
     e.preventDefault();
-    // the browser still sends its own click a moment later, aimed at whatever is under the finger by
-    // then (often the dialog that just opened): swallow that one click so it can't close or press anything
     const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
     addEventListener("click", eat, { capture: true, once: true });
     setTimeout(() => removeEventListener("click", eat, true), 600);

@@ -40,9 +40,152 @@ function itemsOf(v){
   if(v && typeof v === "object" && !("name" in v)) return Object.values(v);
   return null;
 }
-const LIST_KIND = b => /title|costume/.test(b);
+const LIST_KIND = b => /title/.test(b);
+/* Costume pictures are official Hive renders on cdn.playhive.com/avatars/costume/<id>.png.
+   The API does not say which picture belongs to which costume, but Hive's own support page
+   lists every costume with its picture, so the site reads that page once a day and matches by name. */
+const COSTUME_KEY = "hive.tracker.costumeicons.v8";
+const costumeNorm = s => String(s || "").replace(/[§&][0-9a-z]/gi, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+let COSTUMES = null, costumeP = null;
+try{
+  const c = JSON.parse(localStorage.getItem(COSTUME_KEY) || localStorage.getItem("hive.tracker.costumeicons.v2") || "null");
+  if(c && c.d) COSTUMES = c;
+}catch(e){}
+let costumeTried = +(localStorage.getItem(COSTUME_KEY + ".try") || 0);
+// costume pictures are big and slow from Hive: they go through our worker, which marks them as never
+// changing (the file name is the costume's UUID), so the browser keeps them and later visits are instant
+const costumeSrc = u => u && /^https:\/\/(cdn|costume-avatar)\.playhive\.com\/.+\/?[0-9a-f-]{36}\.png$/i.test(u) ? PROXY + encodeURIComponent(u) : u;
+function costumeIcon(it){
+  const name = typeof it === "string" ? it : it && (it.name || it.human_name);
+  const id = it && typeof it === "object" ? String(it.UUID || it.uuid || it.id || "") : "";
+  if(COSTUMES && name && COSTUMES.d[costumeNorm(name)]) return costumeSrc(COSTUMES.d[costumeNorm(name)]);
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return costumeSrc("https://cdn.playhive.com/avatars/costume/" + id.toLowerCase() + ".png");
+  return null;
+}
+// how a costume is obtained, in the same words as hub titles
+// the support page's usual phrases, in Russian
+function costumeRu(t){
+  const month = m => { const d = new Date(m + " 1"); return isNaN(d) ? m :
+    d.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }).replace(/\s*г\.?$/, ""); };
+  let m;
+  if(/^can be purchased from the hive store$/i.test(t)) return "Покупка в магазине Hive";
+  if((m = t.match(/^could be purchased from the quest store during (.+)$/i))) return "Был в магазине квестов: " + month(m[1]);
+  if((m = t.match(/^can be purchased from the quest store(?: during (.+))?$/i))) return "Магазин квестов" + (m[1] ? ": " + month(m[1]) : "");
+  if((m = t.match(/^could be purchased from the hive store during (.+)$/i))) return "Был в магазине Hive: " + month(m[1]);
+  if((m = t.match(/^(?:awarded|unlocked) (?:at|for reaching) level (\d+) in ([\w ]+)$/i))) return "Уровень " + m[1] + " в " + m[2];
+  if((m = t.match(/^included (?:in|with) (?:the )?(.+?)(?: bundle)?$/i))) return "Входит в набор «" + m[1] + "»";
+  if(/^subscribe to our (?:blog )?newsletter$/i.test(t)) return "Подписка на рассылку Hive";
+  return null;
+}
+function costumeHow(name){
+  const k = costumeNorm(name);
+  // Hive's support page says it best (with the QP price, the store, the month); translated like hub titles
+  const sup = COSTUMES && COSTUMES.s && COSTUMES.s[k];
+  if(sup){
+    const price = (sup.match(/^\s*([\d,.]+\s*(?:QP|Tokens?|Coins?|Minecoins?))\s*/i) || [])[1];
+    const body = price ? sup.slice(sup.indexOf(price) + price.length).trim() : sup;
+    let text = body.replace(/\s*\.$/, "");
+    const ru = L === "ru" ? costumeRu(text) : null;
+    if(ru) return (price ? price + " · " : "") + ru;
+    if(L === "ru" && typeof infoText === "function"){
+      const tr = String(infoText({ d: body, g: "", o: 0 }));
+      const [main, gone] = tr.split("\u0001");
+      text = main + (gone !== undefined ? " · " + T("tqGoneLine") : "");
+    }
+    return (price ? price + " · " : "") + text;
+  }
+  const x = COSTUMES && COSTUMES.h && COSTUMES.h[k];
+  if(!x || typeof titleHow !== "function") return "";
+  let text = String(titleHow({ x }));
+  const desc = x.metadata && x.metadata.description;
+  if(desc && typeof infoText === "function"){
+    const ru = String(infoText({ d: desc, g: "", o: 0 }));
+    if(ru && ru !== desc) text = text.replace(desc, ru);
+  }
+  const [main, gone] = text.split("\u0001");
+  return main + (gone !== undefined ? " · " + T("tqGoneLine") : "");
+}
+function loadCostumeIcons(){
+  if(COSTUMES && Date.now() - COSTUMES.t < 3 * 86400000 && COSTUMES.full) return Promise.resolve(false);
+  if(Date.now() - costumeTried < 60 * 60 * 1000) return Promise.resolve(false);
+  if(costumeP) return costumeP;
+  costumeTried = Date.now();
+  try{ localStorage.setItem(COSTUME_KEY + ".try", String(costumeTried)); }catch(e){}
+  costumeP = (async () => {
+    // both sources are merged: the API catalogue (with how each costume is obtained) and Hive's support page,
+    // which also lists the newest costumes the catalogue does not have yet
+    const [cat, sup] = await Promise.all([costumesFromCatalogue().catch(() => null), costumesFromSupport().catch(() => null)]);
+    const d = Object.assign({}, COSTUMES && COSTUMES.d, sup ? sup.d : {}, cat ? cat.d : {});
+    const h = Object.assign({}, COSTUMES && COSTUMES.h, cat ? cat.h : {});
+    const s = Object.assign({}, COSTUMES && COSTUMES.s, sup ? sup.info : {});
+    if(Object.keys(d).length < 40) return false;
+    COSTUMES = { t: Date.now(), d, h, s, full: !!(cat && sup) };
+    try{ localStorage.setItem(COSTUME_KEY, JSON.stringify(COSTUMES)); }catch(e){}
+    return true;
+  })().finally(() => { costumeP = null; });
+  return costumeP;
+}
+const COSTUME_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+async function costumesFromCatalogue(){
+  const d = {}, h = {};
+  for(let off = 0, guard = 0; guard < 20; off += 50, guard++){
+    const r = await hiveFetch(API + "/catalogue/costumes?limit=50&offset=" + off, { cache: "no-store", headers: HIVE_HEADERS });
+    if(!r.ok) break;
+    let list = await r.json();
+    if(!Array.isArray(list)) list = (list && typeof list === "object" && Object.values(list).find(Array.isArray)) || [];
+    list.forEach(v => {
+      if(!v || typeof v !== "object") return;
+      const name = [v.display, v.name, v.title].find(x => typeof x === "string" && x);
+      const id = [v.UUID, v.uuid, v.id].find(x => typeof x === "string" && COSTUME_UUID.test(x));
+      if(!name || !id) return;
+      const k = costumeNorm(name);
+      d[k] = "https://cdn.playhive.com/avatars/costume/" + id.toLowerCase() + ".png";
+      const ud = v.unlock_data;
+      if(ud && ud.type) h[k] = { type: ud.type, active: ud.active, metadata: ud.metadata, offer: ud.store_offer && ud.store_offer.name };
+    });
+    if(list.length < 50) break;
+  }
+  return Object.keys(d).length ? { d, h } : null;
+}
+async function costumesFromSupport(){
+  const r = await fetch(PROXY + encodeURIComponent("https://support.playhive.com/costumes/"), { cache: "no-store" });
+  if(!r.ok) return null;
+  const html = await r.text();
+  const d = {}, info = {};
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
+  let cur = null;
+  for(let n = walker.nextNode(); n; n = walker.nextNode()){
+    if(n.tagName === "IMG"){
+      // some costumes use a picture from Hive's own site instead of the avatar CDN
+      let src = n.getAttribute("src") || n.getAttribute("data-src") || (n.getAttribute("srcset") || "").split(/[\s,]+/)[0] || "";
+      if(src.startsWith("//")) src = "https:" + src;
+      else if(src.startsWith("/")) src = "https://support.playhive.com" + src;
+      // pictures live on several Hive hosts (cdn.playhive.com, costume-avatar.playhive.com, the support site)
+      if(!/^https:\/\/([a-z0-9-]+\.)*playhive\.com\/.+\.(png|webp|jpe?g)(\?.*)?$/i.test(src) || /logo|favicon|\/icons?\//i.test(src)){ continue; }
+      cur = src;
+      if(n.alt && n.alt.length < 60) d[costumeNorm(n.alt)] = cur;
+    }else if(cur && /^(STRONG|B|H3|H4)$/.test(n.tagName)){
+      const k = costumeNorm(n.textContent);
+      if(k && !d[k]) d[k] = cur;
+      const box = n.parentElement;
+      if(k && box){
+        const text = box.textContent.replace(n.textContent, "").replace(/\s+/g, " ").trim();
+        if(text && text.length < 300) info[k] = text;
+      }
+      cur = null;
+    }
+  }
+  const raw = html.replace(/\\\//g, "/").replace(/&quot;/g, '"');
+  const rx = /"(?:name|title|alt|display)"\s*:\s*"([^"]{1,60})"[^{}]{0,400}?avatars\/costume\/([0-9a-f-]{36})\.png|avatars\/costume\/([0-9a-f-]{36})\.png[^{}]{0,400}?"(?:name|title|alt|display)"\s*:\s*"([^"]{1,60})"/gi;
+  let m;
+  while((m = rx.exec(raw))){
+    const k = costumeNorm(m[1] || m[4]);
+    if(k && !d[k]) d[k] = "https://cdn.playhive.com/avatars/costume/" + (m[2] || m[3]).toLowerCase() + ".png";
+  }
+  return Object.keys(d).length ? { d, info } : null;
+}
 const LIMIT = b => LIST_KIND(b) ? 5 : 12;
-/* limited-edition cosmetics ("Hot Drops") carry their copy number and the print run */
 function edition(it){
   if(!it || typeof it !== "object") return null;
   const n = +it.edition, t = +(it.editional_total || it.edition_total);
@@ -52,13 +195,15 @@ const edLabel = e => "№ " + nf(e.n) + (e.t ? " / " + nf(e.t) : "");
 function itemHTML(base, it){
   const name = typeof it === "string" ? it : (pick(it, "name", "human_name", "id") || "");
   const id = typeof it === "string" ? it : (pick(it, "id", "index", "name") || "");
-  const url = cosIcon(it) || iconUrl(base, String(id));
+  const url = cosIcon(it) || (base === "costume" ? costumeIcon(it) : null) || (base === "costume" ? null : iconUrl(base, String(id)));
   const first = String(name).replace(/[§&][0-9a-z]/gi,"").trim().charAt(0).toUpperCase() || "?";
   if(/^\[?placeholder\]?$/i.test(String(name).trim())) return "";
   const clean = String(name).replace(/[§&][0-9a-z]/gi,"").trim();
   const rar = it && typeof it === "object" ? (pick(it, "rarity", "rarity_name") || "") : "";
   const ed = edition(it);
-  return '<div class="it' + (ed ? " ltd" : "") + '" data-tn="' + esc(clean + (ed ? " · " + edLabel(ed) : "")) + '" data-tr="' + esc(String(rar)) + '"><div class="box">' +
+  const how = base === "costume" ? costumeHow(clean) : "";
+  return '<div class="it' + (ed ? " ltd" : "") + '"' + (base === "costume" ? ' data-cos-tile="1"' : "") + ' data-tn="' + esc(clean) + '"' + (ed ? ' data-ed="' + esc(edLabel(ed)) + '"' : "") +
+    (how ? ' data-how="' + esc(how) + '"' : "") + ' data-tr="' + esc(String(rar)) + '"><div class="box">' +
     (url ? '<img alt="" loading="lazy" decoding="async" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
       'document.createElement(\'em\'),{textContent:' + JSON.stringify(first).replace(/"/g, "&quot;") + '}))">'
          : "<em>" + esc(first) + "</em>") +
@@ -89,8 +234,6 @@ function openCos(base, arr, from){
     '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  // Hundreds of items at once froze the tap for half a second. The window opens first, the first screen of
-  // items lands right after, and the rest is added in small batches between frames.
   const list = LIST_KIND(base);
   const piece = part => list ? rowsHTML(base, part).replace(/^<div class="tlist">|<\/div>$/g, "")
                              : part.map(it => itemHTML(base, it)).join("");
@@ -102,8 +245,6 @@ function openCos(base, arr, from){
     let i = 0;
     const FIRST = list ? 30 : 36, STEP = list ? 60 : 72;
     const put = n => { holder.insertAdjacentHTML("beforeend", piece(arr.slice(i, i + n))); i += n; };
-    // The first batch fills the whole visible window (a wide screen shows far more than a phone), so
-    // everything the eye sees arrives in ONE cascade. Later batches land below the fold, out of sight.
     put(FIRST);
     const inner = m.querySelector(".inner");
     const bottom = () => Math.min(innerHeight, inner ? inner.getBoundingClientRect().bottom : innerHeight);
@@ -166,6 +307,8 @@ function parkourHTML(pk){
     (rows ? '<div class="pkl">' + rows + "</div>" : "") + "</div>";
 }
 function cosmeticsHTML(main, extra){
+  if(main && (main.costume_unlocked || main.equipped_costume || main.costume_count))
+    loadCostumeIcons().then(fresh => { if(fresh) fillCostumeTiles(); });
   const g = cosGroups(main), keys = Object.keys(g);
   if(!keys.length) return "";
   const ordered = keys.slice().sort((x,y) => {
@@ -175,7 +318,7 @@ function cosmeticsHTML(main, extra){
   const counts = ordered.map(k => ({ k, v:cosCount(g[k].un) }))
     .filter(t => t.v !== null).map(t => ({ k:cosLabelN(t.k, t.v), v:nf(t.v), d:"" }));
   const worn = ordered.filter(k => "eq" in g[k]).map(k => {
-    const n = cosName(g[k].eq), icon = cosIcon(g[k].eq);
+    const n = cosName(g[k].eq), icon = cosIcon(g[k].eq) || (k === "costume" ? costumeIcon(g[k].eq) : null);
     return '<div class="cos"><span>' + esc(cosLabel(k)) + "</span><b>" +
       (icon ? '<span class="ciw"><span><img alt="" loading="lazy" decoding="async" src="' + esc(icon) +
         '" onerror="this.closest(\'.ciw\').remove()"></span></span>' : "") +
@@ -201,4 +344,20 @@ function cosmeticsHTML(main, extra){
   });
   window.__cos = g;
   return out;
+}
+
+// once the catalogue arrives, put pictures into the costume tiles already on screen instead of redrawing the page
+function fillCostumeTiles(){
+  document.querySelectorAll('.it[data-cos-tile] .box').forEach(box => {
+    const it = box.parentElement, name = it.dataset.tn;
+    if(box.querySelector("img")) return;
+    const url = costumeIcon(name);
+    if(url){
+      const img = new Image();
+      img.alt = ""; img.decoding = "async"; img.src = url;
+      img.onload = () => { box.textContent = ""; box.append(img); };
+    }
+    const how = costumeHow(name);
+    if(how && !it.dataset.how) it.dataset.how = how;
+  });
 }

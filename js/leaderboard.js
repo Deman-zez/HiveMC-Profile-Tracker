@@ -76,7 +76,7 @@ function lbPeriods(game){
   if(game === "overall") return [["all", T("tfAll")]];
   const out = [["all", T("tfAll")]];
   for(let i = 0; i < LB_MONTHS_BACK; i++)
-    out.push(["m" + i, i ? lbMonthName(lbMonthDate(i)) : T("lbMonth", lbMonthName(lbMonthDate(0)))]);
+    out.push(["m" + i, lbMonthName(lbMonthDate(i)), i ? "" : T("lbMonthNow")]);
   if(game === "bed") LB_SEASONS.forEach(s => out.push(["s" + s, T("lbSeason", s)]));
   return out;
 }
@@ -135,7 +135,6 @@ async function lbMore(entry, game, period){
   }
 }
 
-// prestige as a plain number, whatever shape a leaderboard row carries it in (number, "2", {…})
 function lbPrestige(p){
   const v = p && p.prestige;
   if(typeof v === "number") return v;
@@ -149,14 +148,11 @@ function lbPrestige(p){
 }
 const lbGameLevel = (p, code) => Math.floor(levelFromXP(num(p, "xp"), code) || gameLevel(p, code) || 0);
 
-// modes with a prestige system: a level there means nothing without the prestige next to it
 const LB_PRESTIGE_GAMES = ["bed", "sky", "murder", "wars"];
 const lbHasPrestige = entry => !!(entry && entry.d && entry.d.some(p => p && p.prestige !== null && p.prestige !== undefined));
 function lbSortOptions(game, entry, period){
   const common = [["wins", T("lbSortWins")], ["played", T("lbSortPlayed")], ["winrate", T("lbSortWr")],
     ["kills", T("lbSortKills")], ["kd", "K/D"]];
-  // Hive leaves prestige out of some leaderboards (SkyWars: always null). There a prestiged player
-  // would show as "level 5", so the level ranking is only offered where it can be told honestly.
   const hasLv = Object.keys(META_GAMES).length > 0 && (!period || period === "all") &&
     (!LB_PRESTIGE_GAMES.includes(game) || !entry || lbHasPrestige(entry));
   const base = game === "overall"
@@ -249,8 +245,6 @@ function lbHTML(entry, game, sort){
   const me = lbMe();
   const podium = lbPodium(list, m, me);
   const rest = podium ? list.slice(3) : list;
-  // the fill is measured against the best row of the list itself (place 4 when the podium is shown),
-  // not against the leader on the podium, so the first row is full and the rest read clearly against it
   const top = rest.reduce((mx, x) => Math.max(mx, x.sv !== undefined ? x.sv : m.v(x.p)), 0);
   const first = Math.max(LB_CHUNK, lbMinRows);
   lbPending = { rows: rest.slice(first), m, me, top, overall };
@@ -274,8 +268,6 @@ async function lbPlayerPlace(game, period, nick){
   let d;
   try{ d = await lbFetch(lbPlayerUrl(game, period, nick)); }
   catch(e){
-    // the top for this period has just loaded fine, so Hive is up: a server error for one player's
-    // position is Hive's way of saying it has no record of them for this period
     if(e.status >= 500){ LB_PLACE[key] = { t: Date.now(), v: null }; return null; }
     throw e;
   }
@@ -435,7 +427,7 @@ async function renderLb(){
     ">" + esc(NAME(g)) + "</option>").join("");
   gSel.value = games.includes(want) ? want : lbDefaultGame();
   const game = gSel.value, per = lbPeriods(game), keepP = rs ? rs.p : pSel.value;
-  pSel.innerHTML = per.map(([v, t]) => '<option value="' + v + '">' + esc(t) + "</option>").join("");
+  pSel.innerHTML = per.map(([v, t, s]) => '<option value="' + v + '"' + (s ? ' data-sub="' + esc(s) + '"' : "") + ">" + esc(t) + "</option>").join("");
   pSel.value = per.some(p => p[0] === keepP) ? keepP : "all";
   pSel.disabled = per.length < 2;
   const keepS = rs ? rs.s : sSel.value;
@@ -463,6 +455,14 @@ async function renderLb(){
       reveal(body);
     }
     const me = lbMe();
+    // all-time place outside the top 100: Hive already sends it with the player's own stats
+    if(me && game !== "overall" && period === "all" && !body.querySelector(".lbr.me, .pod.me")){
+      const show = place => { const b = body.querySelector(".lbme > span:last-child");
+        if(seq === lbSeq && place && b) b.textContent = T(sort === "hive" ? "lbYou" : "lbYouHive", nf(place)); };
+      const own = lbOwnPlace(me, game);
+      if(own) show(own);
+      else lbPlayerPlace(game, "all", state.main || state.nick).then(r => show(r && r.place)).catch(() => {});
+    }
     if(me && game !== "overall" && period !== "all" && sort === "hive" && !body.querySelector(".lbr.me, .pod.me")){
       lbPlayerPlace(game, period, state.main || state.nick).then(r => {
         const b = body.querySelector(".lbme > span:last-child");
@@ -472,6 +472,14 @@ async function renderLb(){
   }catch(e){
     if(seq === lbSeq) body.innerHTML = '<p class="sub" style="margin-top:20px">' + esc(e.message) + "</p>";
   }
+}
+function lbOwnPlace(me, game){
+  const snaps = state.snaps.filter(x => (x.n || "") === me && x.g && x.g[game]);
+  const c = snaps.length && snaps[snaps.length - 1].g[game];
+  if(!c) return 0;
+  if(typeof c.human_index === "number" && c.human_index > 0) return c.human_index;
+  if(typeof c.index === "number" && c.index >= 0) return c.index + 1;
+  return 0;
 }
 function openProfileOf(n){
   navSave();

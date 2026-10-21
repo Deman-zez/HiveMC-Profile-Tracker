@@ -59,22 +59,31 @@ function mergeAct(uuid, list){
   if(added) save();
   return added;
 }
-/* Games recorded while the site was closed: the worker polls the activity feed of the site owner's own
-   profile every 20 minutes and keeps it, and the site merges that history in on every visit. */
 const actSrv = () => PROXY.replace(/\/\?url=$/, "") + "/activity/";
 const ACT_SRV_KEY = "hive.tracker.actsrv.v1";
+// only a player signed in with Xbox is put on the worker's polling list, and only their own profile
+async function trackMe(force){
+  if(!authOn() || !AUTH.uuid) return;
+  const K = "hive.tracker.trackat";
+  if(!force && Date.now() - (+localStorage.getItem(K) || 0) < 12 * 3600 * 1000) return;
+  try{
+    const r = await fetch(actSrv() + "track", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()), body: "{}" });
+    if(r.status === 401){ AUTH = null; authSave(); if(state.sync && state.sync.xbox){ delete state.sync; save(); } renderSync(); trendGate(); toast(T("xbExpiredPass")); return; }
+    if(r.ok){
+      localStorage.setItem(K, String(Date.now()));
+      const j = await r.json().catch(() => ({}));
+      if(j.token && AUTH){ AUTH.token = j.token; authSave(); }
+    }
+  }catch(e){}
+}
 async function pullServerActivity(uuid){
   let st = {};
   try{ st = JSON.parse(localStorage.getItem(ACT_SRV_KEY) || "{}") || {}; }catch(e){}
-  const me = String(state.main || "").toLowerCase();
+  trackMe(false);
   try{
-    if(me && nickKey() === me && Date.now() - (st["t:" + uuid] || 0) > 12 * 3600 * 1000){
-      const r = await fetch(actSrv() + "track", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uuid, nick: state.nick }) });
-      if(r.ok) st["t:" + uuid] = Date.now();
-    }
     const since = st["s:" + uuid] || 0;
-    const r = await fetch(actSrv() + uuid + "?since=" + since, { cache: "no-store" });
+    const r = await fetch(actSrv() + uuid + "?since=" + since, { cache: "no-store",
+      headers: authOn() && AUTH.uuid === uuid ? authHeaders() : {} });
     if(r.ok){
       const j = await r.json();
       const ev = Array.isArray(j.events) ? j.events : [];
@@ -122,12 +131,33 @@ function unlSpan(e, grp){
   return '<span class="ag unl"' + (e.unlock_id ? ' data-unl="' + esc(e.unlock_id) + '" data-ut="' + esc(e.unlock_type || "") + '"' +
     (grp ? ' data-grp="1"' : "") : "") + ">" + lockerHTML(e.unlock_type, e.unlock_id, grp) + "</span>";
 }
+// what one round changed, from Hive's own per-round changeset
+function changeHTML(e){
+  const c = e && e.changeset;
+  if(!c || typeof c !== "object") return "";
+  const keys = Object.keys(c).filter(k => typeof c[k] === "number" && c[k] && !/^(played|victories|games_played)$/.test(k));
+  if(!keys.length) return "";
+  const rank = k => k === "xp" ? 0 : /kills$|^murders$|eliminations$/.test(k) ? 1 : k === "deaths" ? 2 : /coins|bux/.test(k) ? 4 : 3;
+  keys.sort((a, b) => rank(a) - rank(b));
+  const RU_FORMS = { kills: ["убийство", "убийства", "убийств"], deaths: ["смерть", "смерти", "смертей"],
+    final_kills: ["финалка", "финалки", "финалок"], coins: ["монета", "монеты", "монет"], bux: ["бакс", "бакса", "баксов"],
+    murders: ["убийство маньяком", "убийства маньяком", "убийств маньяком"], beds_destroyed: ["кровать", "кровати", "кроватей"] };
+  const ruForm = (n, f) => { const a = Math.abs(n) % 100, b = a % 10;
+    return a > 10 && a < 20 ? f[2] : b === 1 ? f[0] : b >= 2 && b <= 4 ? f[1] : f[2]; };
+  const low = k => { if(L === "ru" && RU_FORMS[k]) return ruForm(c[k], RU_FORMS[k]);
+    const t = label(k);
+    if(L === "ru") return t.charAt(0).toLowerCase() + t.slice(1);
+    const s = t.toLowerCase();
+    return Math.abs(c[k]) === 1 ? s.replace(/\b(\w{3,}?)s\b/, "$1") : s; };
+  return '<div class="acs">' + keys.map(k => '<span class="cs' + (k === "xp" ? " x" : /kills$|^murders$|eliminations$/.test(k) ? " k" : k === "deaths" ? " d" : "") + '">' +
+    (k === "xp" ? "+" + esc(nf(c[k])) + " XP" : "<b>" + esc(nf(c[k])) + "</b> " + esc(low(k))) + "</span>").join("") + "</div>";
+}
 function actRow(e, ex){
   const t = typeof e.time === "number" ? agoText(e.time) : "";
   if(e.type === "ROUND_PLAYED"){
     const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
     return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
-      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span>" +
+      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span>" + changeHTML(e) +
       (ex && ex.length ? ex.map(x => '<div class="actx">' + unlSpan(x, true) + "</div>").join("") : "") + "</div>";
   }
   return '<div class="act">' + unlSpan(e, false) + '<span class="at">' + esc(t) + "</span></div>";
@@ -194,8 +224,6 @@ function lockerName(id){
   walk(main, 0);
   return found;
 }
-/* Recent games: today's games are listed as they are; older days are one line each with their totals and
-   open on tap. An open day's header sticks to the top like a date in a chat, on a frosted bar. */
 function actHTML(list, err){
   const all = list || [];
   const groups = actGroups(all);
@@ -241,7 +269,7 @@ function actHTML(list, err){
   const more = days.length > actDaysShown
     ? '<button type="button" class="mini actmore">' + esc((n => T(n === 1 ? "actMoreDay1" : "actMoreDays", n))(Math.min(14, days.length - actDaysShown))) + "</button>" : "";
   const empty = !head && !body ? '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>" : "";
-  return "<h2>" + esc(T("actTitle")) + (groups.length ? ' <span class="actn">' + nf(groups.length) + "</span>" : "") +
+  return "<h2>" + esc(T("actTitle")) +
     '</h2><div class="card actCard">' + head + body + empty + more + "</div>";
 }
 const winsWord = n => L === "ru" ? "поб." : (n === 1 ? "win" : "wins");
@@ -267,12 +295,9 @@ function actSlide(body, open, done){
   body.__anim = a;
   let fade = null;
   if(open){
-    // One animation for the whole list: a dozen separate row animations made phone browsers repaint the
-    // entire card on every frame, which showed up as flicker. The list glides down as one piece instead.
     fade = inner.animate([{ opacity: 0, transform: "translate3d(0,-14px,0)" }, { opacity: 1, transform: "none" }],
       { duration: 420, delay: 40, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" });
   }else{
-    // the fade is held at zero until the day is really hidden, otherwise rows pop back mid-collapse
     fade = inner.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" });
   }
   a.onfinish = () => {
@@ -298,9 +323,6 @@ function actBindDays(box, list){
       day.classList.add("open");
       actSlide(body, true);
     }else if(day.classList.contains("stuck")){
-      // Closing a day you have scrolled into: collapsing it in place would yank everything under the
-      // pinned header. Instead the header stays exactly where it is on screen, the day's games vanish
-      // above the fold, and the days below glide up into view.
       actOpen.delete(k);
       if(body.__anim){ body.__anim.cancel(); body.__anim = null; }
       const docTop = day.getBoundingClientRect().top + scrollY;
@@ -325,7 +347,6 @@ function actBindDays(box, list){
     h.setAttribute("aria-expanded", opening);
   });
 }
-/* a sticky day header gets its frosted bar only while it is actually stuck at the top */
 let actStickTick = false;
 function actStickCheck(){
   if(actStickTick) return;
@@ -353,11 +374,7 @@ async function renderActivity(){
     box.innerHTML = (list.length || !c.p ? actHTML(list, c.err)
       : "<h2>" + esc(T("actTitle")) + '</h2><div class="card"><p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p></div>");
     const side = $("#trendSide");
-    if(side && typeof calHTML === "function"){
-      side.innerHTML = (typeof daysHTML === "function" ? daysHTML(list) : "") + calHTML(list);
-      calBind(side);
-      if(typeof daysBind === "function") daysBind(side);
-    }
+    if(side && typeof calHTML === "function"){ side.innerHTML = calHTML(list); calBind(side); }
     actBindDays(box, list);
     const mb = box.querySelector(".actmore");
     if(mb) mb.onclick = () => {
@@ -381,8 +398,6 @@ function renderToday(){
   fitNames(box);
   fitText(box);
 }
-/* The Trend tab is the heaviest screen (chart, history, calendar). While it is hidden nothing is drawn:
-   it is only marked out of date and rebuilt the moment it is opened. This keeps the first screen fast. */
 let trendStale = true;
 function renderTrend(){
   const view = $("#vTrend");
@@ -396,7 +411,6 @@ function renderTrend(){
   const withData = state.games.filter(g => mine.some(s => s.g[g]))
     .sort((a, b) => order.indexOf(a) - order.indexOf(b));
   const ctl = $(".trendctl");
-  // monthly history comes from Hive itself, so one snapshot (to know the player's games) is enough
   if(mine.length < 1){
     body.innerHTML = '<p class="sub" style="margin-top:10px">' + esc(T("trendNeed")) + "</p>";
     gSel.innerHTML = mSel.innerHTML = "";
@@ -482,8 +496,6 @@ function renderTrend(){
   body.innerHTML = '<div class="card"><div class="chart">' +
     '<svg class="line" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img">' +
     '<path vector-effect="non-scaling-stroke" d="' + path + '"/></svg>' +
-    pts.slice(0, -1).map((p, i) => '<i class="dot sm" style="left:' +
-      (x(i) / W * 100).toFixed(2) + "%;top:" + (y(p.v) / H * 100).toFixed(2) + '%"></i>').join("") +
     '<i class="dot" style="left:' + lastX + '%;top:' + lastY + '%"></i></div>' +
     '<div class="tmeta"><span>' + esc(when(t0)) + "</span><span>" +
     esc(when(t1)) + "</span></div>" +
@@ -496,7 +508,6 @@ $("#trendGame").onchange = renderTrend;
 $("#trendMetric").onchange = renderTrend;
 $("#trendRange").onchange = renderTrend;
 
-/* "By month": one bar per calendar month from Hive's monthly stats, newest on the right */
 function renderTrendMonths(game, metric, body){
   const nick = state.nick, list = histMonthList(HIST_MONTHS).reverse();
   const st = histState(nick);
@@ -530,7 +541,7 @@ function renderTrendMonths(game, metric, body){
       const h = r.known && r.v !== null ? Math.max(r.v > 0 ? 4 : 0, r.v / max * 100) : 0;
       const label = new Date(Date.UTC(r.x.y, r.x.m - 1, 1)).toLocaleDateString(loc, { month: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3);
       return '<div class="hmCol' + (r.known ? "" : " wait") + (r === best ? " best" : "") + (r.x.current ? " now" : "") + '" style="--ei:' + i + '">' +
-        '<span class="hmVal">' + (r.known && r.v ? esc(fmt(r.v)) : "") + "</span>" +
+        '<span class="hmVal">' + (r.known && r.v && (r === best || r.x.current) ? esc(fmt(r.v)) : "") + "</span>" +
         '<span class="hmTrack"><i style="height:' + h.toFixed(1) + '%"></i></span>' +
         '<span class="hmLbl">' + esc(label) + "</span></div>";
     }).join("") + "</div>" +

@@ -303,7 +303,6 @@ async function markTq(root){
   if(!btns.length) return;
   let d = await loadTqData();
   let missed = btns.filter(b => b.isConnected && !howFor(d, b.dataset.t, b.dataset.u));
-  // a title unknown to the cached lists is probably new: refresh the lists once and look again
   if(missed.length && !tqRefreshed && (cacheAge(TINFO_KEY) > 30 * 60 * 1000 || cacheAge(TCAT_KEY) > 30 * 60 * 1000)){
     tqRefreshed = true;
     const old = d;
@@ -364,7 +363,8 @@ function openItemTip(el){
   const r = RARITY[rk];
   const pop = document.createElement("div");
   pop.className = "tqpop itip"; pop.__btn = el; pop.__t = performance.now();
-  pop.innerHTML = '<b class="tn">' + esc(name) + "</b>" + (rk ? '<span class="rr" style="color:' +
+  pop.innerHTML = '<b class="tn">' + esc(name) + "</b>" + (el.dataset.ed ? '<span class="ted">' + esc(el.dataset.ed) + "</span>" : "") +
+    (el.dataset.how ? '<span class="thow">' + esc(el.dataset.how) + "</span>" : "") + (rk ? '<span class="rr" style="color:' +
     (r ? r[2] : "var(--soft)") + '">' + esc(r ? r[L === "ru" ? 0 : 1] : pretty(el.dataset.tr)) + "</span>" : "");
   document.body.append(pop); tqPop = pop;
   const rc = el.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;

@@ -61,6 +61,7 @@ async function shareProfile(){
 }
 function switchNick(n){
   state.nick = n;
-  state.dead = []; state.lastDiag = 0;
-  save(); tickDiag(); renderSnap(); renderTrend();
+  state.dead = [];
+  save(); renderSnap(); renderTrend();
+  if(typeof trendGate === "function") trendGate();
 }

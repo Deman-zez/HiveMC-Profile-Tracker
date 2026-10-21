@@ -1,14 +1,11 @@
 "use strict";
 
-/* Liquid glass: what is behind a glass piece is bent near its rounded rim, like looking through a thick lens.
-   Chromium can run an SVG displacement filter on the backdrop; other browsers keep a plain frosted blur. */
 const LG_OK = (() => {
   const ua = navigator.userAgent || "";
   return /Chrome\/\d+/.test(ua) && !/CriOS|FxiOS|iPhone|iPad|Firefox/.test(ua) &&
     !!(window.CSS && CSS.supports("backdrop-filter", "url(#x)"));
 })();
 let lgSvg = null, lgSeq = 0;
-// metaball ("goo") filter: blurred shapes thresholded back to crisp edges, so two drops melt into one with a smooth neck
 (function(){
   const g = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   g.setAttribute("aria-hidden", "true");
@@ -101,7 +98,6 @@ function lgAttach(el, opt){
   mo.observe(document.body, { childList: true, subtree: true });
 }
 
-/* ---- living light, touch glow, adaptive tint ---- */
 const LG_ELS = new Set(), LG_ADAPT = new Set();
 const lgFine = matchMedia("(hover: hover) and (pointer: fine)");
 let lgLX = 18, lgLY = 0, lgTilt = null, lgRaf = 0;
@@ -133,7 +129,6 @@ function lgDecor(el, adapt){
   el.addEventListener("pointerleave", () => el.classList.remove("hov"));
   lgLight();
 }
-// the rim highlight follows a light source: phone tilt, the mouse on a computer, a slow drift while scrolling
 function lgLight(){
   if(lgRaf) return;
   lgRaf = requestAnimationFrame(() => {
@@ -162,7 +157,6 @@ if(!/iPhone|iPad/.test(navigator.userAgent)) addEventListener("deviceorientation
   lgLight();
 }, { passive: true });
 
-// tint: darker over bright content (the gold button, avatars) so text on the glass stays readable
 const lum = c => {
   const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/.exec(c || "");
   if(!m) return null;

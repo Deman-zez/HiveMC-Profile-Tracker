@@ -1,7 +1,5 @@
 "use strict";
 
-/* Dropdowns open inside the page (a glass sheet sliding out of the field) instead of the system picker.
-   The real <select> stays in the DOM and keeps the value, so every existing onchange keeps working. */
 const SEL_CHECK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" ' +
   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 let selOpen = null;
@@ -40,7 +38,9 @@ function enhanceSelect(sel){
 function selLabel(sel){
   const lab = sel.__lab; if(!lab) return;
   const o = sel.options[sel.selectedIndex];
-  const full = o ? o.textContent : "", short = o && o.dataset.short;
+  const full = o ? o.textContent : "", short = o && o.dataset.short, subT = o && o.dataset.sub;
+  lab.classList.toggle("two", !!subT);
+  if(subT){ lab.innerHTML = '<span class="selmain">' + esc(full) + '</span><small class="selsub">' + esc(subT) + "</small>"; lab.style.fontSize = ""; return; }
   lab.textContent = full;
   lab.style.fontSize = "";
   if(!lab.clientWidth) return;                         // hidden view: refit when shown
@@ -71,7 +71,8 @@ function openSelect(sel, wrap){
   pop.setAttribute("role", "listbox");
   pop.innerHTML = opts.map((o, i) => '<button type="button" role="option" class="selo' + (o.value === sel.value ? " on" : "") +
     '" data-v="' + esc(o.value) + '"' + (o.disabled ? " disabled" : "") + ' style="--ei:' + Math.min(i, 14) + '">' +
-    '<span class="selt">' + esc(o.textContent) + "</span>" + (o.value === sel.value ? SEL_CHECK : "") + "</button>").join("");
+    '<span class="selt">' + esc(o.textContent) + (o.dataset.sub ? '<small class="selsub">' + esc(o.dataset.sub) + "</small>" : "") +
+    "</span>" + (o.value === sel.value ? SEL_CHECK : "") + "</button>").join("");
   document.body.append(pop);
   selOpen = { sel, wrap, pop };
   wrap.classList.add("open");
