@@ -1,5 +1,7 @@
 # HiveMC Profile Tracker
 
+**Better. Beautiful. Open.** — the first open-source Hive tracker.
+
 Stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. It saves snapshots of your stats over time, so you can see not just where you stand, but how fast you are moving.
 
 **Live:** https://deman-zez.github.io/HiveMC-Profile-Tracker/
@@ -23,7 +25,7 @@ Stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server
 - **Every game in detail** — win rate, K/D, per-game averages, level progress with an estimate of how many games the next level takes, and the rewards waiting at that level.
 - **Trend** — snapshots turn into charts for any stat, including win rate and K/D, plus a summary of what changed today.
 - **By month** — Hive's own numbers for each of the last twelve months, as bars for any stat. Works from the first visit, even for months when the site was never opened.
-- **Recent games** — every round grouped by day with wins, losses and modes, a games-per-day chart with sessions, and a calendar heatmap of the month.
+- **Recent games** — every round grouped by day with wins, losses and modes, and a calendar heatmap of the month with a detailed view of any day.
 - **Leaderboards** — all-time, monthly and BedWars seasons for every mode, with search by username or place. Levels include prestige where Hive provides it.
 - **Maps** — the maps currently in rotation for each mode, with a gallery you can filter by name, variant and season.
 - **Compare** — put any two players side by side, for all time or for this month.
@@ -45,9 +47,9 @@ The first snapshot shows your current stats. From the second one on, the **Trend
 
 ## Your data
 
-Snapshots are stored in your browser; there is no account to create. To use the tracker on several devices, enter the same sync code in **Settings** on each of them — your snapshots are then kept on the project's server under that code, so treat it like a password. You can also export and import a backup file instead.
+Snapshots are stored in your browser; there is no account to create. To use the tracker on several devices, enter the same sync code in **Settings** on each of them — your snapshots are then kept on the project's server under that code, so treat it like a password. 
 
-Hive only shows the last ten games of a player, and only after they leave a session. So that your game history has no gaps, the project's server checks the feed of your own profile (the one set as **My profile**) every twenty minutes and keeps what it finds; the site merges it in when you open it. Players nobody has opened for thirty days are no longer checked.
+Hive only shows the last ten games of a player, and only after they leave a session. So that your game history has no gaps, sign in with Xbox in **Settings**: the project's server then checks your game feed every twenty minutes and keeps what it finds, and the site merges it in when you open it. Signing in also syncs your data between devices without a code. Sign-in uses Microsoft's device-code page, and the site only receives your gamertag. Players who have not opened the site for thirty days are no longer checked.
 
 ## Limits
 
