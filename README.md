@@ -2,62 +2,43 @@
 
 **Better. Beautiful. Open.** — the first open-source Hive tracker.
 
-Stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. It saves snapshots of your stats over time, so you can see not just where you stand, but how fast you are moving.
+A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. Look up any player, follow your progress over time, and see your recent games, cosmetics and leaderboard places in one place.
 
 **Live:** https://deman-zez.github.io/HiveMC-Profile-Tracker/
 
-> [!NOTE]
-> The project is in open beta. Found a bug or have an idea? [Open an issue](https://github.com/deman-zez/HiveMC-Profile-Tracker/issues).
-
-## Screenshots
-
-| Profile | Game breakdown | Cosmetics |
+| Profile | Game | Cosmetics |
 |---|---|---|
 | ![Profile](profile.jpg) | ![Game](game.jpg) | ![Cosmetics](cosmetics.jpg) |
 
-| Appearance | Trend | Settings |
-|---|---|---|
-| ![Appearance](appearance.jpg) | ![Trend](trend.jpg) | ![Settings](settings.jpg) |
-
-## What it does
-
-- **Profile** — rank, avatar, hub title in its real in-game colours, login streak and totals across all games.
-- **Every game in detail** — win rate, K/D, per-game averages, level progress with an estimate of how many games the next level takes, and the rewards waiting at that level.
-- **Trend** — snapshots turn into charts for any stat, including win rate and K/D, plus a summary of what changed today.
-- **By month** — Hive's own numbers for each of the last twelve months, as bars for any stat. Works from the first visit, even for months when the site was never opened.
-- **Recent games** — every round grouped by day with wins, losses and modes, and a calendar heatmap of the month with a detailed view of any day.
-- **Leaderboards** — all-time, monthly and BedWars seasons for every mode, with search by username or place. Levels include prestige where Hive provides it.
-- **Maps** — the maps currently in rotation for each mode, with a gallery you can filter by name, variant and season.
-- **Compare** — put any two players side by side, for all time or for this month.
-- **Share card** — a ready-made image of your profile for Discord or chats, with a link back to your page.
-- **Any player** — search by username, open anyone's profile, or share a link like `?nick=DemanZeZ`.
-- **English and Russian**, chosen from your device language.
-
-On screens 900px and wider the page switches to a two-column desktop layout: games on the left, cosmetics on the right.
-
-![Desktop](desktop.jpg)
-
 ## Getting started
 
-Open the site, type your Hive username and pick it from the suggestions. That's it — your profile opens and the first snapshot is taken right away.
+Open the site, type a Hive username and pick it from the suggestions. Your stats are saved each time you open the profile, and the **Trend** tab shows how they change.
 
-To look up someone else, tap the search button in the profile header (or press `/` on a computer). Players you have opened recently are listed there for one-tap switching, and the **My profile** button always brings you back.
+English and Russian are supported.
 
-The first snapshot shows your current stats. From the second one on, the **Trend** tab starts drawing your progress, so come back after a few games.
+## Privacy
 
-## Your data
+- No account is needed. Your snapshots and settings stay in your browser.
+- Requests to Hive go through the project's small Cloudflare server, which only passes them on and briefly caches public stats.
+- **Sync by code** stores a copy of your data on that server under a hash of the code. Anyone who knows the code can open it, so treat it like a password.
+- Visits are counted with Cloudflare Web Analytics, which uses no cookies.
 
-Snapshots are stored in your browser; there is no account to create. To use the tracker on several devices, enter the same sync code in **Settings** on each of them — your snapshots are then kept on the project's server under that code, so treat it like a password. 
+## Signing in with Xbox
 
-Hive only shows the last ten games of a player, and only after they leave a session. So that your game history has no gaps, sign in with Xbox in **Settings**: the project's server then checks your game feed every twenty minutes and keeps what it finds, and the site merges it in when you open it. Signing in also syncs your data between devices without a code. Sign-in uses Microsoft's device-code page, and the site only receives your gamertag. Players who have not opened the site for thirty days are no longer checked.
+Signing in is optional. It lets the site keep your game history while it is closed and sync between your devices without a code.
 
-## Limits
+How it works:
 
-Hive allows each player and game to be requested three times an hour. The tracker keeps finished months for good, refreshes the current one at most every fifteen minutes, and when Hive says "too many requests" it simply waits and carries on later by itself.
+- You sign in on Microsoft's own page (`microsoft.com/link`) with a one-time code. The site never sees your password or email.
+- The sign-in uses Minecraft's official app, the same way launchers do, so Microsoft may mention Minecraft.
+- The site receives only your gamertag and Xbox ID, and uses them to find your Hive profile. Microsoft's tokens are used once and not stored.
+- Your browser keeps a sign-in pass for 90 days. It renews itself while you use the site.
+- While you are signed in, the server checks your Hive game feed every 20 minutes and keeps the games it finds for up to 180 days.
+- **Sign out** in Settings stops the checks right away. If you do not open the site for 30 days, your stored games are deleted.
 
 ## Running locally
 
-Keep the folder structure as it is and serve it over HTTP. Opening `index.html` straight from disk often blocks browser storage, so snapshots would not be saved.
+Serve the folder over HTTP. Opening `index.html` straight from disk often blocks browser storage.
 
 ```bash
 python3 -m http.server 8080
