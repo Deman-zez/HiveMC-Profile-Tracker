@@ -1558,10 +1558,31 @@ body::before,#shade{bottom:auto;height:100vh;height:100lvh}
 .slogan span{font-size:12.5px;color:var(--soft)}
 .slogan a{margin-top:6px;font-size:12.5px;font-weight:700;color:var(--gold);text-decoration:none}
 
-.linkbtn{display:inline-block;margin:8px 0 0;padding:4px 0;border:none;background:none;font:inherit;font-size:13px;font-weight:700;color:var(--gold);cursor:pointer}
-#syncRow.hidden + .linkbtn{display:none}
+.codebox{position:relative;flex:1;min-width:0;display:flex}
+.codebox input{flex:1;min-width:0;padding-right:52px !important;font-variant-numeric:tabular-nums;transition:box-shadow .3s ease,border-color .3s ease}
+.genBtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:10px;
+  border:1px solid rgba(255,192,46,.35);background:rgba(255,192,46,.12);color:var(--gold);display:grid;place-items:center;
+  cursor:pointer;padding:0;transition:background .2s ease,border-color .2s ease}
+.genBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8}
+.genBtn svg circle{fill:currentColor;stroke:none}
+.genBtn:active{background:rgba(255,192,46,.22)}
+.genBtn.press{animation:genPress .33s cubic-bezier(.2,.8,.3,1),pressRing .42s ease-out}
+@keyframes genPress{0%{transform:translateY(-50%) scale(1)}30%{transform:translateY(-50%) scale(.9)}65%{transform:translateY(-50%) scale(1.06)}100%{transform:translateY(-50%) scale(1)}}
+@media (prefers-reduced-motion: no-preference){
+  .genBtn.spin svg{animation:genSpin .52s cubic-bezier(.3,.7,.3,1)}
+  .codebox.rolling input{border-color:rgba(255,192,46,.55);box-shadow:0 0 0 3px rgba(255,192,46,.14)}
+  .codebox.rolled input{animation:codeSettle .6s ease-out}
+}
+@keyframes genSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes codeSettle{0%{box-shadow:0 0 0 3px rgba(255,192,46,.3);border-color:rgba(255,192,46,.7)}100%{box-shadow:0 0 0 0 rgba(255,192,46,0)}}
+.lite .genBtn.spin svg,.lite .codebox.rolled input{animation:none}
 
 .tqpop .thow{display:block;margin:4px 0 0;font-size:11.5px;font-weight:600;color:var(--soft);line-height:1.35;white-space:normal}
 
 .noanim{animation:none !important}
 .rv.noanim{transition:none !important}
+@media (max-width:480px){
+  #syncRow{flex-wrap:wrap}
+  #syncRow .codebox{flex:1 1 100%}
+  #syncRow .mini{flex:1 1 100%}
+}
