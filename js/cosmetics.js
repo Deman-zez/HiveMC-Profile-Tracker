@@ -54,6 +54,15 @@ try{
 let costumeTried = +(localStorage.getItem(COSTUME_KEY + ".try") || 0);
 // costume pictures are big and slow from Hive: they go through our worker, which marks them as never
 // changing (the file name is the costume's UUID), so the browser keeps them and later visits are instant
+// a picture that fails through the worker is tried once straight from Hive before falling back to the letter
+function imgFail(img){
+  const src = img.getAttribute("src") || "";
+  const m = src.startsWith(PROXY) && decodeURIComponent(src.slice(PROXY.length));
+  if(m && !img.dataset.tried){ img.dataset.tried = "1"; img.src = m; return; }
+  const em = document.createElement("em");
+  em.textContent = img.dataset.l || "?";
+  img.replaceWith(em);
+}
 const costumeSrc = u => u && /^https:\/\/(cdn|costume-avatar)\.playhive\.com\/.+\/?[0-9a-f-]{36}\.png$/i.test(u) ? PROXY + encodeURIComponent(u) : u;
 function costumeIcon(it){
   const name = typeof it === "string" ? it : it && (it.name || it.human_name);
@@ -107,7 +116,9 @@ function costumeHow(name){
 }
 function loadCostumeIcons(){
   if(COSTUMES && Date.now() - COSTUMES.t < 3 * 86400000 && COSTUMES.full) return Promise.resolve(false);
-  if(Date.now() - costumeTried < 60 * 60 * 1000) return Promise.resolve(false);
+  // with nothing known yet a failed load is retried within minutes; otherwise at most once an hour
+  const known = COSTUMES && Object.keys(COSTUMES.d || {}).length;
+  if(Date.now() - costumeTried < (known ? 60 * 60 * 1000 : 2 * 60 * 1000)) return Promise.resolve(false);
   if(costumeP) return costumeP;
   costumeTried = Date.now();
   try{ localStorage.setItem(COSTUME_KEY + ".try", String(costumeTried)); }catch(e){}
@@ -204,8 +215,7 @@ function itemHTML(base, it){
   const how = base === "costume" ? costumeHow(clean) : "";
   return '<div class="it' + (ed ? " ltd" : "") + '"' + (base === "costume" ? ' data-cos-tile="1"' : "") + ' data-tn="' + esc(clean) + '"' + (ed ? ' data-ed="' + esc(edLabel(ed)) + '"' : "") +
     (how ? ' data-how="' + esc(how) + '"' : "") + ' data-tr="' + esc(String(rar)) + '"><div class="box">' +
-    (url ? '<img alt="" loading="lazy" decoding="async" src="' + esc(url) + '" onerror="this.replaceWith(Object.assign(' +
-      'document.createElement(\'em\'),{textContent:' + JSON.stringify(first).replace(/"/g, "&quot;") + '}))">'
+    (url ? '<img alt="" loading="lazy" decoding="async" src="' + esc(url) + '" data-l="' + esc(first) + '" onerror="imgFail(this)">'
          : "<em>" + esc(first) + "</em>") +
     "</div>" + (ed ? '<i class="edb">' + esc("№" + nf(ed.n)) + "</i>" : "") + "</div>";
 }
@@ -356,6 +366,7 @@ function fillCostumeTiles(){
       const img = new Image();
       img.alt = ""; img.decoding = "async"; img.src = url;
       img.onload = () => { box.textContent = ""; box.append(img); };
+      img.onerror = () => { if(!img.dataset.tried && url.startsWith(PROXY)){ img.dataset.tried = "1"; img.src = decodeURIComponent(url.slice(PROXY.length)); } };
     }
     const how = costumeHow(name);
     if(how && !it.dataset.how) it.dataset.how = how;

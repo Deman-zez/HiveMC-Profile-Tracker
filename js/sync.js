@@ -171,7 +171,8 @@ function renderSync(){
   $("#syncNowBtn").textContent = syncBusy ? T("snapping") : T("syncNowBtn");
   $("#syncNowBtn").disabled = syncBusy;
   $("#syncOffBtn").textContent = T("syncOff");
-  $("#syncGen").textContent = T("syncGen");
+  $("#syncGen").title = T("syncGen");
+  $("#syncGen").setAttribute("aria-label", T("syncGen"));
   $("#syncOffBtn").classList.toggle("hidden", xb);
   $("#syncStatus").textContent = !on ? "" : syncBusy ? T("snapping")
     : state.sync.err ? T("syncErr", state.sync.err)
@@ -210,9 +211,25 @@ function randomSyncCode(){
   crypto.getRandomValues(b);
   return [...b].map(x => abc[x % abc.length]).join("").replace(/(.{4})(?!$)/g, "$1-");
 }
+// the new code "rolls" into the field: letters spin and settle one by one from left to right
+function rollCode(inp, code){
+  const box = inp.closest(".codebox"), abc = "abcdefghjkmnpqrstuvwxyz23456789";
+  const done = () => { inp.value = code; inp.dispatchEvent(new Event("input", { bubbles: true })); };
+  if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches){ done(); return; }
+  cancelAnimationFrame(rollCode.raf);
+  if(box){ box.classList.remove("rolled"); void box.offsetWidth; box.classList.add("rolling"); }
+  const t0 = performance.now(), dur = 520, n = code.length;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    inp.value = [...code].map((ch, i) => ch === "-" || p >= (i + 1) / n ? ch : abc[Math.random() * abc.length | 0]).join("");
+    if(p < 1) rollCode.raf = requestAnimationFrame(step);
+    else{ done(); if(box){ box.classList.remove("rolling"); box.classList.add("rolled"); } }
+  };
+  rollCode.raf = requestAnimationFrame(step);
+}
 $("#syncGen").onclick = () => {
-  const inp = $("#syncCode");
-  inp.value = randomSyncCode();
-  inp.focus(); inp.select();
+  const inp = $("#syncCode"), btn = $("#syncGen");
+  btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin");
+  rollCode(inp, randomSyncCode());
   toast(T("syncGenHint"));
 };

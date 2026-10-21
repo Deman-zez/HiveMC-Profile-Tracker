@@ -239,7 +239,7 @@ addEventListener("pointerup", e => {
 addEventListener("pointerdown", e => {
   if(state.lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const b = e.target.closest &&
-    e.target.closest(".primary,.mini,.chip,.close,.sugg button,.myBtn,.hbtn,.toTop");
+    e.target.closest(".primary,.mini,.chip,.close,.sugg button,.myBtn,.hbtn,.toTop,.genBtn");
   if(!b || b.disabled) return;
   const t = b.matches(".tabs button") ? b.firstElementChild : b;
   if(!t) return;
