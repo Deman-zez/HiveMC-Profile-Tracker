@@ -144,7 +144,8 @@ function lgLight(){
 }
 addEventListener("scroll", () => { if(!lgFine.matches) lgLight(); lgAdaptSoon(); }, { passive: true });
 addEventListener("pointermove", e => {
-  if(!lgFine.matches || lgCalm()) return;
+  // with a window open the glass is hidden behind it; repainting it on every mouse move only costs frames
+  if(!lgFine.matches || lgCalm() || document.documentElement.classList.contains("locked")) return;
   lgLX = e.clientX / innerWidth * 100;
   lgLY = Math.max(-20, e.clientY / innerHeight * 100 - 40);
   lgLight();

@@ -51,6 +51,7 @@ try{
   const c = JSON.parse(localStorage.getItem(COSTUME_KEY) || localStorage.getItem("hive.tracker.costumeicons.v2") || "null");
   if(c && c.d) COSTUMES = c;
 }catch(e){}
+let costumeLog = null;
 let costumeTried = +(localStorage.getItem(COSTUME_KEY + ".try") || 0);
 // costume pictures are big and slow from Hive: they go through our worker, which marks them as never
 // changing (the file name is the costume's UUID), so the browser keeps them and later visits are instant
@@ -125,7 +126,11 @@ function loadCostumeIcons(){
   costumeP = (async () => {
     // both sources are merged: the API catalogue (with how each costume is obtained) and Hive's support page,
     // which also lists the newest costumes the catalogue does not have yet
-    const [cat, sup] = await Promise.all([costumesFromCatalogue().catch(() => null), costumesFromSupport().catch(() => null)]);
+    const why = {};
+    const [cat, sup] = await Promise.all([
+      costumesFromCatalogue().catch(e => { why.cat = String(e && e.message || e); return null; }),
+      costumesFromSupport().catch(e => { why.sup = String(e && e.message || e); return null; })]);
+    costumeLog = { t: Date.now(), cat: cat ? Object.keys(cat.d).length : 0, sup: sup ? Object.keys(sup.d).length : 0, why };
     const d = Object.assign({}, COSTUMES && COSTUMES.d, sup ? sup.d : {}, cat ? cat.d : {});
     const h = Object.assign({}, COSTUMES && COSTUMES.h, cat ? cat.h : {});
     const s = Object.assign({}, COSTUMES && COSTUMES.s, sup ? sup.info : {});
@@ -141,7 +146,7 @@ async function costumesFromCatalogue(){
   const d = {}, h = {};
   for(let off = 0, guard = 0; guard < 20; off += 50, guard++){
     const r = await hiveFetch(API + "/catalogue/costumes?limit=50&offset=" + off, { cache: "no-store", headers: HIVE_HEADERS });
-    if(!r.ok) break;
+    if(!r.ok){ if(!off) throw new Error("HTTP " + r.status); break; }
     let list = await r.json();
     if(!Array.isArray(list)) list = (list && typeof list === "object" && Object.values(list).find(Array.isArray)) || [];
     list.forEach(v => {
@@ -160,7 +165,7 @@ async function costumesFromCatalogue(){
 }
 async function costumesFromSupport(){
   const r = await fetch(PROXY + encodeURIComponent("https://support.playhive.com/costumes/"), { cache: "no-store" });
-  if(!r.ok) return null;
+  if(!r.ok) throw new Error("HTTP " + r.status);
   const html = await r.text();
   const d = {}, info = {};
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -244,6 +249,16 @@ function openCos(base, arr, from){
     '</h3><button class="close">' + esc(T("close")) + '</button></div><div class="mbody"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
+  if(base === "costume"){
+    const known = COSTUMES ? Object.keys(COSTUMES.d || {}).length : 0;
+    const missing = arr.filter(it => !costumeIcon(it)).length;
+    if(missing){
+      const l = costumeLog, why = l ? Object.entries(l.why).map(([k, v]) => k + ": " + v).join(", ") : "";
+      const line = T("cosStatus", nf(known), nf(missing)) +
+        (l ? " · " + T("cosStatusLast", nf(l.cat), nf(l.sup)) + (why ? " · " + why : "") : " · " + T("cosStatusNone"));
+      m.querySelector(".mhead").insertAdjacentHTML("afterend", '<p class="sub cosstat">' + esc(line) + "</p>");
+    }
+  }
   const list = LIST_KIND(base);
   const piece = part => list ? rowsHTML(base, part).replace(/^<div class="tlist">|<\/div>$/g, "")
                              : part.map(it => itemHTML(base, it)).join("");

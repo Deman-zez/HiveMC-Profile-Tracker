@@ -364,8 +364,9 @@ function levelUnlockHTML(code, lv, cap){
   const list = un[at], shown = list.length > 4 ? list.slice(0, 3) : list;
   const rows = shown.map(x => {
     const kind = unlockKind(x.t);
-    const icon = x.i
-      ? '<span class="ciw lvui"><span><img alt="" src="' + esc(x.i) +
+    const pic = x.i || (/costume/i.test(x.t || "") && typeof costumeIcon === "function" ? costumeIcon(x.n) : null);
+    const icon = pic
+      ? '<span class="ciw lvui"><span><img alt="" src="' + esc(pic) +
         '" onload="this.closest(\'.ciw\').classList.add(\'ok\')" onerror="unlIconFail(this)"></span></span>' : "";
     const name = hasMC(x.n) ? mcText(x.n) : esc(x.n);
     return '<div class="lvur">' + icon + '<span class="lvun">' + name + "</span>" +
