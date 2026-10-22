@@ -142,7 +142,7 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
   .tq:hover{border-color:rgba(255,192,46,.6);color:var(--gold)}}
 .pav{display:grid;place-items:center;width:100%;height:100%;border-radius:10px;overflow:hidden;
   background:linear-gradient(155deg,hsl(var(--h) 58% 46%),hsl(calc(var(--h) + 34) 62% 28%))}
-.pav img{width:154%;height:154%;margin:-27%;object-fit:contain;display:block}
+.pav img{width:141%;height:141%;margin:-20.5%;object-fit:contain;display:block}
 .pav i{font-style:normal;color:#fff;font-size:19px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 @media (min-width:900px){
   .hbtn:hover{color:var(--gold)}}
@@ -179,13 +179,13 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .ciw{width:34px;height:34px;flex:0 0 34px;box-sizing:border-box;border-radius:9px;padding:3px;
   background:linear-gradient(160deg,#ffd970,#d99a15);box-shadow:0 3px 9px rgba(0,0,0,.3)}
 .ciw span{display:block;width:100%;height:100%;border-radius:6px;overflow:hidden;background:#170e22}
-.ciw img{width:156%;height:156%;margin:-28%;object-fit:contain;display:block}
+.ciw img{width:141%;height:141%;margin:-20.5%;object-fit:contain;display:block}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:10px;margin-top:12px}
 .it{background:linear-gradient(160deg,#ffd970,#d99a15);border-radius:13px;padding:5px;
   aspect-ratio:1;box-shadow:0 4px 12px rgba(0,0,0,.28)}
-.it .box{width:100%;height:100%;border-radius:8px;overflow:hidden;background:#170e22;
+.it .box{width:100%;height:100%;border-radius:9px;overflow:hidden;background:#170e22;
   display:grid;place-items:center}
-.it .box img{width:154%;height:154%;margin:-27%;object-fit:contain;display:block}
+.it .box img{width:141%;height:141%;margin:-20.5%;object-fit:contain;display:block}
 .it .box em{font-style:normal;color:var(--soft);font-size:20px;font-weight:800}
 .tlist div{padding:10px 0;font-size:16px;border-top:1px solid rgba(255,255,255,.07);font-size:15px}
 .tlist div:first-child{border-top:none}
@@ -193,9 +193,9 @@ code{font-size:12px;background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px}
 .hero{text-align:center;padding:10px 0 4px}
 .ava{width:104px;height:104px;margin:0 auto;border-radius:14px;
   background:linear-gradient(160deg,#ffd970,#d99a15);padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.ava span{display:grid;place-items:center;overflow:hidden;width:100%;height:100%;border-radius:7px;
+.ava span{display:grid;place-items:center;overflow:hidden;width:100%;height:100%;border-radius:11px;
   background:linear-gradient(160deg,#fff,#f3dff0);color:#2a1442;font-size:38px;font-weight:800}
-.ava img{width:152%;height:152%;margin:-26%;border-radius:0;display:block;object-fit:contain;background:transparent}
+.ava img{width:146%;height:146%;margin:-23%;border-radius:0;display:block;object-fit:contain;background:transparent}
 .title{color:var(--pink);font-size:19px;margin:12px 0 0;font-weight:600;text-align:center;
   line-height:1.25}
 .title .sh{display:inline-block;white-space:pre-wrap;background-image:linear-gradient(90deg,
@@ -323,7 +323,7 @@ label{display:block;font-size:13px;color:var(--soft);margin:20px 0 7px}
     hsl(var(--h) 58% 46%), hsl(calc(var(--h) + 34) 62% 28%))}
 .sugg .av i{font-style:normal;color:#fff;font-size:17px;font-weight:800;
   text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.sugg .av img{width:154%;height:154%;margin:-27%;object-fit:contain;display:block}
+.sugg .av img{width:141%;height:141%;margin:-20.5%;object-fit:contain;display:block}
 .sugg .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sugg button:first-child{border-top:none}
 .sugg button:hover,.sugg button:focus-visible{background:color-mix(in srgb,var(--gold) 10%,transparent)}
@@ -1585,4 +1585,10 @@ body::before,#shade{bottom:auto;height:100vh;height:100lvh}
   #syncRow{flex-wrap:wrap}
   #syncRow .codebox{flex:1 1 100%}
   #syncRow .mini{flex:1 1 100%}
+}
+
+.cosstat{margin:-4px 0 12px;font-size:12px;opacity:.8}
+
+@media (hover:hover) and (pointer:fine){
+  .it{will-change:transform;backface-visibility:hidden}
 }
