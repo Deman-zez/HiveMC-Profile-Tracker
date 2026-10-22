@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://deman-zez.github.io/HiveMC-Profile-Tracker/sitemap.xml
