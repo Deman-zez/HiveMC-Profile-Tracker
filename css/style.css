@@ -1592,3 +1592,7 @@ body::before,#shade{bottom:auto;height:100vh;height:100lvh}
 @media (hover:hover) and (pointer:fine){
   .it{will-change:transform;backface-visibility:hidden}
 }
+.cmpMine{display:block;width:100%;margin-top:10px}
+.cmpMine b{color:var(--gold);font-weight:800}
+img[src*="prestige"]{width:108% !important;height:108% !important;margin:-4% !important}
+html:not(.ready) .wrap{visibility:hidden}
