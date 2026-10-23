@@ -124,6 +124,8 @@ function openCompare(from){
     '<div class="nickbox"><input id="cmpNick" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" ' +
       'placeholder="' + esc(T("nickPh")) + '"><div class="sugg hidden" id="cmpSugg"></div></div>' +
     '<button class="primary" id="cmpGo">' + esc(T("cmpGo")) + '</button>' +
+    (typeof signedIn === "function" && signedIn() && state.main && String(state.main).toLowerCase() !== nickKey()
+      ? '<button type="button" class="mini cmpMine">' + esc(T("cmpMine")) + " <b>" + esc(state.main) + "</b></button>" : "") +
     '<div class="seg cmpSeg hidden" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
       '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>" +
     '<div class="cmpBody"></div></div>';
@@ -171,4 +173,6 @@ function openCompare(from){
   search = attachSearch(inp, m.querySelector("#cmpSugg"), run);
   inp.onkeydown = e => { if(e.key === "Enter") run(inp.value); };
   m.querySelector("#cmpGo").onclick = () => run(inp.value);
+  const mineBtn = m.querySelector(".cmpMine");
+  if(mineBtn) mineBtn.onclick = () => { inp.value = state.main; run(state.main); };
 }

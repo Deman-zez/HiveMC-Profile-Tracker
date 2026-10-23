@@ -18,3 +18,4 @@ loadTitleMeta().catch(() => {});
 setInterval(tickStatus, 30000);
 if(typeof trackMe === "function") setTimeout(() => trackMe(false), 4000);
 trendGate();
+requestAnimationFrame(() => document.documentElement.classList.add("ready"));
