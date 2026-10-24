@@ -109,7 +109,7 @@ function attachSearch(inp, box, onPick, skip){
         if(my !== seq) return;
         show(list.length ? list.map(x => suggRow(x, q)).join("") : '<div class="note2">' + esc(T("noPlayers")) + "</div>");
       }catch(e){ if(my === seq) show('<div class="note2">' + esc(e.message) + "</div>"); }
-    }, 450);
+    }, searchCache.has(q) ? 0 : 280);
   };
   inp.onblur = () => setTimeout(hide, 180);
   return { stop(){ clearTimeout(tmr); seq++; hide(); } };

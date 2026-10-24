@@ -157,7 +157,7 @@ function renderSnap(){
       "<h2>" + esc(T("games")) + '</h2><div class="games">' + cards + "</div>");
     body.querySelectorAll(".game").forEach((b, i) => {
       b.style.setProperty("--i", i);
-      b.onclick = () => openGame(b.dataset.g, b);
+      b.onclick = () => afterPaint(() => openGame(b.dataset.g, b));
     });
     body.querySelectorAll('[data-act="kills"]').forEach(el => el.onclick = () => openKills(el));
   }
@@ -169,7 +169,7 @@ function renderSnap(){
       '</h2><div class="card" style="text-align:center">' +
       '<button class="mini" id="openMain">' + esc(T("showAll")) + "</button></div>");
     const b = body.querySelector("#openMain");
-    if(b) b.onclick = () => openGame("main", b);
+    if(b) b.onclick = () => afterPaint(() => openGame("main", b));
   }else{
     body.insertAdjacentHTML("beforeend", '<div class="note">' + esc(T("noProfile")) + "</div>");
   }
@@ -184,6 +184,7 @@ function renderSnap(){
   fitText(body);
   // on a quiet redraw only what is already on screen (or above it) stays still;
   // everything further down keeps its normal entrance when you scroll to it
+  if(typeof onScroll === "function") onScroll();
   if(quiet){
     const edge = innerHeight + 60;
     body.querySelectorAll(".card,.games,h2,.phead,.chips,.tile,.game,.cos,.it").forEach(el => {

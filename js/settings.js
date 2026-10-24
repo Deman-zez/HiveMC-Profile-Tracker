@@ -75,6 +75,9 @@ $("#wipeBtn").onclick = () => {
 $("#fetchBtn").onclick = snapshot;
 function goMain(){
   if(!state.main) return;
+  afterPaint(goMainNow);
+}
+function goMainNow(){
   const other = state.main.toLowerCase() !== nickKey();
   if(other) navSave();
   scrollTo(0, 0);

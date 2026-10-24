@@ -74,7 +74,7 @@ function openSearch(){
         show(list.length ? list.map(x => suggRow(x, q)).join("")
                          : '<div class="note2">' + esc(T("qsNone")) + "</div>");
       }catch(e){ if(my === seq) show('<div class="note2">' + esc(e.message) + "</div>"); }
-    }, 350);
+    }, searchCache.has(q) ? 0 : 280);
   };
   inp.onkeydown = e => {
     if(e.key === "Enter"){ const v = inp.value.trim(); if(v) pick(v); }

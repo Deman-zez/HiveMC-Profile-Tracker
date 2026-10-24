@@ -48,7 +48,7 @@ function closeModal(m, how){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(reduce){
     m.remove();
-    if(!document.querySelector(".modal")) document.documentElement.classList.remove("locked");
+    if(!document.querySelector(".modal")){ document.documentElement.classList.remove("locked"); unlocked(); }
     return;
   }
   m.classList.remove("in");
@@ -56,7 +56,7 @@ function closeModal(m, how){
   setTimeout(() => {
     m.remove();
     if(!document.querySelector(".modal"))
-      document.documentElement.classList.remove("locked");
+      document.documentElement.classList.remove("locked"); unlocked();
   }, 200);
 }
 const TOAST_MS = 4000;
@@ -206,6 +206,10 @@ function iconUrl(base, id){
   if(!slug) return null;
   return "https://cdn.playhive.com/avatars/" + pre + slug + ".png";
 }
+// the page may have scrolled (e.g. to a new profile's top) while a window covered it: refresh the shade and header
+const unlocked = () => { if(typeof onScroll === "function") onScroll(); };
+// let the tap show (press feedback) first, then do the heavy redraw in the next task
+const afterPaint = fn => requestAnimationFrame(() => setTimeout(fn, 0));
 function staggerIn(els, cap){
   if((typeof state === "object" && state.lite) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const list = [...els], vh = innerHeight, steps = cap || 24;

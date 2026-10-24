@@ -491,7 +491,7 @@ function openMapsAll(list, from){
   }));
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
-  setTimeout(() => draw(true), 30);
+  requestAnimationFrame(() => draw(true));
 }
 function openMap(list, k, from){
   const m = document.createElement("div");

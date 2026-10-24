@@ -85,7 +85,7 @@ function askSearch(q){
     }catch(e){
       if(seq === searchSeq) showSugg('<div class="note2">' + esc(e.message) + "</div>");
     }
-  }, 450);
+  }, searchCache.has(query) ? 0 : 280);
 }
 function suggRow(x, query){
   const i = x.name.toLowerCase().indexOf(query.toLowerCase());

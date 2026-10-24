@@ -481,7 +481,8 @@ function lbOwnPlace(me, game){
   if(typeof c.index === "number" && c.index >= 0) return c.index + 1;
   return 0;
 }
-function openProfileOf(n){
+function openProfileOf(n){ afterPaint(() => openProfileNow(n)); }
+function openProfileNow(n){
   navSave();
   if(n.toLowerCase() !== nickKey()) switchNick(niceNick(n));
   go("snap", { y: 0, saved: true, force: true });

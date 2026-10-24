@@ -188,7 +188,7 @@ function calShowDetail(wrap){
     if(wasOpen && motion){ det.style.height = was + "px"; det.style.overflow = "hidden"; }
     inner.innerHTML = calDetailHTML(calDaysNow());
     det.hidden = !calSel && !motion;
-    setTimeout(() => fillCatalogue(wrap), 400);
+    afterPaint(() => fillCatalogue(wrap));
     if(!motion){ det.hidden = !calSel; return; }
     if(calSel) det.hidden = false;
     const now = calSel ? inner.offsetHeight : 0;

@@ -262,7 +262,7 @@ function openCos(base, arr, from){
   const list = LIST_KIND(base);
   const piece = part => list ? rowsHTML(base, part).replace(/^<div class="tlist">|<\/div>$/g, "")
                              : part.map(it => itemHTML(base, it)).join("");
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     const box = m.querySelector(".mbody");
     if(!box || !m.isConnected) return;
     box.innerHTML = '<div class="card"><div class="' + (list ? "tlist" : "grid") + '"></div></div>';
@@ -276,16 +276,25 @@ function openCos(base, arr, from){
     while(i < arr.length && holder.lastElementChild && holder.lastElementChild.getBoundingClientRect().top < bottom()) put(STEP);
     staggerIn(holder.children, 30);
     markTq(holder);
+    // the rest is added off screen only after the entrance wave, so new tiles never interrupt its frames;
+    // scrolling down early pulls it in at once
+    const idle = window.requestIdleCallback || (f => setTimeout(f, 16));
     const more = () => {
       if(!m.isConnected || i >= arr.length) return;
       const from = holder.children.length;
-      put(STEP);
-      staggerIn([...holder.children].slice(from), 30);   // only animates what happens to be on screen
+      put(STEP * 2);
+      staggerIn([...holder.children].slice(from), 30);
       markTq(holder);
-      if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(more, { timeout: 120 });
+      if(i < arr.length) idle(more, { timeout: 250 });
     };
-    if(i < arr.length) (window.requestIdleCallback || (f => setTimeout(f, 16)))(more, { timeout: 120 });
-  }, 30);
+    if(i < arr.length){
+      let started = false;
+      const start = () => { if(started) return; started = true; inner && inner.removeEventListener("scroll", start); m.removeEventListener("scroll", start); idle(more, { timeout: 250 }); };
+      setTimeout(start, 750);
+      if(inner) inner.addEventListener("scroll", start, { passive: true, once: true });
+      m.addEventListener("scroll", start, { passive: true, once: true });
+    }
+  });
 }
 function fmtTicks(t){
   const ms = Math.round(t * 50), m = Math.floor(ms / 60000), sec = Math.floor(ms % 60000 / 1000);
