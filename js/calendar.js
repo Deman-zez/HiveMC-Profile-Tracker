@@ -188,8 +188,9 @@ function calShowDetail(wrap){
     if(wasOpen && motion){ det.style.height = was + "px"; det.style.overflow = "hidden"; }
     inner.innerHTML = calDetailHTML(calDaysNow());
     det.hidden = !calSel && !motion;
-    afterPaint(() => fillCatalogue(wrap));
-    if(!motion){ det.hidden = !calSel; return; }
+    // names of unlocks are filled in once the day has finished opening, so a redraw never interrupts the animation
+    const fill = () => fillCatalogue(wrap);
+    if(!motion){ det.hidden = !calSel; fill(); return; }
     if(calSel) det.hidden = false;
     const now = calSel ? inner.offsetHeight : 0;
     det.style.height = "";
@@ -198,8 +199,8 @@ function calShowDetail(wrap){
       const a = det.animate([{ height: was + "px" }, { height: now + "px" }],
         { duration: wasOpen && calSel ? 380 : 380, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
       det.__anim = a;
-      a.onfinish = () => { det.hidden = !calSel; det.style.overflow = ""; a.cancel(); if(det.__anim === a) det.__anim = null; };
-    }else{ det.hidden = !calSel; det.style.overflow = ""; }
+      a.onfinish = () => { det.hidden = !calSel; det.style.overflow = ""; a.cancel(); if(det.__anim === a) det.__anim = null; fill(); };
+    }else{ det.hidden = !calSel; det.style.overflow = ""; fill(); }
     if(calSel) inner.__fade = inner.animate([{ opacity: wasOpen ? .35 : 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }],
       { duration: wasOpen ? 200 : 300, easing: "cubic-bezier(.2,.9,.3,1)" });
   });
