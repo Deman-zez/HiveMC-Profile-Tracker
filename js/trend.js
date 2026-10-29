@@ -15,7 +15,7 @@ const TREND_RANGES = [
   ["all", null], ["24h", 86400000], ["7d", 7*86400000], ["30d", 30*86400000], ["months", null]
 ];
 const ACT = {};
-const ACT_MAX = 2000;
+const ACT_MAX = 3500;
 let actShown = 20;
 let actDaysShown = 7, actOpen = null;
 const actDayKey = sec => { const d = new Date(sec * 1000);
@@ -32,17 +32,28 @@ function actDayLabel(key){
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 let actClockOnly = false;
-function agoText(sec){
-  if(actClockOnly){
-    const d = new Date(sec * 1000);
-    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-  }
+function agoRel(sec){
   const diff = Date.now() - sec * 1000;
   if(diff < 60000) return T("agoNow");
   if(diff < 3600000) return T("agoMin", Math.floor(diff / 60000));
   if(diff < 86400000) return T("agoH", Math.floor(diff / 3600000));
   return when(sec * 1000);
 }
+function agoText(sec){
+  if(actClockOnly){
+    const d = new Date(sec * 1000);
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  return agoRel(sec);
+}
+// "5 min ago" labels keep counting while the page stays open
+setInterval(() => {
+  if(document.hidden) return;
+  document.querySelectorAll("#trendAct .at[data-t]").forEach(el => {
+    const s = agoRel(+el.dataset.t);
+    if(el.textContent !== s) el.textContent = s;
+  });
+}, 15000);
 const actKey = e => [e.time, e.type, e.game || "", JSON.stringify(e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "")].join("|");
 function mergeAct(uuid, list){
   if(!uuid || !Array.isArray(list)) return 0;
@@ -112,10 +123,47 @@ async function fetchActivity(uuid){
     ACT[uuid] = { t: Date.now(), err: e.message };
   }
 }
+// games the player made between two stat checks that the (capped, delayed) round feed never showed
+const gapMemo = new WeakMap();
+function actGaps(list){
+  if(!list.some(e => e.type === "STATS_WINDOW")) return [];
+  if(gapMemo.has(list)) return gapMemo.get(list);
+  const byGame = {};
+  list.forEach(e => { if(e.type === "ROUND_PLAYED" && typeof e.time === "number") (byGame[e.game] || (byGame[e.game] = [])).push(e); });
+  Object.values(byGame).forEach(a => a.sort((x, y) => x.time - y.time));
+  const inRange = (code, lo, hi) => {
+    const a = byGame[code] || [];
+    let i = 0, j = a.length;
+    while(i < j){ const m = (i + j) >> 1; if(a[m].time <= lo) i = m + 1; else j = m; }
+    const out = [];
+    for(; i < a.length && a[i].time <= hi; i++) out.push(a[i]);
+    return out;
+  };
+  const out = [], carry = {};
+  // windows are cut exactly at the stat checks, so every known round belongs to exactly one window;
+  // a round counted slightly early or late leaves a negative remainder that is settled in the next window
+  list.filter(w => w.type === "STATS_WINDOW" && w.g && typeof w.time === "number").sort((a, b) => a.time - b.time).forEach(w => {
+    const g = {};
+    let total = 0, wins = 0;
+    for(const code of Object.keys(w.g)){
+      const d = w.g[code], from = d.s || w.from || w.time, known = inRange(code, from, w.time);
+      const c = carry[code] && from - carry[code].time <= 5 ? carry[code] : { p: 0, w: 0 };
+      const p = (d.p || 0) - known.length + c.p;
+      const wt = (d.w || 0) - known.filter(r => r.victory === true).length + c.w;
+      if(p <= 0){ carry[code] = { time: w.time, p, w: Math.min(wt, 0) }; continue; }
+      const wn = Math.max(0, Math.min(p, wt));
+      carry[code] = { time: w.time, p: 0, w: wt < 0 ? wt : 0 };
+      g[code] = { p, w: wn }; total += p; wins += wn;
+    }
+    if(total) out.push({ time: w.time, from: Math.min(...Object.keys(g).map(c => w.g[c].s || w.from || w.time)), g, total, wins });
+  });
+  if(list.length > 40) gapMemo.set(list, out);
+  return out;
+}
 function actGroups(list){
   const out = list.filter(e => e.type === "ROUND_PLAYED").map(e => ({ e, ex: [] }));
   list.forEach(e => {
-    if(e.type === "ROUND_PLAYED") return;
+    if(e.type === "ROUND_PLAYED" || e.type === "STATS_WINDOW") return;
     const c = e.unlock_id && CAT[e.unlock_id];
     let best = null, bd = 601;
     if(catKind(c) === "GAME_LEVEL") out.forEach(g => {
@@ -125,6 +173,7 @@ function actGroups(list){
     });
     if(best) best.ex.push(e); else out.push({ e, ex: [] });
   });
+  actGaps(list).forEach(gp => out.push({ e: { type: "GAP", time: gp.time, from: gp.from, g: gp.g, total: gp.total, wins: gp.wins }, ex: [] }));
   return out.sort((a, b) => (b.e.time || 0) - (a.e.time || 0));
 }
 function unlSpan(e, grp){
@@ -152,15 +201,21 @@ function changeHTML(e){
   return '<div class="acs">' + keys.map(k => '<span class="cs' + (k === "xp" ? " x" : /kills$|^murders$|eliminations$/.test(k) ? " k" : k === "deaths" ? " d" : "") + '">' +
     (k === "xp" ? "+" + esc(nf(c[k])) + " XP" : "<b>" + esc(nf(c[k])) + "</b> " + esc(low(k))) + "</span>").join("") + "</div>";
 }
+const actClock = ts => new Date(ts * 1000).toLocaleTimeString(L === "ru" ? "ru-RU" : "en-US", { hour: "2-digit", minute: "2-digit" });
 function actRow(e, ex){
+  if(e.type === "GAP"){
+    const parts = Object.entries(e.g).sort((a, b) => b[1].p - a[1].p).map(([c, x]) => esc(NAME(c)) + " ×" + nf(x.p));
+    return '<div class="act gap"><span class="ag">' + parts.join(" · ") + '</span><span class="ar">' + esc(nf(e.wins) + " " + winsWord(e.wins)) +
+      '</span><span class="at">' + esc(actClock(e.from) + "–" + actClock(e.time)) + "</span></div>";
+  }
   const t = typeof e.time === "number" ? agoText(e.time) : "";
   if(e.type === "ROUND_PLAYED"){
     const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
     return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
-      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span>" + changeHTML(e) +
+      esc(r[1]) + '</span><span class="at"' + (actClockOnly ? "" : ' data-t="' + e.time + '"') + ">" + esc(t) + "</span>" + changeHTML(e) +
       (ex && ex.length ? ex.map(x => '<div class="actx">' + unlSpan(x, true) + "</div>").join("") : "") + "</div>";
   }
-  return '<div class="act">' + unlSpan(e, false) + '<span class="at">' + esc(t) + "</span></div>";
+  return '<div class="act">' + unlSpan(e, false) + '<span class="at"' + (actClockOnly ? "" : ' data-t="' + e.time + '"') + ">" + esc(t) + "</span></div>";
 }
 const CAT_KEY = "hive.tracker.catalogue.v2";
 let CAT = (() => { try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(e){ return {}; } })();
@@ -236,15 +291,18 @@ function actHTML(list, err){
     if(!d || d.k !== k) days.push(d = { k, gs: [], games: 0, wins: 0, rewards: 0 });
     d.gs.push(g);
     if(g.e.type === "ROUND_PLAYED"){ d.games++; if(g.e.victory === true) d.wins++; }
-    d.rewards += (g.e.type === "ROUND_PLAYED" ? 0 : 1) + g.ex.length;
+    else if(g.e.type === "GAP"){ d.games += g.e.total; d.wins += g.e.wins; }
+    d.rewards += (g.e.type === "ROUND_PLAYED" || g.e.type === "GAP" ? 0 : 1) + g.ex.length;
   });
   if(!actOpen) actOpen = new Set();
   let head = "";
   if(todayRows.length){
-    const tg = todayRows.filter(g => g.e.type === "ROUND_PLAYED"), tw = tg.filter(g => g.e.victory === true).length;
-    const twr = tg.length ? Math.round(tw / tg.length * 100) : 0;
-    const tsum = tg.length
-      ? '<span class="adg">' + esc(nf(tg.length) + " " + gamesWord(tg.length)) + '</span><span class="adw' + (twr >= 50 ? " good" : "") + '">' + twr + "%</span>"
+    const tg = todayRows.filter(g => g.e.type === "ROUND_PLAYED"), tgap = todayRows.filter(g => g.e.type === "GAP");
+    const tn = tg.length + tgap.reduce((n, g) => n + g.e.total, 0);
+    const tw = tg.filter(g => g.e.victory === true).length + tgap.reduce((n, g) => n + g.e.wins, 0);
+    const twr = tn ? Math.round(tw / tn * 100) : 0;
+    const tsum = tn
+      ? '<span class="adg">' + esc(nf(tn) + " " + gamesWord(tn)) + '</span><span class="adw' + (twr >= 50 ? " good" : "") + '">' + twr + "%</span>"
       : "";
     const now = new Date();
     const dateTxt = now.toLocaleDateString(L === "ru" ? "ru-RU" : "en-US", { weekday: "short", day: "numeric", month: "long" });
@@ -270,7 +328,8 @@ function actHTML(list, err){
     ? '<button type="button" class="mini actmore">' + esc((n => T(n === 1 ? "actMoreDay1" : "actMoreDays", n))(Math.min(14, days.length - actDaysShown))) + "</button>" : "";
   const empty = !head && !body ? '<p class="sub" style="margin:0">' + esc(err || T("actEmpty")) + "</p>" : "";
   return "<h2>" + esc(T("actTitle")) +
-    '</h2><div class="card actCard">' + head + body + empty + more + "</div>";
+    '</h2><div class="card actCard">' + head + body + empty + more +
+    (head || body ? '<p class="sub actNote">' + esc(T("actNote")) + "</p>" : "") + "</div>";
 }
 const winsWord = n => L === "ru" ? "поб." : (n === 1 ? "win" : "wins");
 // rows of one day: today keeps "5 min ago", older days only need the clock time

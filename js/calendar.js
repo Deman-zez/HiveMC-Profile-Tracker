@@ -46,11 +46,12 @@ const calWeekStart = () => (L === "ru" ? 1 : 0);
 
 function calDays(list){
   const days = new Map();
+  const dayOf = k => { let d = days.get(k); if(!d) days.set(k, d = { ev: [], win: [], games: 0, wins: 0, rewards: 0, modes: {}, gap: 0 }); return d; };
   list.forEach(e => {
     if(typeof e.time !== "number") return;
     const k = calKey(new Date(e.time * 1000));
-    let d = days.get(k);
-    if(!d) days.set(k, d = { ev: [], games: 0, wins: 0, rewards: 0, modes: {} });
+    if(e.type === "STATS_WINDOW"){ dayOf(k).win.push(e); return; }
+    const d = dayOf(k);
     d.ev.push(e);
     if(e.type === "ROUND_PLAYED"){
       d.games++;
@@ -58,6 +59,14 @@ function calDays(list){
       const m = d.modes[e.game] || (d.modes[e.game] = { p: 0, w: 0 });
       m.p++; if(e.victory === true) m.w++;
     }else d.rewards++;
+  });
+  actGaps(list).forEach(gp => {
+    const d = dayOf(calKey(new Date(gp.time * 1000)));
+    d.games += gp.total; d.wins += gp.wins; d.gap += gp.total;
+    for(const [code, x] of Object.entries(gp.g)){
+      const m = d.modes[code] || (d.modes[code] = { p: 0, w: 0 });
+      m.p += x.p; m.w += x.w;
+    }
   });
   return days;
 }
@@ -158,7 +167,7 @@ function calDetailHTML(days){
         '<span class="calBar"><i>' + (m.w ? '<em class="w" style="flex:' + m.w + '"></em>' : "") + (m.p - m.w ? '<em class="l" style="flex:' + (m.p - m.w) + '"></em>' : "") + "</i></span>" +
         '<span class="calMv"><b>' + nf(m.w) + '</b><span>–</span><i>' + nf(m.p - m.w) + "</i></span></div>").join("") + "</div>";
   }
-  const groups = actGroups(d.ev);
+  const groups = actGroups(d.ev.concat(d.win || []));
   html += '<div class="calSub">' + esc(d.rewards ? T("calGamesRew", nf(d.rewards)) : T("calGamesH")) + "</div>";
   actClockOnly = true;
   try{ html += '<div class="calList">' + groups.map(g => actRow(g.e, g.ex)).join("") + "</div>"; }
