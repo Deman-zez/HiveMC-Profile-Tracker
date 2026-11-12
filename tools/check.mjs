@@ -1,6 +1,8 @@
 // Pre-publish checks for the tracker. Run locally with: node tools/check.mjs
 // Exits with code 1 if anything is broken, so CI refuses to publish a broken site.
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, copyFileSync } from "node:fs";
+import { join, basename } from "node:path";
+import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 
 const problems = [];
@@ -11,7 +13,10 @@ const scripts = readdirSync("js").filter(f => f.endsWith(".js")).map(f => "js/" 
 const workers = existsSync("worker") ? readdirSync("worker").filter(f => f.endsWith(".js")).map(f => "worker/" + f) : [];
 for (const f of [...scripts, ...workers]) {
   if (!existsSync(f)) continue;
-  try { execFileSync(process.execPath, ["--check", f], { stdio: "pipe" }); }
+  // workers are ES modules: check them as .mjs so any Node version parses `export default`
+  let path = f;
+  if (f.startsWith("worker/")) { path = join(tmpdir(), "check-" + basename(f, ".js") + ".mjs"); copyFileSync(f, path); }
+  try { execFileSync(process.execPath, ["--check", path], { stdio: "pipe" }); }
   catch (e) { fail(`${f}: syntax error\n${String(e.stderr || e.message).trim()}`); }
 }
 
