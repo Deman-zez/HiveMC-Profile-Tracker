@@ -1,0 +1,27 @@
+/* leaderboard controls: long month names must stay inside the block */
+.lbctl > *{min-width:0;max-width:100%}
+.lbctl select{min-width:0;max-width:100%;width:100%;text-overflow:ellipsis}
+.lbctl button,.lbctl [class*="sel"]{min-width:0;max-width:100%}
+.lbctl .sub,.lbctl small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* trend controls use the same layout rules */
+.trendctl .row2 > *{min-width:0;max-width:100%}
+.trendctl select{min-width:0;max-width:100%;width:100%;text-overflow:ellipsis}
+
+/* map filters: single selection per group reads clearly */
+.mapsChips .mchip{transition:background .15s,border-color .15s,color .15s}
+.mapsChips .mchip.on{background:#7b3fb8;border-color:#a05fd6;color:#fff}
+.mapsChips .mchip.s.on{background:#27405e;border-color:#4cc3ff;color:#cfe9ff}
+
+/* modal helpers (were injected from JS before, now live here) */
+.modal.mapswait .mmaps{min-height:240px}
+.ciw.fail{visibility:hidden}
+.tabs button.gone{display:flex !important;visibility:hidden;pointer-events:none}
+.swap .glass,.enter .glass,.modal.in .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* themed scrollbars */
+*{scrollbar-width:thin;scrollbar-color:#54307a #140a20}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#140a20}
+::-webkit-scrollbar-thumb{background:#54307a;border-radius:8px;border:2px solid #140a20}
+::-webkit-scrollbar-thumb:hover{background:#a05fd6}
