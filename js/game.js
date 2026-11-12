@@ -13,8 +13,6 @@ function tilesHTML(list, extra){
       "<small>" + esc(m.k) + "</small></div>";
   }).join("") + "</div>";
 }
-/* cards appear as they scroll in, and the faster you scroll, the quicker they appear
-   (a fast fling shows them almost at once instead of making you wait for each one) */
 let scrollSpeed = 0, lastSY = scrollY, lastST = performance.now();
 addEventListener("scroll", () => {
   const now = performance.now(), dt = now - lastST;
@@ -216,7 +214,7 @@ function openGame(code, from){
     lvArgs = [code, cur, lv, cap, xp, rank];
     const next = cap && lv >= cap ? '<small class="lvmax">' + esc(T("lvMax")) + "</small>" : levelNextHTML(...lvArgs);
     bar = '<div class="tile wide lvl"><b>' + (cap ? lv + " / " + cap : lv) + "</b>" +
-      (cap ? '<div class="bar"><i style="width:' + (lv / cap * 100).toFixed(2) + '%"></i></div>' : "") +
+      (cap ? '<div class="bar"><i style="width:' + (lv/cap*100).toFixed(2) + '%"></i></div>' : "") +
       "<small>" + note + "</small>" + next + levelUnlockHTML(code, lv, cap) + "</div>";
   }
   const m = document.createElement("div");
@@ -243,14 +241,23 @@ function openGame(code, from){
   const go = m.querySelector(".lbgo");
   if(go) go.onclick = () => { closeModal(m, "nav"); openLb(code); };
   requestAnimationFrame(fillAll);
-  if(MAP_GAMES.includes(code)) loadMaps(code).then(list => {
-    const box = m.querySelector(".mmaps");
-    if(box && list && list.length){ box.innerHTML = mapsHTML(list); mapsBind(box, list); }
-  }).catch(() => {});
+  if(MAP_GAMES.includes(code)){
+    m.classList.add("mapswait");
+    loadMaps(code).then(list => {
+      const mbox = m.querySelector(".mmaps");
+      if(mbox && list && list.length){ mbox.innerHTML = mapsHTML(list); mapsBind(mbox, list); }
+      m.classList.remove("mapswait");
+    }).catch(() => { m.classList.remove("mapswait"); });
+  }
   if(lvArgs && xpRate(lvArgs[0], lvArgs[1]).src === "all" && !MONTHLY[nickKey()]){
     loadMonthly().then(() => {
       const el = m.querySelector(".lvnext");
-      if(el && m.isConnected) el.outerHTML = levelNextHTML(...lvArgs);
+      if(el && m.isConnected){
+        const tmp = document.createElement("div");
+        tmp.innerHTML = levelNextHTML(...lvArgs);
+        const nu = tmp.firstElementChild;
+        if(nu){ el.className = nu.className; el.replaceChildren(...nu.childNodes); }
+      }
     }).catch(() => {});
   }
 }
@@ -274,6 +281,7 @@ async function loadMonthly(){
   return d;
 }
 async function fillMonth(box, code, m){
+  box.style.minHeight = box.offsetHeight + "px";
   box.innerHTML = '<p class="sub" style="margin:0">' + esc(T("tqLoading")) + "</p>";
   try{
     const d = await loadMonthly();
@@ -292,6 +300,7 @@ async function fillMonth(box, code, m){
         esc(T("monthRank")) + "</small></div>" : "");
     fitText(m);
   }catch(e){ if(box.isConnected) box.innerHTML = '<p class="sub" style="margin:0">' + esc(e.message) + "</p>"; }
+  finally{ requestAnimationFrame(() => { box.style.minHeight = ""; }); }
 }
 function openKills(from){
   const mine = mySnaps();
@@ -354,7 +363,7 @@ function unlockKind(t){
 }
 function unlIconFail(img){
   const w = img.closest(".ciw");
-  if(w) w.remove();
+  if(w) w.classList.add("fail");
 }
 function levelUnlockHTML(code, lv, cap){
   const mg = META_GAMES[code], un = mg && mg.u;
@@ -471,12 +480,13 @@ function openMapsAll(list, from){
       (kinds.length ? '<div class="mapsChips">' + kinds.map((k, n) => '<button type="button" class="mchip ' + k.c + '" data-n="' + n + '">' + esc(k.t) + "</button>").join("") + "</div>" : "") +
     '</div><div class="mapsGrid all"></div><p class="sub mapsNone" hidden>' + esc(T("mapsNone")) + "</p></div>";
   const grid = m.querySelector(".mapsGrid"), inp = m.querySelector(".mapsFind input"), none = m.querySelector(".mapsNone");
-  const on = new Set();
+  // one selection per group: a map has exactly one season and one variant
+  let selV = null, selS = null;
   let shown = list;
   const draw = animate => {
     const q = inp.value.trim().toLowerCase();
     shown = list.filter(x => (!q || String(x.name).toLowerCase().includes(q)) &&
-      [...on].every(n => { const k = kinds[n]; return k.v ? x.variant === k.v : x.season === k.s; }));
+      (selV === null || x.variant === selV) && (selS === null || x.season === selS));
     grid.innerHTML = shown.map(mapTile).join("");
     none.hidden = shown.length > 0;
     grid.querySelectorAll(".map").forEach(c => tapOn(c, () => openMap(shown, +c.dataset.k, c)));
@@ -484,9 +494,13 @@ function openMapsAll(list, from){
   };
   inp.oninput = () => draw(false);
   m.querySelectorAll(".mchip").forEach(b => tapOn(b, () => {
-    const n = +b.dataset.n;
-    on.has(n) ? on.delete(n) : on.add(n);
-    b.classList.toggle("on", on.has(n));
+    const k = kinds[+b.dataset.n];
+    if(k.c === "v") selV = (selV === k.v ? null : k.v);
+    else selS = (selS === k.s ? null : k.s);
+    m.querySelectorAll(".mchip").forEach(x => {
+      const kk = kinds[+x.dataset.n];
+      x.classList.toggle("on", kk.c === "v" ? selV === kk.v : selS === kk.s);
+    });
     draw(true);
   }));
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };

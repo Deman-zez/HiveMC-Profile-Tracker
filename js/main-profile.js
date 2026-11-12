@@ -1,6 +1,5 @@
 "use strict";
 
-// avatar for a nick: the cache, or else the avatar from that player's own latest snapshot
 function avatarFor(name){
   const k = String(name || "").toLowerCase();
   if(!k) return "";

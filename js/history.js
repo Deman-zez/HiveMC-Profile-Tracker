@@ -10,7 +10,7 @@ let histWaitUntil = +(localStorage.getItem(HIST_KEY + ".wait") || 0);
 const histKeyOf = (y, m) => y + "-" + String(m).padStart(2, "0");
 function histSave(){
   try{ localStorage.setItem(HIST_KEY, JSON.stringify(HIST)); }
-  catch(e){                                   // keep the newest players if storage is tight
+  catch(e){
     const ks = Object.keys(HIST); if(ks.length > 1){ delete HIST[ks[0]]; histSave(); }
   }
 }
@@ -48,7 +48,9 @@ async function histFetch(nick, y, m){
     const ra = +res.headers.get("Retry-After");
     const err = new Error("limited"); err.wait = (ra > 0 ? ra : 20 * 60) * 1000; throw err;
   }
-  if(res.status === 404 || res.status >= 500) return {};        // Hive: no record for that month
+  if(res.status === 404) return {};
+  // transient upstream failure must not be stored as an empty month
+  if(res.status >= 500){ const err = new Error("hiveDown"); err.wait = 60 * 1000; throw err; }
   if(!res.ok) throw new Error(httpMsg(res.status));
   const d = await res.json().catch(() => ({}));
   if(!d || typeof d !== "object" || Array.isArray(d)) return {};
@@ -58,7 +60,6 @@ async function histFetch(nick, y, m){
   }
   return d;
 }
-// newest first: the months people look at load first
 async function histLoad(onlyKey){
   const nick = state.nick, k = nickKey();
   if(!nick || histBusy || Date.now() < histWaitUntil) return;
@@ -68,7 +69,7 @@ async function histLoad(onlyKey){
     const first = histFirstPlayed();
     for(const x of histMonthList(HIST_MONTHS)){
       if(onlyKey && x.key !== onlyKey) continue;
-      if(first && Date.UTC(x.y, x.m, 1) <= first) break;      // nothing before the first game
+      if(first && Date.UTC(x.y, x.m, 1) <= first) break;
       const e = have[x.key];
       const emptyOld = e && e.empty && Date.now() - e.t > 3 * 86400000;
       if(e && !emptyOld && (!x.current || Date.now() - e.t < 15 * 60 * 1000)) continue;
@@ -82,19 +83,16 @@ async function histLoad(onlyKey){
         if(x.current) MONTHLY[k] = { t: Date.now(), d };
         histSave(); histNotify();
       }catch(e){
-        if(e.wait){
-          histWaitUntil = Date.now() + e.wait;
-          try{ localStorage.setItem(HIST_KEY + ".wait", String(histWaitUntil)); }catch(_){}
-          histResumeLater();
-          histNotify();
-        }
+        histWaitUntil = Date.now() + (e.wait || 30 * 1000);
+        try{ localStorage.setItem(HIST_KEY + ".wait", String(histWaitUntil)); }catch(_){}
+        histResumeLater();
+        histNotify();
         break;
       }
       await new Promise(r => setTimeout(r, 450));
     }
   }finally{ histBusy = false; histNotify(); }
 }
-// totals of one month over every game Hive returned
 function histTotals(d){
   let played = 0, wins = 0;
   if(d) for(const g of Object.keys(d)){

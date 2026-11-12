@@ -32,28 +32,17 @@ function actDayLabel(key){
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 let actClockOnly = false;
-function agoRel(sec){
+function agoText(sec){
+  if(actClockOnly){
+    const d = new Date(sec * 1000);
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
   const diff = Date.now() - sec * 1000;
   if(diff < 60000) return T("agoNow");
   if(diff < 3600000) return T("agoMin", Math.floor(diff / 60000));
   if(diff < 86400000) return T("agoH", Math.floor(diff / 3600000));
   return when(sec * 1000);
 }
-function agoText(sec){
-  if(actClockOnly){
-    const d = new Date(sec * 1000);
-    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-  }
-  return agoRel(sec);
-}
-// "5 min ago" labels keep counting while the page stays open
-setInterval(() => {
-  if(document.hidden) return;
-  document.querySelectorAll("#trendAct .at[data-t]").forEach(el => {
-    const s = agoRel(+el.dataset.t);
-    if(el.textContent !== s) el.textContent = s;
-  });
-}, 15000);
 const actKey = e => [e.time, e.type, e.game || "", JSON.stringify(e.unlock ?? e.item ?? e.cosmetic ?? e.id ?? "")].join("|");
 function mergeAct(uuid, list){
   if(!uuid || !Array.isArray(list)) return 0;
@@ -139,23 +128,19 @@ function actGaps(list){
     for(; i < a.length && a[i].time <= hi; i++) out.push(a[i]);
     return out;
   };
-  const out = [], carry = {};
-  // windows are cut exactly at the stat checks, so every known round belongs to exactly one window;
-  // a round counted slightly early or late leaves a negative remainder that is settled in the next window
-  list.filter(w => w.type === "STATS_WINDOW" && w.g && typeof w.time === "number").sort((a, b) => a.time - b.time).forEach(w => {
-    const g = {};
+  const out = [];
+  list.forEach(w => {
+    if(w.type !== "STATS_WINDOW" || !w.g || typeof w.time !== "number") return;
+    const lo = (w.from || w.time) - 90, hi = w.time + 90, g = {};
     let total = 0, wins = 0;
     for(const code of Object.keys(w.g)){
-      const d = w.g[code], from = d.s || w.from || w.time, known = inRange(code, from, w.time);
-      const c = carry[code] && from - carry[code].time <= 5 ? carry[code] : { p: 0, w: 0 };
-      const p = (d.p || 0) - known.length + c.p;
-      const wt = (d.w || 0) - known.filter(r => r.victory === true).length + c.w;
-      if(p <= 0){ carry[code] = { time: w.time, p, w: Math.min(wt, 0) }; continue; }
-      const wn = Math.max(0, Math.min(p, wt));
-      carry[code] = { time: w.time, p: 0, w: wt < 0 ? wt : 0 };
+      const d = w.g[code], known = inRange(code, lo, hi);
+      const p = (d.p || 0) - known.length;
+      if(p <= 0) continue;
+      const wn = Math.max(0, Math.min(p, (d.w || 0) - known.filter(r => r.victory === true).length));
       g[code] = { p, w: wn }; total += p; wins += wn;
     }
-    if(total) out.push({ time: w.time, from: Math.min(...Object.keys(g).map(c => w.g[c].s || w.from || w.time)), g, total, wins });
+    if(total) out.push({ time: w.time, from: w.from, g, total, wins });
   });
   if(list.length > 40) gapMemo.set(list, out);
   return out;
@@ -212,10 +197,10 @@ function actRow(e, ex){
   if(e.type === "ROUND_PLAYED"){
     const r = e.victory === true ? ["w", T("actWin")] : e.victory === false ? ["l", T("actLoss")] : ["", T("actPlayed")];
     return '<div class="act"><span class="ag">' + esc(NAME(e.game)) + '</span><span class="ar ' + r[0] + '">' +
-      esc(r[1]) + '</span><span class="at"' + (actClockOnly ? "" : ' data-t="' + e.time + '"') + ">" + esc(t) + "</span>" + changeHTML(e) +
+      esc(r[1]) + '</span><span class="at">' + esc(t) + "</span>" + changeHTML(e) +
       (ex && ex.length ? ex.map(x => '<div class="actx">' + unlSpan(x, true) + "</div>").join("") : "") + "</div>";
   }
-  return '<div class="act">' + unlSpan(e, false) + '<span class="at"' + (actClockOnly ? "" : ' data-t="' + e.time + '"') + ">" + esc(t) + "</span></div>";
+  return '<div class="act">' + unlSpan(e, false) + '<span class="at">' + esc(t) + "</span></div>";
 }
 const CAT_KEY = "hive.tracker.catalogue.v2";
 let CAT = (() => { try{ return JSON.parse(localStorage.getItem(CAT_KEY)) || {}; }catch(e){ return {}; } })();

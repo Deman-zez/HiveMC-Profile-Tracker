@@ -48,7 +48,7 @@ function closeModal(m, how){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(reduce){
     m.remove();
-    if(!document.querySelector(".modal")){ document.documentElement.classList.remove("locked"); unlocked(); }
+    if(!document.querySelector(".modal")){ document.documentElement.classList.remove("locked"); }
     return;
   }
   m.classList.remove("in");
@@ -56,7 +56,7 @@ function closeModal(m, how){
   setTimeout(() => {
     m.remove();
     if(!document.querySelector(".modal"))
-      document.documentElement.classList.remove("locked"); unlocked();
+      document.documentElement.classList.remove("locked");
   }, 200);
 }
 const TOAST_MS = 4000;
