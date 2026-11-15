@@ -115,11 +115,15 @@ function costumeHow(name){
   const [main, gone] = text.split("\u0001");
   return main + (gone !== undefined ? " · " + T("tqGoneLine") : "");
 }
-function loadCostumeIcons(){
-  if(COSTUMES && Date.now() - COSTUMES.t < 3 * 86400000 && COSTUMES.full) return Promise.resolve(false);
-  // with nothing known yet a failed load is retried within minutes; otherwise at most once an hour
+// a costume on screen that the saved catalogue does not know yet (a brand-new skin) forces a refresh
+// instead of waiting for the 3-day cache to expire; such refreshes are spaced 15 minutes apart
+const costumeKnown = name => !!(COSTUMES && COSTUMES.d && COSTUMES.d[costumeNorm(name)]);
+function loadCostumeIcons(force){
+  if(!force && COSTUMES && Date.now() - COSTUMES.t < 3 * 86400000 && COSTUMES.full) return Promise.resolve(false);
+  // with nothing known yet a failed load is retried within minutes; a partial or forced one within a quarter of an hour
   const known = COSTUMES && Object.keys(COSTUMES.d || {}).length;
-  if(Date.now() - costumeTried < (known ? 60 * 60 * 1000 : 2 * 60 * 1000)) return Promise.resolve(false);
+  const gap = !known ? 2 * 60 * 1000 : (force || !COSTUMES.full) ? 15 * 60 * 1000 : 60 * 60 * 1000;
+  if(Date.now() - costumeTried < gap) return Promise.resolve(false);
   if(costumeP) return costumeP;
   costumeTried = Date.now();
   try{ localStorage.setItem(COSTUME_KEY + ".try", String(costumeTried)); }catch(e){}
@@ -341,9 +345,15 @@ function parkourHTML(pk){
     (rows ? '<div class="pkl">' + rows + "</div>" : "") + "</div>";
 }
 function cosmeticsHTML(main, extra){
-  if(main && (main.costume_unlocked || main.equipped_costume || main.costume_count))
-    loadCostumeIcons().then(fresh => { if(fresh) fillCostumeTiles(); });
   const g = cosGroups(main), keys = Object.keys(g);
+  if(main && (main.costume_unlocked || main.equipped_costume || main.costume_count)){
+    const shown = (itemsOf(g.costume && g.costume.un) || []).concat(g.costume && g.costume.eq && typeof g.costume.eq === "object" ? [g.costume.eq] : []);
+    const unknown = shown.some(it => {
+      const n = typeof it === "string" ? it : it && (it.name || it.human_name);
+      return n && !/^\[?placeholder\]?$/i.test(String(n).trim()) && !costumeKnown(n);
+    });
+    loadCostumeIcons(unknown).then(fresh => { if(fresh) fillCostumeTiles(); });
+  }
   if(!keys.length) return "";
   const ordered = keys.slice().sort((x,y) => {
     const ix = COS_ORDER.indexOf(x), iy = COS_ORDER.indexOf(y);

@@ -33,6 +33,7 @@ function applyLang(){
   $("#lite").checked = !!state.lite;
   $("#wipeBtn").textContent = T("wipeBtn");
   $("#sloganSub").textContent = T("sloganSub");
+  $("#legalNote").textContent = T("legalNote");
   if(typeof renderSync === "function") renderSync();
   renderChips(); renderSnap(); renderTrend();
 }

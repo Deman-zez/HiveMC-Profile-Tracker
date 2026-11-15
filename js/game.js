@@ -223,8 +223,10 @@ function openGame(code, from){
     '<div class="seg" role="tablist"><button type="button" data-tf="all" aria-pressed="true">' + esc(T("tfAll")) +
     '</button><button type="button" data-tf="month" aria-pressed="false">' + esc(T("tfMonth")) + "</button></div>";
   m.innerHTML = '<div class="inner"><div class="mhead"><h3>' + esc(NAME(code)) +
-    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div><div class="mmaps"></div>' +
-    (code === "main" ? "" : '<button type="button" class="mini lbgo">' + esc(T("lbOpen")) + "</button>") + "</div>";
+    '</h3><button class="close">' + esc(T("close")) + "</button></div>" + seg + '<div class="mbody"></div>' +
+    (code === "main" ? "" : '<button type="button" class="mini lbgo">' + esc(T("lbOpen")) + "</button>") +
+    /* maps load late, so they sit last: content that arrives below the button cannot push it around (layout shift) */
+    '<div class="mmaps"></div></div>';
   m.onclick = e => { if(e.target === m || e.target.classList.contains("close")) closeModal(m); };
   mountModal(m, from);
   const box = m.querySelector(".mbody");
