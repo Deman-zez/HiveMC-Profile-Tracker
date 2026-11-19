@@ -1,5 +1,9 @@
 # HiveMC Profile Tracker
 
+>[!IMPORTANT NOTE]
+>the site is currently unavailable because The Hive has disabled anonymous requests, when they will release api v2 is unknown
+>Read More: [Api Updates](https://api-updates.playhive.com/anonymous-access-disabled/)
+
 **Better. Beautiful. Open.** — the first open-source Hive tracker.
 
 A stats tracker for [The Hive](https://playhive.com), the Minecraft Bedrock server. Look up any player, follow your progress over time, and see your recent games, cosmetics and leaderboard places in one place.
