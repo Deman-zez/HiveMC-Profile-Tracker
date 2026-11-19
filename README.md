@@ -2,8 +2,8 @@
 
 >[!IMPORTANT NOTE]
 >the site is currently unavailable because The Hive has disabled anonymous requests, when they will release api v2 is unknown
-
 >Read More: [Api Updates](https://api-updates.playhive.com/anonymous-access-disabled/)
+
 
 **Better. Beautiful. Open.** — the first open-source Hive tracker.
 
