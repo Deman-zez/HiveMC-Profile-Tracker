@@ -1,7 +1,7 @@
 # HiveMC Profile Tracker
 
 >[!IMPORTANT]
->the site is currently unavailable because The Hive has disabled anonymous requests, when they will release api v2 is unknown.
+>the site is currently unavailable because The Hive has disabled anonymous requests, when they will release api v2 is unknown.<br>
 >Read More: [Api Updates](https://api-updates.playhive.com/anonymous-access-disabled/)
 
 
